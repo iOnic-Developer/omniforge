@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest-cache/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OmniForge runtime data (never commit)
+omniforge_data/
+omniforge_lib/
+omniforge_scripts/
+*.db
+*.db-*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

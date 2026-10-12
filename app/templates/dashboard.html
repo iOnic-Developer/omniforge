@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniForge</title>
+  <style>
+    :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85f2f; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+    header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); }
+    header h1 { font-size:20px; margin:0; }
+    header .tag { color:var(--muted); font-size:13px; }
+    .wrap { display:grid; grid-template-columns:320px 1fr; gap:20px; padding:24px; max-width:1400px; margin:0 auto; }
+    .panel { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
+    .panel h2 { margin:0 0 12px; font-size:15px; }
+    .tool-list { list-style:none; padding:0; margin:0; max-height:60vh; overflow:auto; }
+    .tool-list li { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border:1px solid transparent; border-radius:6px; cursor:pointer; margin-bottom:4px; }
+    .tool-list li:hover, .tool-list li.active { border-color:var(--accent); background:#1c2128; }
+    .tool-list .name { font-weight:500; }
+    .tool-list .lang { color:var(--muted); font-size:12px; }
+    .badge { font-size:11px; padding:2px 8px; border-radius:10px; }
+    .badge.on { background:#1a3a1e; color:var(--green); }
+    .badge.off { background:#3a1f1f; color:var(--red); }
+    label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
+    input, select, textarea { width:100%; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:8px; font-size:14px; }
+    textarea { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+    button { cursor:pointer; border:none; border-radius:6px; padding:9px 16px; font-size:14px; font-weight:500; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-ghost { background:transparent; color:var(--text); border:1px solid var(--border); }
+    .btn-danger { background:transparent; color:var(--red); border:1px solid var(--red); }
+    .actions { display:flex; gap:8px; margin-top:16px; }
+    .out { margin-top:12px; }
+    .out pre { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:12px; white-space:pre-wrap; max-height:300px; overflow:auto; }
+    .out .ok { color:var(--green); }
+    .out .err { color:var(--red); }
+    .empty { color:var(--muted); font-size:13px; }
+    .close-x { color:var(--muted); cursor:pointer; font-size:16px; }
+    .close-x:hover { color:var(--red); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🛠️ OmniForge</h1>
+      <div class="tag">Write, test, and deploy scripts as live MCP tools</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="panel">
+      <h2>Tools</h2>
+      <ul class="tool-list" id="toolList"></ul>
+    </div>
+
+    <div class="panel">
+      <h2>
+        <span id="formTitle">New Tool</span>
+        <span class="close-x" id="closeForm" style="float:right;display:none">×</span>
+      </h2>
+      <form id="toolForm">
+        <div class="row">
+          <div>
+            <label>Tool Name</label>
+            <input name="name" placeholder="e.g. weather" required>
+          </div>
+          <div>
+            <label>Language</label>
+            <select name="language">
+              <option value="python3">Python</option>
+              <option value="node">Node.js</option>
+            </select>
+          </div>
+        </div>
+        <label>Description</label>
+        <input name="description" placeholder="What does this tool do?">
+        <label>Code</label>
+        <textarea name="code" rows="12" placeholder="# Print the current date&#10;import datetime&#10;print(datetime.date.today())"></textarea>
+        <label>Requirements (one per line, optional)</label>
+        <textarea name="requirements" rows="2" placeholder="requests&#10;pandas"></textarea>
+        <div class="actions">
+          <button type="submit" class="btn-primary" id="saveBtn">Save</button>
+          <button type="button" class="btn-ghost" id="runBtn">Run / Test</button>
+          <button type="button" class="btn-danger" id="delBtn" style="display:none">Delete</button>
+        </div>
+      </form>
+      <div class="out" id="out" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+    let current = null;
+    const el = (s) => document.querySelector(s);
+
+    async function loadTools() {
+      const res = await fetch('/api/tools');
+      const { tools } = await res.json();
+      el('#toolList').innerHTML = '';
+      if (tools.length === 0) {
+        el('#toolList').innerHTML = '<li class="empty">No tools yet — create one on the right.</li>';
+      }
+      tools.forEach(t => {
+        const li = document.createElement('li');
+        li.innerHTML = `<div><div class="name">${t.name}</div><div class="lang">${t.language}</div></div>
+          <span class="badge ${t.is_active ? 'on' : 'off'}">${t.is_active ? 'active' : 'off'}</span>`;
+        li.onclick = () => selectTool(t);
+        el('#toolList').appendChild(li);
+      });
+    }
+
+    async function selectTool(t) {
+      current = t;
+      el('#formTitle').textContent = 'Edit Tool';
+      el('#closeForm').style.display = 'inline';
+      el('#delBtn').style.display = 'inline-block';
+      el('[name=name]').value = t.name;
+      el('[name-description]').value = t.description;
+      el('[name-language]').value = t.language;
+      el('[name-code]').value = t.code;
+      el('[name-requirements]').value = t.requirements_json;
+      el('#out').style.display = 'none';
+    }
+
+    el('#toolForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = {
+        name: fd.get('name'),
+        description: fd.get('description'),
+        language: fd.get('language'),
+        code: fd.get('code'),
+        requirements: (fd.get('requirements') || '').split('\n').filter(Boolean),
+        json_schema: {},
+        is_active: true
+      };
+      const url = current ? `/api/tools/${current.name}` : '/api/tools';
+      const method = current ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (res.ok) { current = null; el('#formTitle').textContent = 'New Tool'; el('#closeForm').style.display='none'; el('#delBtn').style.display='none'; loadTools(); }
+      else { const d = await res.json(); alert('Save failed: ' + (d.detail || JSON.stringify(d))); }
+    });
+
+    el('#runBtn').addEventListener('click', async () => {
+      const name = el('[name-name]').value;
+      if (!name) { alert('Enter a tool name first'); return; }
+      const out = el('#out'); out.style.display='block';
+      out.innerHTML = '<div class="err">Running…</div>';
+      const res = await fetch(`/api/tools/${name}/run`);
+      const d = await res.json();
+      out.innerHTML = `<div class="${d.exit_code === 0 ? 'ok' : 'err'}">${d.exit_code === 0 ? 'OK' : 'ERROR'} (exit ${d.exit_code}${d.timed_out ? ', timeout' : ''})</div><pre>${(d.stdout || '') + (d.stderr ? '\n' + d.stderr : '') || '(no output)'}</pre>`;
+    });
+
+    el('#delBtn').addEventListener('click', async () => {
+      if (!confirm(`Delete tool "${current.name}"?`)) return;
+      const res = await fetch(`/api/tools/${current.name}`, { method: 'DELETE' });
+      if (res.ok) { current = null; el('#formTitle').textContent = 'New Tool'; el('#closeForm').style.display='none'; el('#delBtn').style.display='none'; loadTools(); }
+    });
+
+    el('#closeForm').addEventListener('click', () => {
+      current = null; el('#formTitle').textContent = 'New Tool'; el('#closeForm').style.display='none'; el('#delBtn').style.display='none';
+    });
+
+    loadTools();
+  </script>
+</body>
+</html>
