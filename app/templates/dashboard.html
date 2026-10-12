@@ -93,6 +93,7 @@
   <script>
     let current = null;
     const el = (s) => document.querySelector(s);
+    const val = (name) => el(`[name="${name}"]`).value;
 
     async function loadTools() {
       const res = await fetch('/api/tools');
@@ -143,7 +144,7 @@
     });
 
     el('#runBtn').addEventListener('click', async () => {
-      const name = el('[name="name"]').value;
+      const name = val('name');
       if (!name) { alert('Enter a tool name first'); return; }
       const out = el('#out'); out.style.display='block';
       out.innerHTML = '<div class="err">Running…</div>';
