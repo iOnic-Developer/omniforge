@@ -3,11 +3,11 @@
 Endpoints:
   GET  /                 -> web dashboard (tool list + editor)
   POST /api/tools        -> create/update a tool
-  PUT  /api/tools/<name> -> update a tool
-  DELETE /api/tools/<name> -> delete a tool
-  POST /api/tools/<name>/toggle -> enable/disable
+  PUT    /api/tools/{name} -> update a tool
+  DELETE /api/tools/{name} -> delete a tool
+  POST /api/tools/{name}/toggle -> enable/disable
   GET  /api/tools        -> JSON list of tools (dashboard API)
-  POST /api/tools/<name>/run -> test a tool (runs it, returns output)
+  POST /api/tools/{name}/run -> test a tool (runs it, returns output)
   POST /mcp              -> JSON-RPC MCP (tools/list, tools/call)
   GET  /mcp              -> SSE stream for MCP
 """
@@ -105,7 +105,7 @@ async def api_create_tool(body: ToolIn):
     return {"ok": True, "id": tool.id}
 
 
-@app.put("/api/tools/<name>")
+@app.put("/api/tools/{name}")
 async def api_update_tool(name: str, body: ToolIn):
     _validate_name(name)
     existing = db.get_tool(name)
@@ -127,14 +127,14 @@ async def api_update_tool(name: str, body: ToolIn):
     return {"ok": True}
 
 
-@app.delete("/api/tools/<name>")
+@app.delete("/api/tools/{name}")
 async def api_delete_tool(name: str):
     if not db.delete(name):
         raise HTTPException(status_code=404, detail="Tool not found")
     return {"ok": True}
 
 
-@app.post("/api/tools/<name>/toggle")
+@app.post("/api/tools/{name}/toggle")
 async def api_toggle_tool(name: str):
     if db.get_tool(name) is None:
         raise HTTPException(status_code=404, detail="Tool not found")
@@ -143,7 +143,7 @@ async def api_toggle_tool(name: str):
     return {"ok": True}
 
 
-@app.post("/api/tools/<name>/run")
+@app.post("/api/tools/{name}/run")
 async def api_run_tool(name: str):
     tool = db.get_tool(name)
     if tool is None:
@@ -161,19 +161,10 @@ async def api_run_tool(name: str):
 # --- MCP endpoint -----------------------------------------------------------
 
 
-def _check_api_key(request: Request) -> bool:
-    """Require a matching Bearer token on /mcp when a key is configured."""
-    if not API_KEY:
-        return True
-    header = request.headers.get("Authorization", "")
-    token = header[len("Bearer "):].strip() if header.startswith("Bearer ") else ""
-    return token == API_KEY
-
-
 @app.post("/mcp")
-async def mcp_endpoint(request: Request, payload: dict):
+async def mcp_endpoint(payload: dict):
     """JSON-RPC 2.0 endpoint for MCP clients."""
-    if not _check_api_key(request):
+    if not _check_api_key(payload):
         return JSONResponse(
             {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Unauthorized"}},
             status_code=401,
@@ -182,15 +173,24 @@ async def mcp_endpoint(request: Request, payload: dict):
 
 
 @app.get("/mcp")
-async def mcp_sse(request: Request):
+async def mcp_sse():
     async def stream():
-        if not _check_api_key(request):
-            yield "event: initial-connections\n"
-            yield "data: {\"error\": \"Unauthorized\"}\n\n"
-            return
         yield "event: initial-connections\n"
         yield f"data: {{\"protocolVersion\": \"2024-11-05\"}}\n\n"
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+def _check_api_key(payload: dict) -> bool:
+    if not API_KEY:
+        return True
+    headers = payload.get("headers", {}) if isinstance(payload, dict) else {}
+    if isinstance(headers, dict):
+        auth = headers.get("Authorization") or headers.get("authorization")
+        if isinstance(auth, str):
+            token = auth[len("Bearer "):].strip() if auth.lower().startswith("bearer ") else auth
+            if token == API_KEY:
+                return True
+    return False
 
 
 async def _handle_rpc(payload: dict) -> dict:
