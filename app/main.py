@@ -14,7 +14,6 @@ Endpoints:
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import time
@@ -162,9 +161,9 @@ async def api_run_tool(name: str):
 
 
 @app.post("/mcp")
-async def mcp_endpoint(payload: dict):
+async def mcp_endpoint(payload: dict, request: Request):
     """JSON-RPC 2.0 endpoint for MCP clients."""
-    if not _check_api_key(payload):
+    if not _check_api_key(request):
         return JSONResponse(
             {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Unauthorized"}},
             status_code=401,
@@ -180,17 +179,15 @@ async def mcp_sse():
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
-def _check_api_key(payload: dict) -> bool:
+def _check_api_key(request: Request) -> bool:
+    """Validate the Bearer API key from the HTTP Authorization header."""
     if not API_KEY:
         return True
-    headers = payload.get("headers", {}) if isinstance(payload, dict) else {}
-    if isinstance(headers, dict):
-        auth = headers.get("Authorization") or headers.get("authorization")
-        if isinstance(auth, str):
-            token = auth[len("Bearer "):].strip() if auth.lower().startswith("bearer ") else auth
-            if token == API_KEY:
-                return True
-    return False
+    auth = request.headers.get("Authorization")
+    if not auth:
+        return False
+    token = auth[7:].strip() if auth.lower().startswith("bearer ") else auth
+    return token == API_KEY
 
 
 async def _handle_rpc(payload: dict) -> dict:
