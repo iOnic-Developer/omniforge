@@ -161,10 +161,19 @@ async def api_run_tool(name: str):
 # --- MCP endpoint -----------------------------------------------------------
 
 
+def _check_api_key(request: Request) -> bool:
+    """Require a matching Bearer token on /mcp when a key is configured."""
+    if not API_KEY:
+        return True
+    header = request.headers.get("Authorization", "")
+    token = header[len("Bearer "):].strip() if header.startswith("Bearer ") else ""
+    return token == API_KEY
+
+
 @app.post("/mcp")
-async def mcp_endpoint(payload: dict):
+async def mcp_endpoint(request: Request, payload: dict):
     """JSON-RPC 2.0 endpoint for MCP clients."""
-    if not _check_api_key(payload):
+    if not _check_api_key(request):
         return JSONResponse(
             {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Unauthorized"}},
             status_code=401,
@@ -173,19 +182,15 @@ async def mcp_endpoint(payload: dict):
 
 
 @app.get("/mcp")
-async def mcp_sse():
+async def mcp_sse(request: Request):
     async def stream():
+        if not _check_api_key(request):
+            yield "event: initial-connections\n"
+            yield "data: {\"error\": \"Unauthorized\"}\n\n"
+            return
         yield "event: initial-connections\n"
         yield f"data: {{\"protocolVersion\": \"2024-11-05\"}}\n\n"
     return StreamingResponse(stream(), media_type="text/event-stream")
-
-
-def _check_api_key(payload: dict) -> bool:
-    if not API_KEY:
-        return True
-    from starlette.requests import Request
-    headers = payload.get("headers", {}) if isinstance(payload, dict) else {}
-    return True
 
 
 async def _handle_rpc(payload: dict) -> dict:
