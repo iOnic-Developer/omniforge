@@ -1,4 +1,3 @@
-
 # Build stage: install Python deps into a virtualenv.
 FROM python:3.12-slim AS build
 WORKDIR /app
@@ -13,6 +12,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends nodejs npm && \
     rm -rf /var/lib/apt/lists/*
 ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
