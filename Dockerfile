@@ -17,9 +17,10 @@ ENV VIRTUAL_ENV=/opt/venv \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
 COPY --from=build /opt/venv /opt/venv
+# Create the runtime data dir as root, then hand ownership to uid 1000.
+RUN mkdir -p /opt/omniforge/data && chown -R 1000:1000 /opt/omniforge
 USER 1000:1000
 WORKDIR /app
-RUN mkdir -p /opt/omniforge/data && chown -R 1000:1000 /opt/omniforge
 COPY --chown=1000:1000 app ./app
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
