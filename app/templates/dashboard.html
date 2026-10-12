@@ -115,11 +115,11 @@
       el('#formTitle').textContent = 'Edit Tool';
       el('#closeForm').style.display = 'inline';
       el('#delBtn').style.display = 'inline-block';
-      el('[name=name]').value = t.name;
-      el('[name-description]').value = t.description;
-      el('[name-language]').value = t.language;
-      el('[name-code]').value = t.code;
-      el('[name-requirements]').value = t.requirements_json;
+      el('[name="name"]').value = t.name;
+      el('[name="description"]').value = t.description;
+      el('[name="language"]').value = t.language;
+      el('[name="code"]').value = t.code;
+      el('[name="requirements"]').value = t.requirements_json;
       el('#out').style.display = 'none';
     }
 
@@ -143,7 +143,7 @@
     });
 
     el('#runBtn').addEventListener('click', async () => {
-      const name = el('[name-name]').value;
+      const name = el('[name="name"]').value;
       if (!name) { alert('Enter a tool name first'); return; }
       const out = el('#out'); out.style.display='block';
       out.innerHTML = '<div class="err">Running…</div>';
