@@ -39,6 +39,12 @@
     .empty { color:var(--muted); font-size:13px; }
     .close-x { color:var(--muted); cursor:pointer; font-size:16px; }
     .close-x:hover { color:var(--red); }
+    dialog { background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; width:min(760px, 95vw); max-height:85vh; overflow:auto; }
+    dialog::backdrop { background:#000a; }
+    dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+    .hint { color:var(--muted); font-size:13px; }
+    @media (max-width:700px) { .wrap { grid-template-columns:1fr; padding:12px; } }
+
   </style>
 </head>
 <body>
@@ -47,11 +53,14 @@
       <h1>🛠️ OmniForge</h1>
       <div class="tag">Write, test, and deploy scripts as live MCP tools</div>
     </div>
+    <button type="button" class="btn-ghost" id="configBtn">Config</button>
   </header>
 
   <div class="wrap">
     <div class="panel">
       <h2>Tools</h2>
+      <button type="button" class="btn-ghost" id="exampleBtn">Load working example</button>
+      <p class="hint">Example uses Python's standard library. Save it, then Run / Test. Print JSON to return output.</p>
       <ul class="tool-list" id="toolList"></ul>
     </div>
 
@@ -90,80 +99,147 @@
     </div>
   </div>
 
+  <dialog id="configDialog">
+    <div class="row"><h2>MCP configuration &amp; connections</h2><button type="button" class="btn-ghost" id="closeConfig">Close</button></div>
+    <div id="configContent"></div>
+  </dialog>
+
   <script>
     let current = null;
     const el = (s) => document.querySelector(s);
     const val = (name) => el(`[name="${name}"]`).value;
 
+    async function api(url, options = {}) {
+      const res = await fetch(url, options);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 200) || 'Empty response'}`); }
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || data)}`);
+      return data;
+    }
+
+    function showOutput(message, error = false) {
+      const out = el('#out');
+      out.style.display = 'block';
+      const pre = document.createElement('pre');
+      pre.className = error ? 'err' : 'ok';
+      pre.textContent = message;
+      out.replaceChildren(pre);
+    }
+
+    function resetForm() {
+      current = null;
+      el('#toolForm').reset();
+      el('#formTitle').textContent = 'New Tool';
+      el('#closeForm').style.display = 'none';
+      el('#delBtn').style.display = 'none';
+    }
+
     async function loadTools() {
-      const res = await fetch('/api/tools');
-      const { tools } = await res.json();
-      el('#toolList').innerHTML = '';
-      if (tools.length === 0) {
-        el('#toolList').innerHTML = '<li class="empty">No tools yet — create one on the right.</li>';
+      const { tools } = await api('/api/tools');
+      const list = el('#toolList'); list.replaceChildren();
+      if (!tools.length) {
+        const li = document.createElement('li');
+        li.className = 'empty'; li.textContent = 'No tools yet — load the example or create one.';
+        list.appendChild(li);
       }
       tools.forEach(t => {
         const li = document.createElement('li');
-        li.innerHTML = `<div><div class="name">${t.name}</div><div class="lang">${t.language}</div></div>
-          <span class="badge ${t.is_active ? 'on' : 'off'}">${t.is_active ? 'active' : 'off'}</span>`;
-        li.onclick = () => selectTool(t);
-        el('#toolList').appendChild(li);
+        const name = document.createElement('span'); name.textContent = `${t.name} (${t.language})`;
+        const badge = document.createElement('span'); badge.className = `badge ${t.is_active ? 'on' : 'off'}`;
+        badge.textContent = t.is_active ? 'active' : 'off';
+        li.append(name, badge); li.onclick = () => selectTool(t); list.appendChild(li);
       });
     }
 
-    async function selectTool(t) {
+    function selectTool(t) {
       current = t;
       el('#formTitle').textContent = 'Edit Tool';
       el('#closeForm').style.display = 'inline';
       el('#delBtn').style.display = 'inline-block';
-      el('[name="name"]').value = t.name;
-      el('[name="description"]').value = t.description;
-      el('[name="language"]').value = t.language;
-      el('[name="code"]').value = t.code;
-      el('[name="requirements"]').value = t.requirements_json;
+      ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = t[key]; });
+      el('[name="requirements"]').value = JSON.parse(t.requirements_json || '[]').join('\n');
       el('#out').style.display = 'none';
     }
 
+    el('#exampleBtn').addEventListener('click', () => {
+      if ((val('code') || val('name')) && !confirm('Replace the editor contents with the example? Saved tools are unchanged.')) return;
+      resetForm();
+      el('[name="name"]').value = 'example_hello';
+      el('[name="description"]').value = 'Return a greeting and the current UTC time as JSON. No packages required.';
+      el('[name="code"]').value = 'import json\nfrom datetime import datetime, timezone\n\nprint(json.dumps({\n    "message": "Hello from OmniForge!",\n    "utc_time": datetime.now(timezone.utc).isoformat(),\n    "ok": True\n}))\n';
+      showOutput('Example loaded. Click Save, then Run / Test. This tool needs no requirements.');
+    });
+
     el('#toolForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fd = new FormData(e.target);
       const body = {
-        name: fd.get('name'),
-        description: fd.get('description'),
-        language: fd.get('language'),
-        code: fd.get('code'),
-        requirements: (fd.get('requirements') || '').split('\n').filter(Boolean),
-        json_schema: {},
-        is_active: true
+        name: val('name'), description: val('description'), language: val('language'), code: val('code'),
+        requirements: val('requirements').split('\n').map(x => x.trim()).filter(Boolean),
+        json_schema: current ? JSON.parse(current.json_schema_json || '{}') : {},
+        is_active: current ? current.is_active : true
       };
-      const url = current ? `/api/tools/${current.name}` : '/api/tools';
-      const method = current ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) { current = null; el('#formTitle').textContent = 'New Tool'; el('#closeForm').style.display='none'; el('#delBtn').style.display='none'; loadTools(); }
-      else { const d = await res.json(); alert('Save failed: ' + (d.detail || JSON.stringify(d))); }
+      try {
+        await api(current ? `/api/tools/${encodeURIComponent(current.name)}` : '/api/tools', {
+          method: current ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        await loadTools();
+        const { tools } = await api('/api/tools');
+        selectTool(tools.find(t => t.name === body.name));
+        showOutput('Saved. Click Run / Test to execute the saved code.');
+      } catch (err) { showOutput(err.message, true); }
     });
 
     el('#runBtn').addEventListener('click', async () => {
-      const name = val('name');
-      if (!name) { alert('Enter a tool name first'); return; }
-      const out = el('#out'); out.style.display='block';
-      out.innerHTML = '<div class="err">Running…</div>';
-      const res = await fetch(`/api/tools/${name}/run`);
-      const d = await res.json();
-      out.innerHTML = `<div class="${d.exit_code === 0 ? 'ok' : 'err'}">${d.exit_code === 0 ? 'OK' : 'ERROR'} (exit ${d.exit_code}${d.timed_out ? ', timeout' : ''})</div><pre>${(d.stdout || '') + (d.stderr ? '\n' + d.stderr : '') || '(no output)'}</pre>`;
+      if (!current) { showOutput('Save or select a tool before running it.', true); return; }
+      if (val('name') !== current.name || val('code') !== current.code || val('language') !== current.language) {
+        showOutput('Save your changes before running this tool.', true); return;
+      }
+      const button = el('#runBtn'); button.disabled = true;
+      showOutput('Running…');
+      try {
+        const d = await api(`/api/tools/${encodeURIComponent(current.name)}/run`, { method: 'POST' });
+        showOutput(`${d.exit_code === 0 ? 'OK' : 'ERROR'} (exit ${d.exit_code}${d.timed_out ? ', timeout' : ''}, ${d.duration_ms} ms)\n\n${(d.stdout || '') + (d.stderr ? '\n' + d.stderr : '') || '(no output — use print() in Python or console.log() in Node)'}`, d.exit_code !== 0);
+      } catch (err) { showOutput(err.message, true); }
+      finally { button.disabled = false; }
     });
 
     el('#delBtn').addEventListener('click', async () => {
-      if (!confirm(`Delete tool "${current.name}"?`)) return;
-      const res = await fetch(`/api/tools/${current.name}`, { method: 'DELETE' });
-      if (res.ok) { current = null; el('#formTitle').textContent = 'New Tool'; el('#closeForm').style.display='none'; el('#delBtn').style.display='none'; loadTools(); }
+      if (!current || !confirm(`Delete tool "${current.name}"?`)) return;
+      try {
+        await api(`/api/tools/${encodeURIComponent(current.name)}`, { method: 'DELETE' });
+        resetForm(); await loadTools();
+      } catch (err) { showOutput(err.message, true); }
     });
+    el('#closeForm').addEventListener('click', resetForm);
 
-    el('#closeForm').addEventListener('click', () => {
-      current = null; el('#formTitle').textContent = 'New Tool'; el('#closeForm').style.display='none'; el('#delBtn').style.display='none';
+    el('#configBtn').addEventListener('click', async () => {
+      const dialog = el('#configDialog'); const content = el('#configContent');
+      content.textContent = 'Loading…'; dialog.showModal();
+      try {
+        const config = await api('/api/config');
+        const endpoint = new URL(config.mcp_path, window.location.origin).href;
+        const headers = config.auth_enabled ? { Authorization: 'Bearer <YOUR_API_KEY>' } : {};
+        const template = { endpoint, method: 'POST', headers,
+          body: { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} } };
+        const pre = document.createElement('pre');
+        pre.textContent = [
+          `MCP endpoint: ${endpoint}`, `Transport: ${config.transport}`,
+          `MCP authentication: ${config.auth_enabled ? 'Bearer API key enabled (value hidden)' : 'DISABLED'}`,
+          config.auth_configuration,
+          'Dashboard/API authentication: not implemented',
+          'Connected clients: not tracked; no connection list is available',
+          `Methods: ${config.methods.join(', ')}`,
+          '', 'HTTP client request template (replace the key locally):', JSON.stringify(template, null, 2),
+          '', 'Warnings:', ...config.warnings.map(w => `• ${w}`)
+        ].join('\n');
+        content.replaceChildren(pre);
+      } catch (err) { content.textContent = err.message; }
     });
+    el('#closeConfig').addEventListener('click', () => el('#configDialog').close());
 
-    loadTools();
+    loadTools().catch(err => showOutput(err.message, true));
   </script>
 </body>
 </html>

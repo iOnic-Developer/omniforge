@@ -84,3 +84,24 @@ omniforge/
 ├── .gitignore
 └── .env.example
 ```
+
+## Dashboard example and connection settings
+
+- **Load working example** fills the editor with a no-dependency Python tool that
+  prints a greeting and UTC timestamp as JSON. Click **Save**, then **Run / Test**.
+  Loading the example does not automatically create or overwrite a saved tool.
+- **Run / Test** executes saved code via POST and shows stdout, stderr, exit status,
+  execution time and HTTP errors. Save changes before running.
+- **Config** shows the endpoint for the dashboard's current origin, Bearer auth
+  status, supported methods and an HTTP request template. It never displays the
+  configured API key. Set `OMNIFORGE_API_KEY` in the server environment and recreate
+  the container to change it.
+- The current MCP implementation is limited HTTP JSON-RPC, not a complete
+  Streamable HTTP transport. OAuth and connected-client/session tracking are not
+  implemented; the panel explicitly reports these limitations.
+
+**Current security limitations:** the execution engine uses subprocesses inside
+one shared application container, not per-run containers (the earlier architecture
+sections above describe the original design). The dashboard and management API
+are unauthenticated. Only run trusted code and keep the service on a trusted
+network. A Bearer key on MCP alone does not secure the management API.
