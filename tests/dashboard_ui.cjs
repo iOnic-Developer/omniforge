@@ -35,12 +35,18 @@ const field = name => element(`[name="${name}"]`);
 element('#toolForm').reset = () => fields.forEach(f => { field(f).value = f === 'language' ? 'python3' : ''; });
 for (const side of ['Left', 'Right']) element('#collapse' + side).setAttribute('aria-expanded', 'true');
 let approve = true, failNext = null;
+const storage = new Map();
+const systemTheme = {matches: false, addEventListener(event, handler) { this.change = handler; }};
+const windowEvents = {};
+let editWhileSaving = false;
 const calls = [];
 let tools = [];
 const asTool = (body, id) => ({...body, id, requirements_json: JSON.stringify(body.requirements || []), json_schema_json: JSON.stringify(body.json_schema || {})});
 const response = (status, data) => ({ok: status < 400, status, text: async () => JSON.stringify(data)});
 const context = vm.createContext({
+  localStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
   document: {
+    documentElement: new Element(),
     querySelector: element,
     querySelectorAll: () => element('#toolList').children,
     createElement: () => new Element()
@@ -48,6 +54,8 @@ const context = vm.createContext({
   confirm: () => approve,
   fetch: async (url, options = {}) => {
     calls.push({url, options});
+    if (editWhileSaving && options.method === 'PUT') { editWhileSaving = false; field('code').value = 'newer edit'; }
+    if (url.endsWith('/run')) return response(200, {exit_code: 0, stdout: '{"ok":true}', stderr: '', duration_ms: 12, timed_out: false});
     if (failNext && url === failNext.url && options.method === failNext.method) {
       const error = failNext; failNext = null;
       return response(error.status, {detail: error.detail});
@@ -71,7 +79,7 @@ const context = vm.createContext({
     });
     return response(200, url === '/api/tools' && !options.method ? {tools} : {ok: true});
   },
-  URL, window: {location: {origin: 'http://localhost:8000'}}
+  URL, window: {location: {origin: 'http://192.168.0.180:8000', hostname: '192.168.0.180', protocol: 'http:'}, matchMedia: () => systemTheme, addEventListener: (event, handler) => { windowEvents[event] = handler; }}
 });
 vm.runInContext(script, context);
 const run = code => vm.runInContext(code, context);
@@ -99,7 +107,7 @@ const tab = (shiftKey = false, key = 'Tab') => {
   assert.equal(field('name').value, '');
   assert.equal(element('#formTitle').textContent, 'New Tool');
   assert.equal(element('#delBtn').style.display, 'none');
-  assert.equal(element('#out').style.display, 'none');
+  assert.equal(element('#out').style.display, 'block');
   assert.equal(element('#lineNumbers').textContent, '1');
   const examples = JSON.parse(run('JSON.stringify(EXAMPLES)'));
   assert.equal(Object.keys(examples).length, 4);
@@ -229,4 +237,56 @@ const tab = (shiftKey = false, key = 'Tab') => {
   assert.match(element('#configContent').children[0].textContent, /value hidden/);
   click('#closeConfig'); assert.equal(element('#configDialog').open, false);
   console.log('PASS: help/example and config dialog controls');
+
+  assert.equal(context.document.documentElement.dataset.theme, 'light');
+  assert.match(element('#installHint').textContent, /current HTTP LAN address is not installable/);
+  element('#themeSelect').value = 'dark'; element('#themeSelect').handlers.change();
+  assert.equal(storage.get('omniforge.theme'), 'dark');
+  assert.equal(context.document.documentElement.dataset.theme, 'dark');
+  assert.equal(element('#themeColor').getAttribute('content'), '#101419');
+  systemTheme.matches = false; systemTheme.change();
+  assert.equal(context.document.documentElement.dataset.theme, 'dark', 'Explicit theme ignores system updates');
+  element('#themeSelect').value = 'system'; element('#themeSelect').handlers.change();
+  assert.equal(context.document.documentElement.dataset.theme, 'light');
+  systemTheme.matches = true; systemTheme.change();
+  assert.equal(context.document.documentElement.dataset.theme, 'dark');
+  element('#themeSelect').value = 'light'; element('#themeSelect').handlers.change();
+  assert.equal(context.document.documentElement.dataset.theme, 'light');
+  console.log('PASS: persistent light/dark/system theme, system listener, browser color and insecure-LAN hint');
+
+  approve = true; tools = [saved]; run('selectTool(saved)');
+  field('description').value = 'unsaved metadata'; element('#toolForm').handlers.input();
+  assert.equal(element('#editorState').textContent, 'Unsaved changes');
+  approve = false;
+  const other = asTool({name: 'other', description: '', code: 'print(2)', language: 'python3'}, 'other');
+  context.other = other; run('selectTool(other)');
+  assert.equal(run('current.id'), 'saved');
+  assert.equal(field('description').value, 'unsaved metadata');
+  let blocked = false; windowEvents.beforeunload({preventDefault() { blocked = true; }});
+  assert.equal(blocked, true);
+  approve = true; tools.push(other); await run('loadTools()');
+  await row('other').children[0].handlers.click();
+  assert.equal(run('current.id'), 'other');
+  assert.equal(element('#editorState').textContent, 'Saved revision');
+  field('code').value = 'submitted edit'; element('#toolForm').handlers.input();
+  editWhileSaving = true;
+  await element('#toolForm').handlers.submit({preventDefault() {}});
+  assert.equal(field('code').value, 'newer edit', 'In-flight save must preserve subsequent typing');
+  assert.equal(element('#editorState').textContent, 'Unsaved changes');
+  assert.match(output(), /Newer edits remain unsaved/);
+  assert.equal(element('#saveBtn').disabled, false);
+  await click('#runBtn'); assert.match(output(), /Save your changes/);
+  await element('#toolForm').handlers.submit({preventDefault() {}});
+  assert.equal(element('#editorState').textContent, 'Saved revision');
+  await click('#runBtn'); assert.match(output(), /OK \(exit 0/);
+  failNext = {url: '/api/tools/other', method: 'PUT', status: 500, detail: 'Save failed'};
+  field('code').value = 'retain after error'; element('#toolForm').handlers.input();
+  await element('#toolForm').handlers.submit({preventDefault() {}});
+  assert.equal(field('code').value, 'retain after error'); assert.match(output(), /Save failed/);
+  assert.equal(element('#saveBtn').disabled, false);
+  approve = true; await click('#delBtn');
+  assert.equal(tools.some(t => t.name === 'other'), false);
+  assert.equal(run('current'), null);
+  console.log('PASS: actual selection/cancel, metadata dirty state, unload guard, save race/error, saved run and delete');
+
 })().catch(err => { console.error(err); process.exitCode = 1; });

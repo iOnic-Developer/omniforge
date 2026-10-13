@@ -239,3 +239,13 @@ Loading an example prepares a NEW tool, never edits the previously selected tool
 The Python and Node basic examples need no requirements. The `requests` and
 `lodash` examples fill Requirements automatically and install on first execution.
 Changing code, language, name or requirements must be saved before running.
+
+## Workbench redesign (review branch, 2026-10-13)
+
+See [product plan](docs/product-plan.md) for flows, acceptance and security gates.
+The dashboard supports persistent light/dark/system appearance, unsaved-edit
+protection, responsive panels and a custom forge mark. The manifest uses explicit
+allowlisted static routes; no service worker or sensitive offline caching is added.
+Installation is browser-dependent and requires HTTPS/localhost, not the current
+plain-HTTP LAN address. Execution always needs the server. These changes do not
+secure the unauthenticated management API or isolate scripts: trusted network only.

@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 
 from app.database import DuplicateToolError, db
 from app.mcp_server import MCPHandler
@@ -38,6 +39,24 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="OmniForge", version="0.1.0", lifespan=lifespan)
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+
+
+# Explicit allowlist, never serve the data/library/script roots.
+STATIC_DIR = Path(__file__).parent / 'static'
+STATIC_TYPES = {'forge.svg': 'image/svg+xml', 'icon-192.png': 'image/png',
+                'icon-512.png': 'image/png', 'icon-maskable-512.png': 'image/png'}
+
+
+@app.get('/manifest.webmanifest')
+async def web_manifest():
+    return FileResponse(STATIC_DIR / 'manifest.webmanifest', media_type='application/manifest+json')
+
+
+@app.get('/static/{asset}')
+async def static_asset(asset: str):
+    if asset not in STATIC_TYPES:
+        raise HTTPException(status_code=404, detail='Asset not found')
+    return FileResponse(STATIC_DIR / asset, media_type=STATIC_TYPES[asset])
 
 
 def _validate_name(name: str) -> str:
