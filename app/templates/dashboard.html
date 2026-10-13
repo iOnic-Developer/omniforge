@@ -3,99 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OmniForge</title>
+  <title>OmniForge · Tool workbench</title>
+  <meta name="theme-color" content="#f3f4f6" id="themeColor">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Write, test and manage your trusted Python and Node MCP tools.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/forge.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
   <style>
-    :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --muted:#a6b0bb; --accent:#58a6ff; --green:#3fb950; --red:#f85f2f; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
-    header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); }
-    header h1 { font-size:20px; margin:0; }
-    header .tag { color:var(--muted); font-size:13px; }
-    .wrap { --left:280px; --right:300px; display:grid; grid-template-columns:var(--left) minmax(0,1fr) var(--right); gap:16px; padding:16px; margin:0; align-items:start; }
-    .wrap.left-collapsed { --left:64px; }
-    .wrap.right-collapsed { --right:64px; }
-    .panel { min-width:0; }
-    .sidebar.collapsed .sidebar-content, .sidebar.collapsed .sidebar-title { display:none; }
-    .sidebar.collapsed { padding:9px; }
-    .panel-heading, .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .panel-heading { justify-content:space-between; margin-bottom:12px; }
+    :root { color-scheme:light; --bg:#f3f4f6; --card:#ffffff; --editor:#fafbfc; --border:#8994a3; --divider:#d5dae1; --text:#182230; --muted:#526071; --accent:#2458cf; --accent-soft:#edf2ff; --green:#187248; --red:#b53035; --shadow:0 8px 24px #1822300c; --radius:4px; }
+    :root[data-theme="dark"] { color-scheme:dark; --bg:#101419; --card:#191f27; --editor:#131920; --border:#6d7b8c; --divider:#333e4c; --text:#edf1f7; --muted:#adbacb; --accent:#99baff; --accent-soft:#243653; --green:#86d9ad; --red:#ff9da4; --shadow:0 8px 24px #0003; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; background:var(--bg); color:var(--text); }
+    button,input,select,textarea { font:inherit; }
+    button,input,select { min-height:44px; }
+    button { cursor:pointer; padding:9px 14px; border:1px solid var(--border); border-radius:var(--radius); font-weight:600; }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    button:hover:not(:disabled) { background:var(--accent-soft); border-color:var(--accent); }
+    button:active:not(:disabled) { opacity:.8; }
+    .btn-primary { background:var(--accent); color:var(--card); border-color:var(--accent); }
+    .btn-primary:hover:not(:disabled) { background:var(--accent); opacity:.9; }
+    .btn-ghost { background:transparent; color:var(--text); }
+    .btn-danger { background:transparent; color:var(--red); border-color:var(--red); margin-left:auto; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:16px 24px; background:var(--card); border-bottom:1px solid var(--divider); }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand img { width:36px; height:36px; }
+    header h1 { font-size:20px; line-height:1.2; letter-spacing:-.6px; margin:0; }
+    header .tag { color:var(--muted); font-size:12px; margin-top:4px; }
+    .header-controls { display:flex; align-items:center; gap:12px; }
+    .theme-label { margin:0; }
+    #themeSelect { width:auto; min-width:108px; }
+    .context-bar { display:flex; justify-content:space-between; gap:16px; padding:12px 24px; color:var(--muted); font-size:12px; border-bottom:1px solid var(--divider); }
+    .context-bar strong { color:var(--text); }
+    .wrap { --left:272px; --right:288px; display:grid; grid-template-columns:var(--left) minmax(0,1fr) var(--right); gap:16px; padding:24px; align-items:start; }
+    .wrap.left-collapsed { --left:64px; } .wrap.right-collapsed { --right:64px; }
+    .panel { min-width:0; background:var(--card); border:1px solid var(--divider); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
+    .panel h2 { font-size:14px; margin:0 0 12px; letter-spacing:-.2px; }
+    .panel-heading,.toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .panel-heading { justify-content:space-between; margin-bottom:16px; }
     .panel .panel-heading h2 { margin:0; }
-    .sidebar.collapsed .toolbar { flex-direction:column; }
-    .icon-btn { width:44px; padding:10px; flex-shrink:0; }
+    .toolbar { margin-bottom:20px; }
+    .icon-btn { width:44px; padding:11px; flex-shrink:0; }
     .icon-btn svg { width:20px; height:20px; display:block; }
-    .toolbar { margin-bottom:12px; }
-    .sidebar.collapsed .toolbar { margin-bottom:0; }
-    .sidebar.collapsed .panel-heading { margin-bottom:0; }
-    .install-btn { width:100%; margin-bottom:12px; }
-    .tool-list .tool-select { flex:1; min-width:0; padding:8px; text-align:left; background:transparent; color:var(--text); }
-    .tool-select .name, .tool-select .description { display:block; overflow-wrap:anywhere; }
-    .tool-select .description { font-size:12px; font-weight:400; color:var(--muted); margin-top:4px; }
-    .toggle-btn { flex-shrink:0; padding:8px; font-size:12px; min-width:58px; background:transparent; border:1px solid var(--border); }
-    .toggle-btn.on { color:var(--green); }
-    .toggle-btn.off { color:var(--muted); }
-    .editor-shell { display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:minmax(0,1fr); height:clamp(360px,58vh,900px); border:1px solid var(--border); border-radius:6px; overflow:hidden; background:var(--bg); }
-    .line-numbers, #toolCode { font:14px/22px ui-monospace,Menlo,Consolas,monospace; tab-size:2; padding:12px; }
-    .line-numbers { margin:0; text-align:right; color:var(--muted); background:var(--card); border-right:1px solid var(--border); overflow:hidden; min-height:0; padding-bottom:34px; user-select:none; }
+    .sidebar.collapsed .sidebar-content,.sidebar.collapsed .sidebar-title { display:none; }
+    .sidebar.collapsed { padding:9px; }
+    .sidebar.collapsed .toolbar { flex-direction:column; }
+    .sidebar.collapsed .toolbar,.sidebar.collapsed .panel-heading { margin-bottom:0; }
+    .install-btn { width:100%; margin-bottom:8px; }
+    .section-label { display:flex; justify-content:space-between; align-items:center; }
+    #toolCount { font:12px ui-monospace,monospace; color:var(--muted); }
+    .tool-list { list-style:none; padding:0; margin:16px 0 0; max-height:60vh; overflow:auto; }
+    .tool-list li { display:flex; align-items:center; gap:8px; border:1px solid transparent; border-radius:var(--radius); margin-bottom:8px; padding:4px; }
+    .tool-list li.active { border-color:var(--accent); background:var(--accent-soft); }
+    .tool-list li:hover { background:var(--accent-soft); }
+    .tool-list .tool-select { flex:1; min-width:0; text-align:left; padding:8px 4px; background:transparent; color:var(--text); border-color:transparent; }
+    .tool-select .name,.tool-select .description { display:block; overflow-wrap:anywhere; }
+    .tool-select .name { font:600 13px/1.5 ui-monospace,Menlo,Consolas,monospace; }
+    .tool-select .description { color:var(--muted); font-size:12px; font-weight:400; margin-top:4px; }
+    .toggle-btn { flex-shrink:0; padding:8px; font-size:12px; min-width:48px; background:var(--card); color:var(--muted); }
+    .toggle-btn.on { color:var(--green); } .toggle-btn.off { color:var(--muted); }
+    label { display:block; color:var(--text); font-size:12px; font-weight:600; margin:16px 0 6px; }
+    input,select,textarea { width:100%; min-width:0; background:var(--editor); color:var(--text); border:1px solid var(--border); border-radius:var(--radius); padding:10px; }
+    input::placeholder,textarea::placeholder { color:var(--muted); opacity:1; }
+    textarea { font:13px/1.6 ui-monospace,Menlo,Consolas,monospace; resize:vertical; }
+    .editor-shell { display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:minmax(0,1fr); height:clamp(360px,56vh,900px); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; background:var(--editor); }
+    .line-numbers,#toolCode { font:14px/22px ui-monospace,Menlo,Consolas,monospace; tab-size:2; padding:16px 12px; }
+    .line-numbers { margin:0; text-align:right; color:var(--muted); background:var(--card); border-right:1px solid var(--divider); overflow:hidden; min-height:0; padding-bottom:38px; user-select:none; }
     #toolCode { border:0; border-radius:0; resize:none; height:100%; white-space:pre; overflow:auto; }
     #toolCode:focus-visible { outline-offset:-3px; }
-    .editor-hint { margin:8px 0; }
-    .actions { flex-wrap:wrap; }
-    .out pre { overflow-wrap:anywhere; }
-    input, select, textarea { min-width:0; }
-    button, input, select { min-height:44px; }
-    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-    button:disabled { opacity:.6; cursor:wait; }
-    button:hover:not(:disabled) { filter:brightness(1.15); }
-    .btn-primary { color:var(--bg); }
-    .dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-    .dialog-heading h2 { font-size:18px; }
-    .tips { border-top:1px solid var(--border); margin-top:16px; padding-top:8px; }
-    .tips h3 { font-size:14px; }
-    @media (max-width:1100px) { .wrap { --left:230px; --right:250px; gap:12px; padding:12px; } }
-    @media (max-width:860px) { .wrap, .wrap.left-collapsed, .wrap.right-collapsed { grid-template-columns:minmax(0,1fr); } .sidebar.collapsed .toolbar { flex-direction:row; } .editor-shell { height:420px; } .sidebar .tool-list { max-height:260px; } header { padding:16px; } }
-    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
-    .panel { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
-    .panel h2 { margin:0 0 12px; font-size:15px; }
-    .tool-list { list-style:none; padding:0; margin:0; max-height:60vh; overflow:auto; }
-    .tool-list li { display:flex; align-items:center; justify-content:space-between; padding:0; gap:8px; border:1px solid transparent; border-radius:6px; margin-bottom:4px; }
-    .tool-list li:hover, .tool-list li.active { border-color:var(--accent); background:#1c2128; }
-    .tool-list .name { font-weight:500; }
-    .tool-list .lang { color:var(--muted); font-size:12px; }
-    .badge { font-size:11px; padding:2px 8px; border-radius:10px; }
-    .badge.on { background:#1a3a1e; color:var(--green); }
-    .badge.off { background:#3a1f1f; color:var(--red); }
-    label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
-    input, select, textarea { width:100%; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:8px; font-size:14px; }
-    textarea { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; }
-    .row { display:flex; gap:10px; }
-    .row > * { flex:1; }
-    button { cursor:pointer; border:none; border-radius:6px; padding:9px 16px; font-size:14px; font-weight:500; }
-    .btn-primary { background:var(--accent); color:var(--bg); }
-    .btn-ghost { background:transparent; color:var(--text); border:1px solid var(--border); }
-    .btn-danger { background:transparent; color:var(--red); border:1px solid var(--red); }
-    .actions { display:flex; gap:8px; margin-top:16px; }
-    .out { margin-top:12px; }
-    .out pre { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:12px; white-space:pre-wrap; max-height:300px; overflow:auto; }
-    .out .ok { color:var(--green); }
-    .out .err { color:var(--red); }
-    .empty { color:var(--muted); font-size:13px; }
-    .close-x { color:var(--muted); cursor:pointer; font-size:16px; }
-    .close-x:hover { color:var(--red); }
-    dialog { background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; width:min(760px, 95vw); max-height:85vh; overflow:auto; }
-    dialog::backdrop { background:#000a; }
-    dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; }
-    .hint { color:var(--muted); font-size:13px; }
-
-
+    .hint,.empty { color:var(--muted); font-size:12px; line-height:1.65; }
+    .editor-hint { margin:12px 0; }
+    .editor-state { color:var(--muted); font:12px ui-monospace,monospace; padding:4px 8px; border:1px solid var(--divider); border-radius:var(--radius); }
+    .editor-state[data-dirty="true"] { color:var(--accent); border-color:var(--accent); }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider); }
+    .out { margin-top:16px; } .out pre { margin:0; background:var(--editor); border:1px solid var(--border); border-left:3px solid var(--green); border-radius:var(--radius); padding:16px; font:13px/1.65 ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; color:var(--text); }
+    .out .err { border-left-color:var(--red); }
+    .tips { border-top:1px solid var(--divider); margin-top:24px; padding-top:8px; } .tips h3 { font-size:13px; }
+    .notice { padding:12px; background:var(--accent-soft); border-left:2px solid var(--accent); }
+    dialog { background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:var(--radius); padding:24px; width:min(760px,95vw); max-height:85vh; overflow:auto; box-shadow:var(--shadow); }
+    dialog::backdrop { background:#0009; } dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+    .dialog-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; } .dialog-heading h2 { font-size:18px; }
+    .skip-link { position:absolute; left:16px; top:-100px; z-index:5; background:var(--card); color:var(--accent); padding:12px; } .skip-link:focus { top:12px; }
+    @media(max-width:1200px) { .wrap { --left:232px; --right:252px; gap:12px; padding:16px; } }
+    @media(max-width:920px) { .wrap,.wrap.left-collapsed,.wrap.right-collapsed { grid-template-columns:minmax(0,1fr); } .sidebar.collapsed .toolbar { flex-direction:row; } .sidebar .tool-list { max-height:240px; } .editor-shell { height:420px; } }
+    @media(max-width:600px) { header { padding:16px; flex-wrap:wrap; gap:12px; } .header-controls { width:100%; justify-content:space-between; } .context-bar { padding:12px 16px; flex-direction:column; gap:4px; } .wrap { padding:12px; } .panel { padding:12px; } .brand img { width:32px; height:32px; } }
+    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#toolCode">Skip to code editor</a>
   <header>
-    <div>
-      <h1>OmniForge</h1>
-      <div class="tag">Write, test, and deploy scripts as live MCP tools</div>
-    </div>
+    <div class="brand"><img src="/static/forge.svg" alt="" width="36" height="36"><div><h1>OmniForge</h1><div class="tag">Your MCP tool workbench</div></div></div>
+    <div class="header-controls"><span class="hint">Trusted workspace</span><label class="theme-label" for="themeSelect">Appearance</label><select id="themeSelect"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
   </header>
+  <div class="context-bar"><span><strong>Workbench</strong> / Scripts &amp; execution</span><span id="installHint">Online execution · no offline script access</span></div>
 
   <form id="toolForm" class="wrap">
     <aside class="panel sidebar" id="leftPanel" aria-label="Tool library">
@@ -106,16 +108,16 @@
         <button type="button" class="btn-ghost icon-btn" id="helpBtn" aria-label="Help and examples" title="Help and examples"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17h.01"/></svg></button>
       </div>
       <div class="sidebar-content" id="leftContent">
-        <h2>Tools</h2>
+        <div class="section-label"><h2>Tool library</h2><span id="toolCount" aria-live="polite">0 scripts</span></div>
         <button type="button" class="btn-ghost install-btn" id="installExamplesBtn" title="Save missing examples. Packages install lazily on first Run / Test, not now.">Install examples</button>
-        <p class="hint">Name | enabled state. Disabled scripts stay here but are hidden from MCP discovery.</p>
+        <p class="hint">Enabled tools are discoverable by MCP clients. Turn off to hide a tool without deleting it.</p>
         <ul class="tool-list" id="toolList" aria-label="Saved scripts"></ul>
       </div>
     </aside>
 
     <section class="panel" aria-label="Code editor">
       <div class="panel-heading">
-        <h2 id="formTitle">New Tool</h2>
+        <h2 id="formTitle">New Tool</h2><span id="editorState" class="editor-state" role="status" aria-live="polite">New draft</span>
         <button type="button" class="btn-ghost" id="closeForm" style="display:none">Cancel / New</button>
       </div>
       <label for="toolCode">Code</label>
@@ -125,11 +127,11 @@
       </div>
       <p class="hint editor-hint" id="editorHint">Plain-text code editor with line numbers. Tab indents; Shift+Tab unindents selected lines. Escape, then Tab leaves the editor.</p>
       <div class="actions">
-        <button type="submit" class="btn-primary" id="saveBtn">Save</button>
+        <button type="submit" class="btn-primary" id="saveBtn">Save tool</button>
         <button type="button" class="btn-ghost" id="runBtn">Run / Test</button>
         <button type="button" class="btn-danger" id="delBtn" style="display:none">Delete</button>
       </div>
-      <div class="out" id="out" style="display:none" role="status" aria-live="polite"></div>
+      <div class="out" id="out" role="status" aria-live="polite"><pre>Ready to build. Name your tool, add code, then Save tool → Run / Test. Results appear here.</pre></div>
     </section>
 
     <aside class="panel sidebar" id="rightPanel" aria-label="Tool settings">
@@ -146,7 +148,7 @@
         <input id="toolDescription" name="description" placeholder="What does this tool do?">
         <label for="toolRequirements">Requirements (one per line, optional)</label>
         <textarea id="toolRequirements" name="requirements" rows="4" aria-describedby="requirementsHint" placeholder="Leave empty for no packages"></textarea>
-        <p class="hint" id="requirementsHint">Python: requests or requests==2.32.5. Node: lodash or lodash@4.17.21; scoped names supported. Installs on first run into a persistent cache, not on save.</p>
+        <p class="hint notice" id="requirementsHint">Python: requests or requests==2.32.5. Node: lodash or lodash@4.17.21; scoped names supported. Installs on first run into a persistent cache, not on save.</p>
         <div class="tips">
           <h3>Tips</h3>
           <p class="hint">Save before testing. Print JSON with Python print() or Node console.log(). Run / Test executes the saved script with empty inputs.</p>
@@ -187,6 +189,43 @@
     let current = null;
     const el = (s) => document.querySelector(s);
     const val = (name) => el(`[name="${name}"]`).value;
+    const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+    let themeChoice = 'system';
+    try { themeChoice = localStorage.getItem('omniforge.theme') || 'system'; } catch {}
+    if (!['light', 'dark', 'system'].includes(themeChoice)) themeChoice = 'system';
+    function applyTheme() {
+      const theme = themeChoice === 'system' ? (themeMedia.matches ? 'dark' : 'light') : themeChoice;
+      document.documentElement.dataset.theme = theme;
+      el('#themeColor').setAttribute('content', theme === 'dark' ? '#101419' : '#f3f4f6');
+      el('#themeSelect').value = themeChoice;
+    }
+    el('#themeSelect').addEventListener('change', () => {
+      themeChoice = el('#themeSelect').value;
+      try { localStorage.setItem('omniforge.theme', themeChoice); } catch {}
+      applyTheme();
+    });
+    themeMedia.addEventListener('change', () => { if (themeChoice === 'system') applyTheme(); });
+    applyTheme();
+    const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+    el('#installHint').textContent = window.location.protocol === 'https:' || localHost
+      ? 'Install via your browser when supported · online execution only'
+      : 'App installation needs HTTPS or localhost · current HTTP LAN address is not installable';
+    let savedDraft = null;
+    let saving = false;
+    function draftFingerprint() {
+      return JSON.stringify(['name', 'description', 'language', 'code', 'requirements'].map(val));
+    }
+    function isDirty() { return savedDraft !== null && draftFingerprint() !== savedDraft; }
+    function updateDirty() {
+      const dirty = isDirty();
+      el('#editorState').textContent = dirty ? 'Unsaved changes' : current ? 'Saved revision' : 'New draft';
+      el('#editorState').dataset.dirty = String(dirty);
+    }
+    function markClean() { savedDraft = draftFingerprint(); updateDirty(); }
+    function mayDiscard() { return !saving && (!isDirty() || confirm('Discard unsaved changes? Saved tools are unchanged.')); }
+    el('#toolForm').addEventListener('input', updateDirty);
+    el('#toolForm').addEventListener('change', updateDirty);
+    window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
     async function api(url, options = {}) {
       const res = await fetch(url, options);
@@ -216,6 +255,8 @@
       el('#delBtn').style.display = 'none';
       el('#out').style.display = 'none';
       document.querySelectorAll('#toolList li').forEach(li => li.classList.remove('active'));
+      markClean();
+      showOutput('Ready to build. Name your tool, add code, then Save tool → Run / Test.');
     }
 
     async function loadTools() {
@@ -223,6 +264,7 @@
       // Refresh metadata only, never replace the editor's unsaved fields.
       const selected = tools.find(t => t.id === current?.id);
       if (selected) current = selected;
+      el('#toolCount').textContent = `${tools.length} script${tools.length === 1 ? '' : 's'}`;
       const list = el('#toolList'); list.replaceChildren();
       if (!tools.length) {
         const li = document.createElement('li');
@@ -261,16 +303,19 @@
       return tools;
     }
 
-    function selectTool(t) {
+    function selectTool(t, force = false) {
+      if (!force && !mayDiscard()) return;
       current = t;
       document.querySelectorAll('#toolList li').forEach(li => li.classList.toggle('active', li.dataset.toolId === t.id));
-      el('#formTitle').textContent = 'Edit Tool';
+      el('#formTitle').textContent = t.name;
       el('#closeForm').style.display = 'inline';
       el('#delBtn').style.display = 'inline-block';
       ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = t[key]; });
       el('[name="requirements"]').value = JSON.parse(t.requirements_json || '[]').join('\n');
       el('#out').style.display = 'none';
       updateGutter();
+      markClean();
+      showOutput('Saved script selected. Run / Test executes this revision with empty inputs.');
     }
 
     const EXAMPLES = {
@@ -309,6 +354,7 @@
 };
 
     function newTool() {
+      if (saving) return;
       if ((val('code') || val('name')) && !confirm('Clear the editor to start a new tool? Saved tools are unchanged.')) return;
       resetForm();
       setSidebar('right', false);
@@ -318,12 +364,14 @@
     el('#closeForm').addEventListener('click', newTool);
 
     el('#exampleBtn').addEventListener('click', () => {
+      if (saving) return;
       if ((val('code') || val('name')) && !confirm('Replace the editor contents with the example? Saved tools are unchanged.')) return;
       const example = EXAMPLES[el('#exampleSelect').value];
       resetForm();
       ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = example[key]; });
       el('[name="requirements"]').value = example.requirements.join('\n');
       updateGutter();
+      updateDirty();
       el('#helpDialog').close();
       setSidebar('right', false);
       codeEditor.focus();
@@ -365,6 +413,11 @@
 
     el('#toolForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (saving) return;
+      saving = true;
+      const saveButton = el('#saveBtn'); saveButton.disabled = true; saveButton.textContent = 'Saving…';
+      el('#runBtn').disabled = true;
+      const submittedDraft = draftFingerprint();
       const body = {
         name: val('name'), description: val('description'), language: val('language'), code: val('code'),
         requirements: val('requirements').split('\n').map(x => x.trim()).filter(Boolean),
@@ -376,9 +429,16 @@
           method: current ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         const tools = await loadTools();
-        selectTool(tools.find(t => t.name === body.name));
-        showOutput('Saved. Click Run / Test to execute the saved code.');
+        const saved = tools.find(t => t.name === body.name);
+        if (draftFingerprint() === submittedDraft) {
+          selectTool(saved, true);
+          showOutput('Saved. Click Run / Test to execute the saved code.');
+        } else {
+          current = saved; savedDraft = submittedDraft; updateDirty();
+          showOutput('Submitted revision saved. Newer edits remain unsaved; save again before running.');
+        }
       } catch (err) { showOutput(err.message, true); }
+      finally { saving = false; saveButton.disabled = false; saveButton.textContent = 'Save tool'; el('#runBtn').disabled = false; }
     });
 
     el('#runBtn').addEventListener('click', async () => {
@@ -396,6 +456,7 @@
     });
 
     el('#delBtn').addEventListener('click', async () => {
+      if (saving) return;
       if (!current || !confirm(`Delete tool "${current.name}"?`)) return;
       try {
         await api(`/api/tools/${encodeURIComponent(current.name)}`, { method: 'DELETE' });
@@ -451,7 +512,7 @@
       el('#lineNumbers').scrollTop = code.scrollTop;
     }
     const codeEditor = el('[name="code"]');
-    codeEditor.addEventListener('input', updateGutter);
+    codeEditor.addEventListener('input', () => { updateGutter(); updateDirty(); });
     codeEditor.addEventListener('scroll', () => { el('#lineNumbers').scrollTop = codeEditor.scrollTop; });
     let leaveEditor = false;
     codeEditor.addEventListener('blur', () => { leaveEditor = false; });
@@ -483,8 +544,10 @@
         codeEditor.setSelectionRange(Math.max(lineStart, start + firstDelta), Math.max(lineStart, end + delta));
       }
       updateGutter();
+      updateDirty();
     });
     updateGutter();
+    markClean();
 
     loadTools().catch(err => showOutput(err.message, true));
   </script>
