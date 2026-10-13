@@ -110,7 +110,7 @@ class ToolIn(BaseModel):
         return self
 
 
-def save_tool(body: ToolIn, existing: Tool | None = None) -> Tool:
+def save_tool(body: ToolIn, existing: Tool | None = None, expected_revision: str | None = None) -> Tool:
     """Save metadata only. Never install dependencies or execute code."""
     tool = Tool(
         id=existing.id if existing else db.next_id(),
@@ -124,4 +124,4 @@ def save_tool(body: ToolIn, existing: Tool | None = None) -> Tool:
         created_at=existing.created_at if existing else None,
         updated_at=None,
     )
-    return db.upsert(tool, create_only=existing is None)
+    return db.upsert(tool, create_only=existing is None, expected_revision=expected_revision)

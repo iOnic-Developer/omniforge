@@ -21,8 +21,36 @@ jobs:
           Path('/tmp/dashboard.js').write_text(page.split('<script>', 1)[1].split('</script>', 1)[0])
           PY
           node --check /tmp/dashboard.js
-          node tests/dashboard_ui.cjs
+          node --check app/static/sw.js
+          node --test tests/dashboard_ui.cjs tests/service_worker.cjs
       - name: Build image and run tests
         run: |
           docker build -t omniforge:test .
           docker run --rm -v "$PWD/tests:/app/tests:ro" omniforge:test python -m unittest discover -s tests -v
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install development test dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements.txt
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Test actual browser and accessibility
+        run: npm run test:browser
+        env:
+          OMNIFORGE_SCREENSHOTS: test-artifacts/screenshots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: product-browser-screenshots
+          path: test-artifacts/screenshots

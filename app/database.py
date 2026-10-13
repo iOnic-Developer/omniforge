@@ -8,6 +8,8 @@ hot-reload without a container restart.
 from __future__ import annotations
 
 import os
+import hashlib
+import json
 import sqlite3
 import threading
 import time
@@ -31,10 +33,21 @@ class Tool:
     is_active: bool
     created_at: str
     updated_at: str
+    revision: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        # Content identity, not a second-resolution timestamp. No migration required.
+        values = [self.id, self.name, self.description, self.language, self.code,
+                  self.requirements_json, self.json_schema_json, self.is_active]
+        self.revision = hashlib.sha256(json.dumps(values, ensure_ascii=True).encode()).hexdigest()
 
 
 class DuplicateToolError(ValueError):
     """A different tool already uses the requested name."""
+
+
+class ToolConflictError(ValueError):
+    """A conditional write targets a deleted or changed tool."""
 
 
 class Database:
@@ -101,10 +114,10 @@ class Database:
             self._cache["all"] = (tools, time.monotonic())
             return tools
 
-    def get_tool(self, name: str) -> Optional[Tool]:
+    def get_tool(self, name: str, fresh: bool = False) -> Optional[Tool]:
         with self._lock:
             cached = self._cache.get("all")
-            if cached and time.monotonic() - cached[1] < CACHE_TTL / 1000:
+            if not fresh and cached and time.monotonic() - cached[1] < CACHE_TTL / 1000:
                 for t in cached[0]:
                     if t.name == name:
                         return t
@@ -117,13 +130,17 @@ class Database:
     def get_tool_list(self) -> list[Tool]:
         return self._fetch_all()
 
-    def upsert(self, tool: Tool, create_only: bool = False) -> Tool:
+    def upsert(self, tool: Tool, create_only: bool = False, expected_revision: str | None = None) -> Tool:
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         with self._lock:
             with self._connect() as conn:
                 # Serialize check+write across connections without migrating or
                 # deleting legacy duplicate rows in existing databases.
                 conn.execute("BEGIN IMMEDIATE")
+                if expected_revision is not None:
+                    row = conn.execute("SELECT * FROM tools WHERE id = ?", (tool.id,)).fetchone()
+                    if row is None or self._row_to_tool(row).revision != expected_revision:
+                        raise ToolConflictError("Tool changed in another tab or client; reload before changing it")
                 duplicate = conn.execute(
                     "SELECT id FROM tools WHERE name = ? AND (id != ? OR ?) LIMIT 1",
                     (tool.name, tool.id, int(create_only)),
@@ -164,15 +181,38 @@ class Database:
             self._invalidate()
             return tool
 
-    def delete(self, name: str) -> bool:
+    def delete(self, name: str, expected_revision: str | None = None) -> bool:
         with self._lock:
             with self._connect() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                if expected_revision is not None:
+                    rows = conn.execute("SELECT * FROM tools WHERE name = ?", (name,)).fetchall()
+                    if len(rows) != 1 or self._row_to_tool(rows[0]).revision != expected_revision:
+                        raise ToolConflictError("Tool changed in another tab or client; reload before deleting it")
                 cur = conn.execute(
                     "DELETE FROM tools WHERE name = ?", (name,)
                 )
                 conn.commit()
             self._invalidate()
             return cur.rowcount > 0
+
+    def toggle(self, name: str, expected_revision: str | None = None) -> Tool | None:
+        """Atomically flip one identity, never a stale replacement with the same name."""
+        with self._lock:
+            with self._connect() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                row = conn.execute("SELECT * FROM tools WHERE name = ?", (name,)).fetchone()
+                if row is None:
+                    return None
+                tool = self._row_to_tool(row)
+                if expected_revision is not None and tool.revision != expected_revision:
+                    raise ToolConflictError("Tool changed in another tab or client; reload before toggling it")
+                conn.execute("UPDATE tools SET is_active = ?, updated_at = ? WHERE id = ?",
+                             (int(not tool.is_active), time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), tool.id))
+                updated = conn.execute("SELECT * FROM tools WHERE id = ?", (tool.id,)).fetchone()
+                conn.commit()
+            self._invalidate()
+            return self._row_to_tool(updated)
 
     def activate(self, name: str, active: bool) -> None:
         with self._lock:

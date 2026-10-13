@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+node_modules
+__pycache__
+*.pyc
+.env
+.env.*
+*.db
+*.db-*
+omniforge_data
+omniforge_lib
+omniforge_scripts
+test-artifacts
+tests
+docs
