@@ -1,6 +1,6 @@
 """SQLite-backed storage for tool metadata.
 
-All writes are atomic (write to temp file then os.replace). Reads happen per
+Writes use SQLite transactions. Reads happen per
 request with a short in-memory cache that is invalidated on any write, giving
 hot-reload without a container restart.
 """
@@ -31,6 +31,10 @@ class Tool:
     is_active: bool
     created_at: str
     updated_at: str
+
+
+class DuplicateToolError(ValueError):
+    """A different tool already uses the requested name."""
 
 
 class Database:
@@ -113,10 +117,19 @@ class Database:
     def get_tool_list(self) -> list[Tool]:
         return self._fetch_all()
 
-    def upsert(self, tool: Tool) -> Tool:
+    def upsert(self, tool: Tool, create_only: bool = False) -> Tool:
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         with self._lock:
             with self._connect() as conn:
+                # Serialize check+write across connections without migrating or
+                # deleting legacy duplicate rows in existing databases.
+                conn.execute("BEGIN IMMEDIATE")
+                duplicate = conn.execute(
+                    "SELECT id FROM tools WHERE name = ? AND (id != ? OR ?) LIMIT 1",
+                    (tool.name, tool.id, int(create_only)),
+                ).fetchone()
+                if duplicate:
+                    raise DuplicateToolError('Tool name already exists; choose another name or edit it in the dashboard')
                 conn.execute(
                     """
                     INSERT INTO tools
@@ -166,8 +179,7 @@ class Database:
             with self._connect() as conn:
                 conn.execute(
                     "UPDATE tools SET is_active = ?, updated_at = ? WHERE name = ?",
-                    (int(active), time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
-                    name,
+                    (int(active), time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), name),
                 )
                 conn.commit()
             self._invalidate()

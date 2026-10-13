@@ -14,20 +14,16 @@ Endpoints:
 
 from __future__ import annotations
 
-import json
 import os
-import re
-import time
 from contextlib import asynccontextmanager
-from typing import Optional
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
-from pydantic import BaseModel, field_validator
 
-from app.database import Tool, db
+from app.database import DuplicateToolError, db
 from app.mcp_server import MCPHandler
 from app.runner import run_tool
+from app.tool_authoring import ToolIn, save_tool, validate_name
 
 API_KEY = os.environ.get("OMNIFORGE_API_KEY", "")
 handler = MCPHandler()
@@ -45,35 +41,10 @@ TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 
 def _validate_name(name: str) -> str:
-    if not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_-]{0,62}", name):
-        raise HTTPException(status_code=400, detail="Invalid tool name")
-    return name
-
-
-class ToolIn(BaseModel):
-    name: str
-    description: str = ""
-    language: str = "python3"
-    code: str = ""
-    requirements: list[str] = []
-    json_schema: dict = {}
-    is_active: bool = True
-
-    @field_validator("name")
-    @classmethod
-    def check_name(cls, v: str) -> str:
-        return _validate_name(v)
-
-
-def _render_schema(schema: dict, code: str) -> dict:
-    """Fallback: derive a simple input schema from the code if none provided."""
-    if schema:
-        return schema
-    return {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False,
-    }
+    try:
+        return validate_name(name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -109,19 +80,10 @@ async def api_list_tools():
 
 @app.post("/api/tools")
 async def api_create_tool(body: ToolIn):
-    tool = Tool(
-        id=db.next_id(),
-        name=body.name,
-        description=body.description,
-        language=body.language,
-        code=body.code,
-        requirements_json=json.dumps(body.requirements),
-        json_schema_json=json.dumps(_render_schema(body.json_schema, body.code)),
-        is_active=body.is_active,
-        created_at=None,
-        updated_at=None,
-    )
-    db.upsert(tool)
+    try:
+        tool = save_tool(body)
+    except DuplicateToolError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"ok": True, "id": tool.id}
 
 
@@ -131,24 +93,16 @@ async def api_update_tool(name: str, body: ToolIn):
     existing = db.get_tool(name)
     if existing is None:
         raise HTTPException(status_code=404, detail="Tool not found")
-    tool = Tool(
-        id=existing.id,
-        name=body.name,
-        description=body.description,
-        language=body.language,
-        code=body.code,
-        requirements_json=json.dumps(body.requirements),
-        json_schema_json=json.dumps(_render_schema(body.json_schema, body.code)),
-        is_active=body.is_active,
-        created_at=existing.created_at,
-        updated_at=None,
-    )
-    db.upsert(tool)
+    try:
+        save_tool(body, existing)
+    except DuplicateToolError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"ok": True}
 
 
 @app.delete("/api/tools/{name}")
 async def api_delete_tool(name: str):
+    _validate_name(name)
     if not db.delete(name):
         raise HTTPException(status_code=404, detail="Tool not found")
     return {"ok": True}
@@ -156,6 +110,7 @@ async def api_delete_tool(name: str):
 
 @app.post("/api/tools/{name}/toggle")
 async def api_toggle_tool(name: str):
+    _validate_name(name)
     if db.get_tool(name) is None:
         raise HTTPException(status_code=404, detail="Tool not found")
     existing = db.get_tool(name)
@@ -165,6 +120,7 @@ async def api_toggle_tool(name: str):
 
 @app.post("/api/tools/{name}/run")
 async def api_run_tool(name: str):
+    _validate_name(name)
     tool = db.get_tool(name)
     if tool is None:
         raise HTTPException(status_code=404, detail="Tool not found")
@@ -215,6 +171,9 @@ async def _handle_rpc(payload: dict) -> dict:
     method = payload.get("method")
     params = payload.get("params", {})
     req_id = payload.get("id")
+    if not isinstance(params, dict):
+        return {"jsonrpc": "2.0", "id": req_id, "error": {
+            "code": -32602, "message": "params must be a JSON object"}}
 
     if method == "initialize":
         return {"jsonrpc": "2.0", "id": req_id, "result": handler.initialize(
