@@ -1,0 +1,14 @@
+{
+  "name": "omniforge-ui-tests",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Development-only browser regression tests; no frontend runtime dependencies",
+  "scripts": {
+    "test": "node --test tests/dashboard_ui.cjs tests/service_worker.cjs",
+    "test:browser": "node --test tests/product_browser.cjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "playwright": "1.64.0"
+  }
+}

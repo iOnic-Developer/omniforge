@@ -72,21 +72,24 @@ class DashboardTests(unittest.TestCase):
 
     def test_dashboard_controls(self):
         page = Path('app/templates/dashboard.html').read_text()
-        self.assertIn('id="configBtn"', page)
-        self.assertIn('id="exampleBtn"', page)
-        self.assertIn("/run`, { method: 'POST' }", page)
-        self.assertIn('pre.textContent = message', page)
-        self.assertNotIn('out.innerHTML', page)
-        for control in ('collapseLeft', 'collapseRight', 'helpBtn', 'installExamplesBtn', 'lineNumbers'):
+        css = Path('app/static/product.css').read_text()
+        for screen in ('overview', 'tools', 'editor', 'connect', 'help'):
+            self.assertIn('data-page="' + screen + '"', page)
+        for control in ('toolSearch', 'toolFilter', 'runBtn', 'saveBtn', 'installExamplesBtn',
+                        'lineNumbers', 'confirmDialog', 'templateDialog', 'themeSelect'):
             self.assertIn('id="' + control + '"', page)
         for target in ('toolName', 'toolLanguage', 'toolDescription', 'toolCode', 'toolRequirements'):
             self.assertIn('for="' + target + '"', page)
-        self.assertIn('grid-template-columns:var(--left) minmax(0,1fr) var(--right)', page)
-        self.assertIn('grid-template-columns:minmax(0,1fr)', page)
-        self.assertIn('min-height:44px', page)
-        self.assertIn('button:focus-visible', page)
+        self.assertIn("/run`, {method:'POST'", page)
+        self.assertIn('pre.textContent = message', page)
+        self.assertNotIn('innerHTML', page)
+        self.assertRegex(css, r'min-height:\s*44px')
+        self.assertIn('button:focus-visible', css)
+        self.assertIn('prefers-reduced-motion', css)
         self.assertIn('wrap="off"', page)
         self.assertNotIn('🛠', page)
+        self.assertIn('aria-current', page)
+        self.assertIn('beforeunload', page)
 
 
 if __name__ == '__main__':

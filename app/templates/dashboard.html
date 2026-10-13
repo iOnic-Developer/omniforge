@@ -1,279 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OmniForge</title>
-  <style>
-    :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --muted:#a6b0bb; --accent:#58a6ff; --green:#3fb950; --red:#f85f2f; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
-    header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); }
-    header h1 { font-size:20px; margin:0; }
-    header .tag { color:var(--muted); font-size:13px; }
-    .wrap { --left:280px; --right:300px; display:grid; grid-template-columns:var(--left) minmax(0,1fr) var(--right); gap:16px; padding:16px; margin:0; align-items:start; }
-    .wrap.left-collapsed { --left:64px; }
-    .wrap.right-collapsed { --right:64px; }
-    .panel { min-width:0; }
-    .sidebar.collapsed .sidebar-content, .sidebar.collapsed .sidebar-title { display:none; }
-    .sidebar.collapsed { padding:9px; }
-    .panel-heading, .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .panel-heading { justify-content:space-between; margin-bottom:12px; }
-    .panel .panel-heading h2 { margin:0; }
-    .sidebar.collapsed .toolbar { flex-direction:column; }
-    .icon-btn { width:44px; padding:10px; flex-shrink:0; }
-    .icon-btn svg { width:20px; height:20px; display:block; }
-    .toolbar { margin-bottom:12px; }
-    .sidebar.collapsed .toolbar { margin-bottom:0; }
-    .sidebar.collapsed .panel-heading { margin-bottom:0; }
-    .install-btn { width:100%; margin-bottom:12px; }
-    .tool-list .tool-select { flex:1; min-width:0; padding:8px; text-align:left; background:transparent; color:var(--text); }
-    .tool-select .name, .tool-select .description { display:block; overflow-wrap:anywhere; }
-    .tool-select .description { font-size:12px; font-weight:400; color:var(--muted); margin-top:4px; }
-    .toggle-btn { flex-shrink:0; padding:8px; font-size:12px; min-width:58px; background:transparent; border:1px solid var(--border); }
-    .toggle-btn.on { color:var(--green); }
-    .toggle-btn.off { color:var(--muted); }
-    .editor-shell { display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:minmax(0,1fr); height:clamp(360px,58vh,900px); border:1px solid var(--border); border-radius:6px; overflow:hidden; background:var(--bg); }
-    .line-numbers, #toolCode { font:14px/22px ui-monospace,Menlo,Consolas,monospace; tab-size:2; padding:12px; }
-    .line-numbers { margin:0; text-align:right; color:var(--muted); background:var(--card); border-right:1px solid var(--border); overflow:hidden; min-height:0; padding-bottom:34px; user-select:none; }
-    #toolCode { border:0; border-radius:0; resize:none; height:100%; white-space:pre; overflow:auto; }
-    #toolCode:focus-visible { outline-offset:-3px; }
-    .editor-hint { margin:8px 0; }
-    .actions { flex-wrap:wrap; }
-    .out pre { overflow-wrap:anywhere; }
-    input, select, textarea { min-width:0; }
-    button, input, select { min-height:44px; }
-    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-    button:disabled { opacity:.6; cursor:wait; }
-    button:hover:not(:disabled) { filter:brightness(1.15); }
-    .btn-primary { color:var(--bg); }
-    .dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-    .dialog-heading h2 { font-size:18px; }
-    .tips { border-top:1px solid var(--border); margin-top:16px; padding-top:8px; }
-    .tips h3 { font-size:14px; }
-    @media (max-width:1100px) { .wrap { --left:230px; --right:250px; gap:12px; padding:12px; } }
-    @media (max-width:860px) { .wrap, .wrap.left-collapsed, .wrap.right-collapsed { grid-template-columns:minmax(0,1fr); } .sidebar.collapsed .toolbar { flex-direction:row; } .editor-shell { height:420px; } .sidebar .tool-list { max-height:260px; } header { padding:16px; } }
-    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
-    .panel { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
-    .panel h2 { margin:0 0 12px; font-size:15px; }
-    .tool-list { list-style:none; padding:0; margin:0; max-height:60vh; overflow:auto; }
-    .tool-list li { display:flex; align-items:center; justify-content:space-between; padding:0; gap:8px; border:1px solid transparent; border-radius:6px; margin-bottom:4px; }
-    .tool-list li:hover, .tool-list li.active { border-color:var(--accent); background:#1c2128; }
-    .tool-list .name { font-weight:500; }
-    .tool-list .lang { color:var(--muted); font-size:12px; }
-    .badge { font-size:11px; padding:2px 8px; border-radius:10px; }
-    .badge.on { background:#1a3a1e; color:var(--green); }
-    .badge.off { background:#3a1f1f; color:var(--red); }
-    label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
-    input, select, textarea { width:100%; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:8px; font-size:14px; }
-    textarea { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; }
-    .row { display:flex; gap:10px; }
-    .row > * { flex:1; }
-    button { cursor:pointer; border:none; border-radius:6px; padding:9px 16px; font-size:14px; font-weight:500; }
-    .btn-primary { background:var(--accent); color:var(--bg); }
-    .btn-ghost { background:transparent; color:var(--text); border:1px solid var(--border); }
-    .btn-danger { background:transparent; color:var(--red); border:1px solid var(--red); }
-    .actions { display:flex; gap:8px; margin-top:16px; }
-    .out { margin-top:12px; }
-    .out pre { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:12px; white-space:pre-wrap; max-height:300px; overflow:auto; }
-    .out .ok { color:var(--green); }
-    .out .err { color:var(--red); }
-    .empty { color:var(--muted); font-size:13px; }
-    .close-x { color:var(--muted); cursor:pointer; font-size:16px; }
-    .close-x:hover { color:var(--red); }
-    dialog { background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; width:min(760px, 95vw); max-height:85vh; overflow:auto; }
-    dialog::backdrop { background:#000a; }
-    dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; }
-    .hint { color:var(--muted); font-size:13px; }
-
-
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#116859">
+<meta name="description" content="Turn trusted Python and Node scripts into tools for your AI. Create, test and connect with OmniForge.">
+<title>Overview · OmniForge</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/assets/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/manrope.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/assets/product.css">
 </head>
 <body>
-  <header>
-    <div>
-      <h1>OmniForge</h1>
-      <div class="tag">Write, test, and deploy scripts as live MCP tools</div>
-    </div>
-  </header>
-
-  <form id="toolForm" class="wrap">
-    <aside class="panel sidebar" id="leftPanel" aria-label="Tool library">
-      <div class="toolbar">
-        <button type="button" class="btn-ghost icon-btn" id="collapseLeft" aria-label="Collapse tool library" title="Collapse tool library" aria-expanded="true" aria-controls="leftContent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
-        <button type="button" class="btn-ghost icon-btn" id="configBtn" aria-label="MCP configuration" title="MCP configuration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-2-1-3 2-2-2-3-3-1-1-3Z"/><circle cx="10" cy="11" r="3"/></svg></button>
-        <button type="button" class="btn-ghost icon-btn" id="newBtn" aria-label="New tool" title="New tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-        <button type="button" class="btn-ghost icon-btn" id="helpBtn" aria-label="Help and examples" title="Help and examples"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17h.01"/></svg></button>
-      </div>
-      <div class="sidebar-content" id="leftContent">
-        <h2>Tools</h2>
-        <button type="button" class="btn-ghost install-btn" id="installExamplesBtn" title="Save missing examples. Packages install lazily on first Run / Test, not now.">Install examples</button>
-        <p class="hint">Name | enabled state. Disabled scripts stay here but are hidden from MCP discovery.</p>
-        <ul class="tool-list" id="toolList" aria-label="Saved scripts"></ul>
-      </div>
-    </aside>
-
-    <section class="panel" aria-label="Code editor">
-      <div class="panel-heading">
-        <h2 id="formTitle">New Tool</h2>
-        <button type="button" class="btn-ghost" id="closeForm" style="display:none">Cancel / New</button>
-      </div>
-      <label for="toolCode">Code</label>
-      <div class="editor-shell">
-        <pre class="line-numbers" id="lineNumbers" aria-hidden="true">1</pre>
-        <textarea id="toolCode" name="code" wrap="off" spellcheck="false" aria-describedby="editorHint" placeholder="# Print the current date&#10;import datetime&#10;print(datetime.date.today())"></textarea>
-      </div>
-      <p class="hint editor-hint" id="editorHint">Plain-text code editor with line numbers. Tab indents; Shift+Tab unindents selected lines. Escape, then Tab leaves the editor.</p>
-      <div class="actions">
-        <button type="submit" class="btn-primary" id="saveBtn">Save</button>
-        <button type="button" class="btn-ghost" id="runBtn">Run / Test</button>
-        <button type="button" class="btn-danger" id="delBtn" style="display:none">Delete</button>
-      </div>
-      <div class="out" id="out" style="display:none" role="status" aria-live="polite"></div>
-    </section>
-
-    <aside class="panel sidebar" id="rightPanel" aria-label="Tool settings">
-      <div class="panel-heading">
-        <h2 class="sidebar-title">Tool settings</h2>
-        <button type="button" class="btn-ghost icon-btn" id="collapseRight" aria-label="Collapse tool settings" title="Collapse tool settings" aria-expanded="true" aria-controls="rightContent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
-      </div>
-      <div class="sidebar-content" id="rightContent">
-        <label for="toolName">Tool name</label>
-        <input id="toolName" name="name" placeholder="e.g. weather" required>
-        <label for="toolLanguage">Language</label>
-        <select id="toolLanguage" name="language"><option value="python3">Python</option><option value="node">Node.js</option></select>
-        <label for="toolDescription">Description</label>
-        <input id="toolDescription" name="description" placeholder="What does this tool do?">
-        <label for="toolRequirements">Requirements (one per line, optional)</label>
-        <textarea id="toolRequirements" name="requirements" rows="4" aria-describedby="requirementsHint" placeholder="Leave empty for no packages"></textarea>
-        <p class="hint" id="requirementsHint">Python: requests or requests==2.32.5. Node: lodash or lodash@4.17.21; scoped names supported. Installs on first run into a persistent cache, not on save.</p>
-        <div class="tips">
-          <h3>Tips</h3>
-          <p class="hint">Save before testing. Print JSON with Python print() or Node console.log(). Run / Test executes the saved script with empty inputs.</p>
-          <p class="hint">Only run trusted scripts. Built-in MCP authoring tools are always available and cannot be toggled here.</p>
-          <button type="button" class="btn-ghost" id="tipsHelpBtn">Help / load an example</button>
-        </div>
-      </div>
-    </aside>
-  </form>
-
-  <dialog id="helpDialog" aria-labelledby="helpTitle">
-    <div class="dialog-heading"><h2 id="helpTitle">Help and examples</h2><button type="button" class="btn-ghost" id="closeHelp">Close</button></div>
-    <ol>
-      <li>Use New tool, enter a name, language, description and code, then Save.</li>
-      <li>Run / Test executes saved code; save edits first. Results and errors appear below the editor.</li>
-      <li>Enabled scripts appear in MCP discovery. Disable hides discovery, not the dashboard or manual testing. Refresh your client's tool list after changes.</li>
-    </ol>
-    <p class="hint">Install examples saves the four missing examples after confirmation; existing names are never overwritten. It does not install packages. Load example below only changes the editor until you Save.</p>
-    <label for="exampleSelect">Choose an example</label>
-    <select id="exampleSelect">
-      <option value="python_basic">Python — no requirements (ready to run)</option>
-      <option value="node_basic">Node — no requirements (ready to run)</option>
-      <option value="python_packages">Python — with requests (installs on first run)</option>
-      <option value="node_packages">Node — with lodash (installs on first run)</option>
-    </select>
-    <button type="button" class="btn-ghost" id="exampleBtn">Load example</button>
-    <h3>Packages and safety</h3>
-    <p class="hint">Package names, one per line: Python requests or requests==2.32.5; Node lodash or lodash@4.17.21 (scoped names supported). First run installs into a persistent per-tool cache (up to 120 seconds); later runs reuse it. No URLs, commands, system binaries, source builds or npm install scripts. Saving alone does not install. CommonJS require() is supported for Node packages.</p>
-    <p class="hint">Scripts share the application container. Dashboard/API authentication is not implemented: keep this service on a trusted network. Config shows connection metadata, never the API key.</p>
-  </dialog>
-
-  <dialog id="configDialog" aria-labelledby="configTitle">
-    <div class="dialog-heading"><h2 id="configTitle">MCP configuration &amp; connections</h2><button type="button" class="btn-ghost" id="closeConfig">Close</button></div>
-    <div id="configContent"></div>
-  </dialog>
-
-  <script>
-    let current = null;
-    const el = (s) => document.querySelector(s);
-    const val = (name) => el(`[name="${name}"]`).value;
-
-    async function api(url, options = {}) {
-      const res = await fetch(url, options);
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); }
-      catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 200) || 'Empty response'}`); }
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || data)}`);
-      return data;
-    }
-
-    function showOutput(message, error = false) {
-      const out = el('#out');
-      out.style.display = 'block';
-      const pre = document.createElement('pre');
-      pre.className = error ? 'err' : 'ok';
-      pre.textContent = message;
-      out.replaceChildren(pre);
-    }
-
-    function resetForm() {
-      current = null;
-      el('#toolForm').reset();
-      updateGutter();
-      el('#formTitle').textContent = 'New Tool';
-      el('#closeForm').style.display = 'none';
-      el('#delBtn').style.display = 'none';
-      el('#out').style.display = 'none';
-      document.querySelectorAll('#toolList li').forEach(li => li.classList.remove('active'));
-    }
-
-    async function loadTools() {
-      const { tools } = await api('/api/tools');
-      // Refresh metadata only, never replace the editor's unsaved fields.
-      const selected = tools.find(t => t.id === current?.id);
-      if (selected) current = selected;
-      const list = el('#toolList'); list.replaceChildren();
-      if (!tools.length) {
-        const li = document.createElement('li');
-        li.className = 'empty'; li.textContent = 'No tools yet — install examples or create one.';
-        list.appendChild(li);
-      }
-      tools.forEach(t => {
-        const li = document.createElement('li');
-        const select = document.createElement('button'); select.type = 'button'; select.className = 'tool-select';
-        const name = document.createElement('span'); name.className = 'name'; name.textContent = t.name;
-        const description = document.createElement('span'); description.className = 'description';
-        description.textContent = t.description || 'No description';
-        select.append(name, description);
-        select.addEventListener('click', () => selectTool(t));
-        const toggle = document.createElement('button'); toggle.type = 'button';
-        toggle.className = `toggle-btn ${t.is_active ? 'on' : 'off'}`;
-        toggle.textContent = t.is_active ? 'On' : 'Off';
-        toggle.setAttribute('role', 'switch'); toggle.setAttribute('aria-checked', String(t.is_active));
-        const builtin = ['omniforge_instructions', 'omniforge_create_tool'].includes(t.name);
-        toggle.disabled = builtin;
-        toggle.setAttribute('aria-label', `${t.is_active ? 'Disable' : 'Enable'} ${t.name}`);
-        toggle.title = builtin ? 'Built-in MCP tools cannot be toggled' : 'Enable or disable MCP discovery; keep this script in the dashboard';
-        toggle.addEventListener('click', async () => {
-          if (builtin) return;
-          toggle.disabled = true;
-          try {
-            await api(`/api/tools/${encodeURIComponent(t.name)}/toggle`, { method: 'POST' });
-            await loadTools();
-          } catch (err) { showOutput(err.message, true); }
-          finally { toggle.disabled = builtin; }
-        });
-        li.dataset.toolId = t.id;
-        li.classList.toggle('active', current?.id === t.id);
-        li.append(select, toggle); list.appendChild(li);
-      });
-      return tools;
-    }
-
-    function selectTool(t) {
-      current = t;
-      document.querySelectorAll('#toolList li').forEach(li => li.classList.toggle('active', li.dataset.toolId === t.id));
-      el('#formTitle').textContent = 'Edit Tool';
-      el('#closeForm').style.display = 'inline';
-      el('#delBtn').style.display = 'inline-block';
-      ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = t[key]; });
-      el('[name="requirements"]').value = JSON.parse(t.requirements_json || '[]').join('\n');
-      el('#out').style.display = 'none';
-      updateGutter();
-    }
-
-    const EXAMPLES = {
+<a class="skip" href="#main">Skip to content</a>
+<div class="app">
+<aside class="rail" aria-label="Application navigation">
+<a class="brand" href="#overview"><img src="/assets/mark.svg" alt="" width="32" height="32">OmniForge</a>
+<nav aria-label="Main">
+<a class="nav-link" href="#overview" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"/></svg>Overview</a>
+<a class="nav-link" href="#tools" data-nav="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg>Tools</a>
+<a class="nav-link" href="#connect" data-nav="connect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 15 6-6m-4-4 2-2a5 5 0 0 1 7 7l-3 3M7 11l-3 3a5 5 0 0 0 7 7l2-2"/></svg>Connect</a>
+<a class="nav-link" href="#help" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3h.01"/></svg>Help</a>
+</nav>
+<div class="rail-bottom"><div><label class="theme-label" for="themeSelect">Appearance</label><select id="themeSelect" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="rail-note"><strong>Your workspace. Your tools.</strong>Trusted code, connected to AI.</div></div>
+</aside>
+<div class="workspace">
+<header class="topbar"><span class="connection" id="connectionState">Checking workspace…</span><div class="top-actions"><button id="updateBtn" type="button" hidden>Update available</button><button id="installBtn" type="button" hidden>Install app</button><a href="#help" class="muted">Getting started</a></div></header>
+<div id="offlineBanner" class="banner" hidden role="status">You’re offline. Saving, running and tool changes need a connection. Your open draft stays in this tab.</div>
+<main id="main" tabindex="-1">
+<section class="page" id="overviewPage" data-page="overview">
+<div class="hero"><div><p class="eyebrow">Your AI tool workspace</p><h1>Useful scripts.<br>Ready for your AI.</h1><p>Give your assistant something it can actually do. Turn trusted Python and Node scripts into tools, test the output, then connect your client.</p><div class="actions"><button type="button" class="primary" data-new>Create a tool</button><button type="button" data-templates>Start with a template</button></div></div><div class="hero-art" aria-hidden="true"><img src="/assets/mark.svg" width="92" height="92" alt=""><span>SCRIPT → TOOL → AI</span></div></div>
+<div class="metrics" aria-label="Workspace summary"><div class="metric"><strong id="totalCount">—</strong><span>Saved tools</span></div><div class="metric"><strong id="activeCount">—</strong><span>Enabled for AI</span></div><div class="metric"><strong>2</strong><span>Built-in helpers</span></div></div>
+<div class="section-heading"><h2>From first script to first call</h2><a href="#help">Read the guide</a></div>
+<div class="steps"><article class="step"><span class="step-number">01 / CREATE</span><h3>Make it do one thing</h3><p>Start with a working template or write a small script. Give it a clear name and description.</p><a href="#tools/new">Create your first tool →</a></article><article class="step"><span class="step-number">02 / TEST</span><h3>See what comes back</h3><p>Save, then Run / Test. Inspect JSON output and errors before asking an assistant to use it.</p><a href="#tools">Open your library →</a></article><article class="step"><span class="step-number">03 / CONNECT</span><h3>Let your client discover it</h3><p>Use the MCP endpoint and refresh your client’s tool list. Enabled tools are available immediately.</p><a href="#connect">Set up a connection →</a></article></div>
+<div class="notice"><strong>Built for a trusted workspace</strong><p>The dashboard has no authentication and scripts share this container. Keep access on a trusted network; this is not a public, isolated execution service.</p></div>
+</section>
+<section class="page" id="toolsPage" data-page="tools" hidden>
+<div class="page-header"><div><p class="eyebrow">Your library</p><h1>Tools</h1><p>Small scripts with a clear purpose. Enabled tools can be discovered and called by your AI client.</p></div><button class="primary" type="button" id="newBtn" data-new>Create a tool</button></div>
+<div class="toolbar"><div><label for="toolSearch">Search tools</label><input id="toolSearch" type="search" placeholder="Search by name or description" autocomplete="off"></div><div><label for="toolFilter">Show</label><select id="toolFilter"><option value="all">All tools</option><option value="active">Enabled</option><option value="inactive">Disabled</option><option value="python3">Python</option><option value="node">Node</option></select></div><button type="button" data-templates>Browse templates</button></div>
+<p class="count" id="libraryCount" aria-live="polite">Loading tools…</p><div id="toolList" class="library" role="list" aria-label="Saved tools"></div>
+<div id="libraryEmpty" class="library-state" hidden><h2 id="emptyTitle">Your first tool starts here</h2><p id="emptyCopy">Try a greeting template to learn the save, test and connect workflow. No packages needed.</p><button type="button" class="primary" data-templates>Choose a template</button></div>
+<div id="libraryError" class="notice" hidden><strong>Couldn’t load your tools</strong><p id="libraryErrorText"></p><button type="button" id="retryToolsBtn">Try again</button></div>
+<div class="builtin"><h3>Two helpers, always available</h3><p class="hint"><code>omniforge_instructions</code> explains authoring to your client. <code>omniforge_create_tool</code> saves new tools without running them. They’re built in, not editable library scripts.</p></div>
+</section>
+<section class="page" id="editorPage" data-page="editor" hidden>
+<div class="breadcrumb"><a href="#tools">Tools</a><span aria-hidden="true">/</span><span id="editorCrumb">New tool</span></div>
+<div class="page-header"><div><p class="eyebrow">Tool studio</p><h1 id="formTitle">Create a tool</h1><p>Describe the job. Write the script. Save it before you test.</p></div><button type="button" data-templates>Use a template</button></div>
+<form id="toolForm" class="editor-card">
+<div class="editor-meta"><div><label for="toolName">Tool name <span class="muted">(required)</span></label><input id="toolName" name="name" required pattern="[a-zA-Z][a-zA-Z0-9_-]{0,62}" maxlength="63" placeholder="e.g. daily_summary" autocomplete="off" aria-describedby="nameHint nameError"><p class="hint" id="nameHint">Start with a letter. Use letters, numbers, underscores or hyphens. This is the name your client calls.</p><p class="field-error" id="nameError" hidden></p></div><div><label for="toolLanguage">Runtime</label><select id="toolLanguage" name="language"><option value="python3">Python 3</option><option value="node">Node.js</option></select><p class="hint">Node scripts use CommonJS.</p></div><div class="wide"><label for="toolDescription">What does it do?</label><textarea id="toolDescription" name="description" rows="2" placeholder="Describe when your assistant should use this tool."></textarea></div></div>
+<div class="code-bar"><label for="toolCode">Script <span class="muted">(required)</span></label><small id="codeMeta">Python · UTF-8</small></div>
+<div class="editor-shell"><pre id="lineNumbers" class="line-numbers" aria-hidden="true">1</pre><textarea id="toolCode" name="code" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="codeHint"></textarea></div>
+<p id="codeHint" class="sr-only">Print output to stdout. Tab indents; Shift Tab unindents. Press Escape, then Tab to leave the editor.</p>
+<details class="advanced" id="advancedSettings"><summary>Packages &amp; advanced settings</summary><div class="advanced-content"><label for="toolRequirements">Packages — one per line</label><textarea id="toolRequirements" name="requirements" rows="3" placeholder="Python: requests==2.32.5&#10;Node: lodash@4.17.21" spellcheck="false" aria-describedby="requirementsHint"></textarea><p id="requirementsHint" class="hint">Optional. Installed on first execution (up to 120 seconds, plus a bounded lock wait); reused afterwards. Package names or exact versions only. No URLs, install commands or system binaries. Python wheels only; npm lifecycle scripts are disabled. Only use dependencies you trust.</p><p class="hint">Input schemas created via MCP are preserved when editing. Use the saved schema below to understand required fields; the server validates test arguments. Remote schema references are not fetched.</p><p id="savedInputSchemaLabel">Saved input schema — read-only</p><pre id="savedInputSchema" class="request-code" tabindex="0" aria-label="Saved input schema">{}</pre><p class="hint">Create or change schemas through MCP.</p></div></details>
+<div class="test-inputs"><label for="testInputs">Test inputs — JSON object</label><textarea id="testInputs" rows="4" spellcheck="false" aria-describedby="testInputsHint testInputsError">{}</textarea><p id="testInputsHint" class="hint">Sent as arguments on stdin when you Run / Test. Start with {} for tools without required inputs. Inputs stay only in this tab and reset when you select a tool.</p><p id="testInputsError" class="field-error" hidden></p></div>
+<div class="editor-footer"><span id="saveState" class="save-state" aria-live="polite">New draft · not saved</span><div class="actions"><button type="button" id="delBtn" class="danger" hidden>Delete</button><button type="button" id="runBtn" disabled>Run / Test</button><button type="submit" id="saveBtn" class="primary">Save tool</button></div></div>
+</form>
+<div class="output"><div class="section-heading"><h2>Test output</h2><span id="runSummary" class="hint">Not run yet</span></div><div id="out"><p class="out-empty">Save your tool, then run it to see stdout, errors and execution time here. Only run code you trust.</p></div></div>
+</section>
+<section class="page" id="connectPage" data-page="connect" hidden>
+<div class="page-header"><div><p class="eyebrow">Give your AI access</p><h1>Connect your client</h1><p>MCP lets a compatible AI client discover and call your tools. This server currently supports limited HTTP JSON-RPC POST, not full Streamable HTTP.</p></div></div>
+<div class="notice" style="margin-bottom:24px"><strong>Trusted network only — not ready for public exposure</strong><p>Dashboard and management API are unauthenticated. Bearer auth protects MCP POST only, not GET /mcp. Scripts run in this same container with access to its environment and writable data.</p></div>
+<div id="configLoading" class="surface">Loading connection settings…</div><div id="configError" class="notice" hidden><strong>Settings unavailable</strong><p id="configErrorText"></p><button id="retryConfigBtn" type="button">Try again</button></div>
+<div id="configContent" hidden><div class="connect-grid"><article class="surface"><h2>1. Set your endpoint</h2><label for="endpointValue">MCP endpoint</label><div class="endpoint"><input id="endpointValue" readonly><button type="button" id="copyEndpointBtn">Copy</button></div><p class="hint">Use this origin from a trusted client that supports HTTP JSON-RPC POST. Client compatibility must be verified; an SSE connection alone is not supported.</p><dl class="definition"><div><dt>Transport</dt><dd id="transportValue"></dd></div><div><dt>MCP POST authentication</dt><dd id="authValue"></dd></div><div><dt>Connected clients</dt><dd>Not tracked. There is no client or session list.</dd></div></dl></article><article class="surface"><h2>2. Discover &amp; call</h2><p class="muted">Initialize the client, request <code>tools/list</code>, then call a tool with <code>tools/call</code>.</p><p class="hint">Refresh discovery after adding or enabling a tool. No list-change notifications are sent.</p><dl class="definition"><div><dt>Supported methods</dt><dd id="methodsValue"></dd></div><div><dt>Credentials</dt><dd>Never enter API keys into scripts or examples. Configure your client locally.</dd></div></dl></article></div><article class="surface"><div class="section-heading"><h2>HTTP request template</h2><button type="button" id="copyRequestBtn">Copy template</button></div><p class="hint" id="authHelp"></p><pre id="requestTemplate" class="request-code"></pre></article></div>
+</section>
+<section class="page" id="helpPage" data-page="help" hidden>
+<div class="page-header"><div><p class="eyebrow">Start simple. Build confidently.</p><h1>A little guidance goes a long way.</h1><p>New to MCP? Think of a tool as a named script your AI can ask the server to run.</p></div></div>
+<div class="help-layout"><div><article class="help-section"><h2>Your first working tool</h2><ol><li>Choose a no-package Python or Node template below.</li><li>Give it a unique name and save. Saving never runs code.</li><li>Select Run / Test. A successful example prints JSON with <code>ok: true</code>.</li><li>Open Connect to set up your client. Enabled tools appear on its next discovery request.</li></ol></article><article class="help-section"><h2>Working templates</h2><p>Loading prepares a new draft, never overwrites an existing tool. Package examples install requirements only on the first run.</p><div id="helpTemplates" class="template-grid"></div><button id="installExamplesBtn" type="button">Add all missing examples</button><p class="hint">Saves the four examples. Existing names are skipped; no scripts execute.</p></article><article class="help-section"><h2>Write for a predictable result</h2><p>Print JSON using <code>print(json.dumps(...))</code> in Python or <code>console.log(JSON.stringify(...))</code> in Node. Returning an object alone doesn’t produce output.</p><p>MCP arguments arrive as one JSON object on stdin. Enter a JSON object in Test inputs to try required arguments in the browser. The server validates it against the saved input schema before execution; use <code>{}</code> only when no inputs are required.</p><p>Disabled tools remain saved in your library but are hidden from MCP discovery. Built-in helper names are reserved.</p></article><article class="help-section"><h2>When something goes wrong</h2><p>Save changes before running. If the name is taken, choose a new one. For package failures, check names and exact versions; source builds, lifecycle scripts and system binaries aren’t supported.</p><p>First-time installs can take up to 120 seconds plus a bounded lock wait. Script timeout starts after installation and currently adds 15 seconds to the configured duration.</p><p>Only trusted scripts and dependencies belong here. Memory limits, process-tree termination and output caps are not implemented.</p></article></div><aside class="surface help-side"><h2>Take your workspace with you</h2><p>On eligible HTTPS browsers, use Install app when it appears. On iPhone or iPad, open in Safari, use Share, then Add to Home Screen. Other browsers may offer installation in their menu.</p><p>An HTTP LAN address usually isn’t eligible for service workers or installation. Use HTTPS; localhost is allowed for development.</p><p>This is an online workspace. Saving, installing packages and executing tools always require the server. Offline, you’ll see a safe reconnect page — never cached scripts or results.</p><h3>Keyboard essentials</h3><p><code>Ctrl / Cmd + S</code> saves.<br><code>Tab</code> indents code.<br><code>Shift + Tab</code> unindents.<br><code>Escape</code>, then <code>Tab</code> leaves the editor.</p><p>Theme is the only setting stored locally. Drafts, tool code, results and credentials aren’t persisted in browser storage.</p><a href="#connect">Connection &amp; security details →</a></aside></div>
+</section>
+</main>
+</div>
+</div>
+<div id="status" class="status" role="status" aria-live="polite" hidden><span id="statusText"></span><button type="button" id="dismissStatus" aria-label="Dismiss notification">×</button></div>
+<dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmCopy"><h2 id="confirmTitle"></h2><p id="confirmCopy"></p><div class="actions"><button id="cancelConfirm" type="button" autofocus>Cancel</button><button id="acceptConfirm" type="button" class="danger">Continue</button></div></dialog>
+<dialog id="templateDialog" aria-labelledby="templateTitle"><h2 id="templateTitle">Start with something that works.</h2><p>Choose a template, save it, then run it. Each template becomes a new draft.</p><div id="dialogTemplates" class="template-grid"></div><div class="actions"><button id="closeTemplates" type="button">Close</button></div></dialog>
+<script>
+const EXAMPLES = {
   "python_basic": {
     "name": "example_python_basic",
     "language": "python3",
@@ -307,186 +110,465 @@
     "code": "const _ = require(\"lodash\");\nconsole.log(JSON.stringify({numbers: _.sortBy(_.uniq([3, 1, 3, 2])), ok: true}));\n"
   }
 };
-
-    function newTool() {
-      if ((val('code') || val('name')) && !confirm('Clear the editor to start a new tool? Saved tools are unchanged.')) return;
-      resetForm();
-      setSidebar('right', false);
-      el('[name="name"]').focus();
-    }
-    el('#newBtn').addEventListener('click', newTool);
-    el('#closeForm').addEventListener('click', newTool);
-
-    el('#exampleBtn').addEventListener('click', () => {
-      if ((val('code') || val('name')) && !confirm('Replace the editor contents with the example? Saved tools are unchanged.')) return;
-      const example = EXAMPLES[el('#exampleSelect').value];
-      resetForm();
-      ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = example[key]; });
-      el('[name="requirements"]').value = example.requirements.join('\n');
-      updateGutter();
-      el('#helpDialog').close();
-      setSidebar('right', false);
-      codeEditor.focus();
-      if (example.requirements.length) {
-        showOutput('Example loaded. Save, then Run / Test. First run installs ' + example.requirements.join(', ') + ' (up to 120 seconds); subsequent runs reuse the per-tool cache. Expected output: JSON with ok: true.');
-      } else {
-        showOutput('Example loaded. Click Save, then Run / Test. Expected output: a JSON object containing message, utc_time and ok: true. No requirements needed.');
-      }
-    });
-
-    el('[name="name"]').addEventListener('invalid', () => setSidebar('right', false));
-
-    el('#installExamplesBtn').addEventListener('click', async () => {
-      if (!confirm('Save the four missing examples? Existing names will be skipped, never overwritten. Packages install only on first Run / Test.')) return;
-      const button = el('#installExamplesBtn'); button.disabled = true;
-      let created = 0, skipped = 0;
-      const errors = [];
+const $ = selector => document.querySelector(selector);
+const $$ = selector => Array.from(document.querySelectorAll(selector));
+const field = name => $(`[name="${name}"]`);
+const reserved = new Set(['omniforge_instructions', 'omniforge_create_tool']);
+let tools = [], current = null, baseline = '', route = '', busy = false, listReady = false;
+let outputSnapshot = null, outputSummary = '';
+let confirmResolve = null, navigationVersion = 0, statusTimer, pendingInstall = null, waitingWorker = null;
+const blank = {name:'', description:'', language:'python3', code:'', requirements:[]};
+function formValues() {
+  return {name:field('name').value, description:field('description').value,
+    language:field('language').value, code:field('code').value,
+    requirements:field('requirements').value.split('\n').map(s => s.trim()).filter(Boolean)};
+}
+function fingerprint(values) {
+  return JSON.stringify({...values, requirements:[...new Set(values.requirements)].sort()});
+}
+function dirty() { return fingerprint(formValues()) !== baseline; }
+function notify(message, error = false) {
+  clearTimeout(statusTimer);
+  $('#statusText').textContent = message;
+  $('#status').hidden = false; $('#status').classList.toggle('error', error);
+  if (!error) statusTimer = setTimeout(() => { $('#status').hidden = true; }, 7000);
+}
+function showOutput(message, error = false) {
+  const pre = document.createElement('pre');
+  pre.className = error ? 'err' : 'ok'; pre.textContent = message;
+  $('#out').replaceChildren(pre);
+}
+function revisionHeaders(tool) { return tool?.revision ? {'If-Match':tool.revision} : {}; }
+function modalOpen() { return !!confirmResolve || $('#confirmDialog').open || $('#templateDialog').open; }
+function updateOutputState() {
+  if (!outputSnapshot) return;
+  const stale = dirty() || baseline !== outputSnapshot.fingerprint || current?.id !== outputSnapshot.id ||
+    current?.revision !== outputSnapshot.revision || $('#testInputs').value !== outputSnapshot.inputs;
+  $('#runSummary').textContent = stale ? 'Previous version / inputs · ' + outputSummary : outputSummary;
+}
+function clearOutput() {
+  outputSnapshot = null; outputSummary = '';
+  const p = document.createElement('p'); p.className = 'out-empty';
+  p.textContent = 'Save your tool, then run it to inspect stdout, errors and execution time. Only run code you trust.';
+  $('#out').replaceChildren(p); $('#runSummary').textContent = 'Not run yet';
+}
+async function api(url, options = {}) {
+  if (!navigator.onLine) throw new Error('You’re offline. Reconnect, then try again.');
+  let response;
+  try { response = await fetch(url, {...options, cache:'no-store'}); }
+  catch { throw new Error('Cannot reach the server. Check your connection and try again.'); }
+  let data;
+  try { data = await response.json(); }
+  catch { throw new Error(`HTTP ${response.status}: Unexpected server response. Try again.`); }
+  if (!response.ok) {
+    // Pydantic responses contain submitted code in input; display only messages.
+    let message = typeof data.detail === 'string' ? data.detail :
+      Array.isArray(data.detail) ? data.detail.map(e => String(e.msg || 'Invalid input')).join('; ') : 'Request failed. Try again.';
+    if (response.status === 412) message = 'Changed in another tab/client; draft retained. Reload from the library, or copy your draft first before reloading.';
+    throw new Error(`HTTP ${response.status}: ${message}`);
+  }
+  return data;
+}
+function ask(title, copy, action = 'Discard changes') {
+  if (confirmResolve) return Promise.resolve(false);
+  $('#confirmTitle').textContent = title; $('#confirmCopy').textContent = copy;
+  $('#acceptConfirm').textContent = action;
+  $('#confirmDialog').showModal(); $('#cancelConfirm').focus();
+  return new Promise(resolve => { confirmResolve = resolve; updateState(); });
+}
+function finishConfirm(approved) {
+  const resolve = confirmResolve; confirmResolve = null;
+  $('#confirmDialog').close(); updateState(); if (resolve) resolve(approved);
+}
+async function canLeave() {
+  if (modalOpen()) return false;
+  if (busy) { notify('Wait for the current save or test to finish.', true); return false; }
+  return !dirty() || await ask('Leave this draft?', 'Your unsaved changes will be discarded. Saved tools won’t be changed.');
+}
+function updateState() {
+  const blocked = busy || modalOpen();
+  const changed = dirty(), builtin = reserved.has(current?.name), offline = !navigator.onLine;
+  $('#saveState').textContent = busy ? 'Working… Keep this tab open.' :
+    changed ? 'Unsaved changes · save before testing' : current ? `${current.is_active ? 'Enabled for AI' : 'Disabled for AI'} · saved` : 'New draft · not saved';
+  $('#saveBtn').disabled = blocked || offline || builtin;
+  $('#runBtn').disabled = blocked || offline || !current || changed || builtin;
+  $('#runBtn').title = !current ? 'Save a tool first' : changed ? 'Save changes before testing' : 'Execute saved code with the Test inputs JSON object';
+  $('#delBtn').hidden = !current || builtin; $('#delBtn').disabled = blocked || offline;
+  $('#installExamplesBtn').disabled = blocked || offline;
+  $$('.toggle').forEach(button => { button.disabled = blocked || offline || button.dataset.reserved === 'true'; });
+  updateOutputState();
+  $('#codeMeta').textContent = (field('language').value === 'node' ? 'Node.js' : 'Python') + ' · UTF-8';
+}
+function fillEditor(values = blank, tool = null) {
+  current = tool ? {...tool} : null;
+  $('#testInputs').value = '{}'; $('#testInputsError').hidden = true; $('#testInputs').removeAttribute('aria-invalid');
+  try { $('#savedInputSchema').textContent = JSON.stringify(JSON.parse(tool?.json_schema_json || '{}'),null,2); }
+  catch { $('#savedInputSchema').textContent = 'Invalid saved schema. Ask the administrator to review it.'; }
+  for (const key of ['name','description','language','code']) field(key).value = values[key] || (key === 'language' ? 'python3' : '');
+  field('requirements').value = (values.requirements || []).join('\n');
+  baseline = fingerprint(tool ? formValues() : blank);
+  $('#formTitle').textContent = tool ? 'Edit tool' : 'Create a tool';
+  $('#editorCrumb').textContent = tool ? tool.name : 'New tool';
+  $('#nameError').hidden = true; field('name').removeAttribute('aria-invalid');
+  $('#advancedSettings').open = !!values.requirements?.length;
+  updateGutter(); clearOutput(); updateState();
+}
+function toolValues(tool) {
+  return {name:tool.name,description:tool.description,language:tool.language,code:tool.code,
+    requirements:JSON.parse(tool.requirements_json || '[]')};
+}
+function restoreLibraryFocus(target, buttons) {
+  if (!target) return;
+  const matching = buttons.find(b => b.dataset.toolId === target.id && b.dataset.control === target.control);
+  const nearest = buttons[Math.min(target.index, buttons.length - 1)];
+  (matching || nearest || $('#toolSearch')).focus({preventScroll:true});
+}
+function renderTools() {
+  const list = $('#toolList'), active = document.activeElement;
+  const oldButtons = Array.from(list.children).flatMap(row => [row.children[0],row.children[2]]);
+  const focusTarget = oldButtons.includes(active) ? {id:active.dataset.toolId,control:active.dataset.control,index:oldButtons.indexOf(active)} : null;
+  const buttons = [];
+  const query = $('#toolSearch').value.toLowerCase().trim(), filter = $('#toolFilter').value;
+  const visible = tools.filter(t => !reserved.has(t.name)).filter(t =>
+    `${t.name} ${t.description}`.toLowerCase().includes(query) &&
+    (filter === 'all' || (filter === 'active' && t.is_active) || (filter === 'inactive' && !t.is_active) || t.language === filter));
+  const all = tools.filter(t => !reserved.has(t.name));
+  $('#totalCount').textContent = String(all.length); $('#activeCount').textContent = String(all.filter(t => t.is_active).length);
+  $('#libraryCount').textContent = `${visible.length} of ${all.length} saved tools`;
+  list.replaceChildren();
+  for (const t of visible) {
+    const row = document.createElement('article'); row.className = 'tool-row'; row.setAttribute('role','listitem'); row.dataset.toolId = t.id;
+    const open = document.createElement('button'); open.type = 'button'; open.className = 'tool-open'; open.dataset.toolId = t.id; open.dataset.control = 'open';
+    const name = document.createElement('strong'); name.textContent = t.name;
+    const desc = document.createElement('span'); desc.textContent = t.description || 'No description yet. Open to add one.';
+    open.append(name, desc); open.addEventListener('click', () => navigate(`tools/edit/${encodeURIComponent(t.name)}`));
+    const lang = document.createElement('span'); lang.className = 'language'; lang.textContent = t.language === 'node' ? 'Node.js' : 'Python';
+    const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'toggle'; toggle.dataset.toolId = t.id; toggle.dataset.control = 'toggle';
+    toggle.textContent = t.is_active ? 'Enabled' : 'Disabled'; toggle.setAttribute('role','switch');
+    toggle.setAttribute('aria-checked',String(t.is_active)); toggle.setAttribute('aria-label',`${t.is_active ? 'Disable' : 'Enable'} ${t.name}`);
+    toggle.dataset.reserved = String(reserved.has(t.name)); toggle.disabled = !navigator.onLine || busy;
+    toggle.addEventListener('click', async () => {
+      if (busy || modalOpen() || !navigator.onLine || reserved.has(t.name)) return;
+      const focused = document.activeElement === toggle;
+      const focusTarget = {id:t.id,control:'toggle',index:Array.from(list.children).indexOf(row) * 2 + 1};
+      busy = true; updateState();
       try {
-        const { tools } = await api('/api/tools');
-        const names = new Set(tools.map(t => t.name));
-        for (const example of Object.values(EXAMPLES)) {
-          if (names.has(example.name)) { skipped++; continue; }
-          try {
-            await api('/api/tools', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...example, json_schema: {}, is_active: true }) });
-            names.add(example.name); created++;
-          } catch (err) {
-            // A concurrent creator may claim this name; POST is create-only.
-            if (err.message.startsWith('HTTP 409:')) skipped++;
-            else errors.push(`${example.name}: ${err.message}`);
-          }
-        }
+        const result = await api(`/api/tools/${encodeURIComponent(t.name)}/toggle`, {method:'POST',headers:revisionHeaders(t)});
+        // Keep unsaved fields and schema; toggles change metadata only.
+        t.is_active = typeof result.is_active === 'boolean' ? result.is_active : !t.is_active;
+        if (result.revision) t.revision = result.revision;
+        if (current?.id === t.id) current = {...current,is_active:t.is_active};
+        // Do not advance an editor revision from a list toggle: external code may have changed.
+        renderTools(); notify(`${t.name} ${t.is_active ? 'enabled' : 'disabled'} for AI discovery.`);
         await loadTools();
-        showOutput(`Examples: ${created} saved, ${skipped} existing names skipped. Packages install only on first Run / Test.` +
-          (errors.length ? '\n' + errors.join('\n') : ''), errors.length > 0);
-      } catch (err) { showOutput(`Examples: ${created} saved, ${skipped} skipped. ${err.message}`, true); }
-      finally { button.disabled = false; }
-    });
-
-    el('#toolForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const body = {
-        name: val('name'), description: val('description'), language: val('language'), code: val('code'),
-        requirements: val('requirements').split('\n').map(x => x.trim()).filter(Boolean),
-        json_schema: current ? JSON.parse(current.json_schema_json || '{}') : {},
-        is_active: current ? current.is_active : true
-      };
-      try {
-        await api(current ? `/api/tools/${encodeURIComponent(current.name)}` : '/api/tools', {
-          method: current ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-        });
-        const tools = await loadTools();
-        selectTool(tools.find(t => t.name === body.name));
-        showOutput('Saved. Click Run / Test to execute the saved code.');
-      } catch (err) { showOutput(err.message, true); }
-    });
-
-    el('#runBtn').addEventListener('click', async () => {
-      if (!current) { showOutput('Save or select a tool before running it.', true); return; }
-      if (val('name') !== current.name || val('code') !== current.code || val('language') !== current.language || JSON.stringify(val('requirements').split('\n').map(x => x.trim()).filter(Boolean).sort()) !== JSON.stringify(JSON.parse(current.requirements_json || '[]').sort())) {
-        showOutput('Save your changes before running this tool.', true); return;
+      } catch (error) { notify(error.message,true); }
+      finally {
+        busy = false; updateState();
+        // Disabling or replacing a focused switch can move focus to body.
+        // Restore only that lost focus, never steal it from another control.
+        if (focused && (document.activeElement === toggle || document.activeElement === document.body)) {
+          restoreLibraryFocus(focusTarget,Array.from(list.children).flatMap(row => [row.children[0],row.children[2]]));
+        }
       }
-      const button = el('#runBtn'); button.disabled = true;
-      showOutput(JSON.parse(current.requirements_json || '[]').length ? 'Preparing dependencies… First installation may take up to 120 seconds (plus a bounded lock wait if another run is installing); cached packages are reused. Then running script…' : 'Running…');
-      try {
-        const d = await api(`/api/tools/${encodeURIComponent(current.name)}/run`, { method: 'POST' });
-        showOutput(`${d.exit_code === 0 ? 'OK' : 'ERROR'} (exit ${d.exit_code}${d.timed_out ? ', timeout' : ''}, ${d.duration_ms} ms)\n\n${(d.stdout || '') + (d.stderr ? '\n' + d.stderr : '') || '(no output — use print() in Python or console.log() in Node)'}`, d.exit_code !== 0);
-      } catch (err) { showOutput(err.message, true); }
-      finally { button.disabled = false; }
     });
-
-    el('#delBtn').addEventListener('click', async () => {
-      if (!current || !confirm(`Delete tool "${current.name}"?`)) return;
-      try {
-        await api(`/api/tools/${encodeURIComponent(current.name)}`, { method: 'DELETE' });
-        resetForm(); await loadTools();
-      } catch (err) { showOutput(err.message, true); }
-    });
-
-    el('#configBtn').addEventListener('click', async () => {
-      const dialog = el('#configDialog'); const content = el('#configContent');
-      content.textContent = 'Loading…'; dialog.showModal();
-      try {
-        const config = await api('/api/config');
-        const endpoint = new URL(config.mcp_path, window.location.origin).href;
-        const headers = config.auth_enabled ? { Authorization: 'Bearer <YOUR_API_KEY>' } : {};
-        const template = { endpoint, method: 'POST', headers,
-          body: { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} } };
-        const pre = document.createElement('pre');
-        pre.textContent = [
-          `MCP endpoint: ${endpoint}`, `Transport: ${config.transport}`,
-          `MCP authentication: ${config.auth_enabled ? 'Bearer API key enabled (value hidden)' : 'DISABLED'}`,
-          config.auth_configuration,
-          'Dashboard/API authentication: not implemented',
-          'Connected clients: not tracked; no connection list is available',
-          `Methods: ${config.methods.join(', ')}`,
-          '', 'HTTP client request template (replace the key locally):', JSON.stringify(template, null, 2),
-          '', 'Warnings:', ...config.warnings.map(w => `• ${w}`)
-        ].join('\n');
-        content.replaceChildren(pre);
-      } catch (err) { content.textContent = err.message; }
-    });
-    el('#closeConfig').addEventListener('click', () => el('#configDialog').close());
-
-    function setSidebar(side, collapsed) {
-      const title = side === 'left' ? 'tool library' : 'tool settings';
-      const control = el(side === 'left' ? '#collapseLeft' : '#collapseRight');
-      el(`#${side}Panel`).classList.toggle('collapsed', collapsed);
-      el('#toolForm').classList.toggle(`${side}-collapsed`, collapsed);
-      control.setAttribute('aria-expanded', String(!collapsed));
-      control.setAttribute('aria-label', `${collapsed ? 'Expand' : 'Collapse'} ${title}`);
-      control.title = `${collapsed ? 'Expand' : 'Collapse'} ${title}`;
-    }
-    for (const side of ['left', 'right']) {
-      const control = el(side === 'left' ? '#collapseLeft' : '#collapseRight');
-      control.addEventListener('click', () => setSidebar(side, control.getAttribute('aria-expanded') === 'true'));
-    }
-    el('#helpBtn').addEventListener('click', () => el('#helpDialog').showModal());
-    el('#tipsHelpBtn').addEventListener('click', () => el('#helpDialog').showModal());
-    el('#closeHelp').addEventListener('click', () => el('#helpDialog').close());
-
-    function updateGutter() {
-      const code = el('[name="code"]');
-      el('#lineNumbers').textContent = Array.from({ length: code.value.split('\n').length }, (_, i) => i + 1).join('\n');
-      el('#lineNumbers').scrollTop = code.scrollTop;
-    }
-    const codeEditor = el('[name="code"]');
-    codeEditor.addEventListener('input', updateGutter);
-    codeEditor.addEventListener('scroll', () => { el('#lineNumbers').scrollTop = codeEditor.scrollTop; });
-    let leaveEditor = false;
-    codeEditor.addEventListener('blur', () => { leaveEditor = false; });
-    codeEditor.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { leaveEditor = true; return; }
-      if (e.key !== 'Tab') { leaveEditor = false; return; }
-      if (leaveEditor || e.ctrlKey || e.metaKey || e.altKey) { leaveEditor = false; return; }
-      e.preventDefault();
-      const start = codeEditor.selectionStart, end = codeEditor.selectionEnd;
-      if (start === end && !e.shiftKey) {
-        codeEditor.setRangeText('  ', start, end, 'end');
-      } else {
-        const text = codeEditor.value;
-        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-        // Exclude the next line when selection ends exactly at its beginning.
-        const effectiveEnd = end > start && text[end - 1] === '\n' ? end - 1 : end;
-        const nextBreak = text.indexOf('\n', effectiveEnd);
-        const lineEnd = nextBreak === -1 ? text.length : nextBreak;
-        const lines = text.slice(lineStart, lineEnd).split('\n');
-        let delta = 0, firstDelta = 0;
-        const changed = lines.map((line, i) => {
-          const remove = e.shiftKey ? (line.match(/^(?: {1,2}|\t)/)?.[0].length || 0) : 0;
-          const diff = e.shiftKey ? -remove : 2;
-          delta += diff;
-          if (i === 0) firstDelta = diff;
-          return e.shiftKey ? line.slice(remove) : '  ' + line;
-        }).join('\n');
-        codeEditor.setRangeText(changed, lineStart, lineEnd, 'preserve');
-        codeEditor.setSelectionRange(Math.max(lineStart, start + firstDelta), Math.max(lineStart, end + delta));
+    row.append(open,lang,toggle); list.append(row); buttons.push(open,toggle);
+  }
+  restoreLibraryFocus(focusTarget,buttons);
+  $('#libraryEmpty').hidden = visible.length > 0;
+  $('#emptyTitle').textContent = all.length ? 'No tools match your search' : 'Your first tool starts here';
+  $('#emptyCopy').textContent = all.length ? 'Try another name or description, or switch the filter to All tools.' : 'Try a greeting template to learn the save, test and connect workflow. No packages needed.';
+}
+async function loadTools() {
+  $('#libraryError').hidden = true;
+  if (!listReady) $('#libraryCount').textContent = 'Loading tools…';
+  try {
+    const data = await api('/api/tools'); tools = data.tools; listReady = true;
+    if (current) { const found = tools.find(t => t.id === current.id); if (found) current = {...current,is_active:found.is_active}; }
+    renderTools(); $('#connectionState').textContent = navigator.onLine ? 'Workspace online' : 'Offline'; updateState(); return tools;
+  } catch (error) {
+    $('#libraryError').hidden = false; $('#libraryErrorText').textContent = error.message;
+    $('#libraryEmpty').hidden = true; $('#libraryCount').textContent = 'Tools unavailable';
+    $('#connectionState').textContent = 'Server unavailable'; throw error;
+  }
+}
+function normalizedRoute(hash) {
+  const value = hash.replace(/^#/, '');
+  return /^(overview|tools(?:\/new|\/edit\/[^/]+)?|connect|help)$/.test(value) ? value : 'overview';
+}
+async function navigate(target, replace = false) {
+  if (target === route && !replace) return;
+  if (!await canLeave()) return;
+  await activateRoute(target, replace);
+}
+async function activateRoute(target, replace = false) {
+  const version = ++navigationVersion;
+  const [base, mode, rawName] = target.split('/'); let page = base;
+  if (base === 'tools' && mode) {
+    page = 'editor';
+    if (mode === 'new') fillEditor();
+    else {
+      let name; try { name = decodeURIComponent(rawName); } catch { name = ''; }
+      if (!listReady) { try { await loadTools(); } catch { target = 'tools'; page = 'tools'; } }
+      if (version !== navigationVersion) return;
+      if (page === 'editor') {
+        const tool = tools.find(t => t.name === name && !reserved.has(t.name));
+        if (tool) fillEditor(toolValues(tool), tool);
+        else { target = 'tools'; page = 'tools'; notify('This tool is unavailable. Refresh the library or create a new tool.',true); }
       }
-      updateGutter();
+    }
+  } else if (route.startsWith('tools/')) fillEditor();
+  if (version !== navigationVersion) return;
+  route = target;
+  if (location.hash !== '#' + target) history[replace ? 'replaceState' : 'pushState'](null,'','#' + target);
+  $$('[data-page]').forEach(section => { section.hidden = section.dataset.page !== page; });
+  $$('[data-nav]').forEach(link => {
+    if (link.dataset.nav === (page === 'editor' ? 'tools' : page)) link.setAttribute('aria-current','page');
+    else link.removeAttribute('aria-current');
+  });
+  document.title = `${page === 'editor' ? current?.name || 'New tool' : page[0].toUpperCase() + page.slice(1)} · OmniForge`;
+  window.scrollTo(0,0); $('#main').focus({preventScroll:true});
+  if (page === 'editor') field('name').focus({preventScroll:true});
+  if (page === 'connect') loadConfig();
+}
+async function loadExample(key) {
+  $('#templateDialog').close();
+  if (!await canLeave()) return;
+  await activateRoute('tools/new',location.hash === '#tools/new');
+  fillEditor(EXAMPLES[key]);
+  field('name').focus();
+  notify(EXAMPLES[key].requirements.length ? 'Template ready. Save, then test. Packages install on the first run only.' : 'Template ready. Save, then test — no packages needed.');
+}
+function renderTemplates() {
+  const titles = {python_basic:'Python greeting',node_basic:'Node greeting',python_packages:'Python + requests',node_packages:'Node + lodash'};
+  for (const selector of ['#helpTemplates','#dialogTemplates']) {
+    for (const [key,example] of Object.entries(EXAMPLES)) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'template-card'; button.dataset.example = key;
+      const badge = document.createElement('span'); badge.className = 'language'; badge.textContent = example.requirements.length ? 'INSTALLS ON FIRST RUN' : 'NO PACKAGES';
+      const title = document.createElement('strong'); title.textContent = titles[key];
+      const copy = document.createElement('span'); copy.textContent = example.description;
+      button.append(badge,title,copy); button.addEventListener('click', () => loadExample(key)); $(selector).append(button);
+    }
+  }
+}
+async function save() {
+  if (busy || modalOpen() || !navigator.onLine || reserved.has(current?.name)) return;
+  $('#nameError').hidden = true;
+  const values = formValues();
+  if (reserved.has(values.name)) {
+    $('#nameError').textContent = 'This name is reserved for a built-in helper. Choose another name.';
+    $('#nameError').hidden = false; field('name').setAttribute('aria-invalid','true'); field('name').focus(); return;
+  }
+  if (!$('#toolForm').reportValidity()) return;
+  const previous = current, snapshot = fingerprint(values);
+  let schema;
+  try { schema = previous ? JSON.parse(previous.json_schema_json || '{}') : {}; }
+  catch { notify('This tool’s saved schema is invalid. Ask the administrator to review it.',true); return; }
+  const body = {...values, json_schema:schema, is_active:previous?.is_active ?? true};
+  busy = true; updateState();
+  try {
+    const result = await api(previous ? `/api/tools/${encodeURIComponent(previous.name)}` : '/api/tools', {
+      method:previous ? 'PUT' : 'POST', headers:{'Content-Type':'application/json',...revisionHeaders(previous)}, body:JSON.stringify(body)});
+    // A successful write is a save even if the following list refresh fails.
+    current = {...body,revision:result.revision,id:previous?.id || result.id,requirements_json:JSON.stringify(values.requirements),json_schema_json:JSON.stringify(schema)};
+    baseline = snapshot;
+    tools = tools.filter(t => t.id !== current.id); tools.unshift(current); renderTools();
+    route = 'tools/edit/' + encodeURIComponent(current.name); history.replaceState(null,'','#' + route);
+    $('#formTitle').textContent = 'Edit tool'; $('#editorCrumb').textContent = current.name; document.title = current.name + ' · OmniForge';
+    notify(dirty() ? 'Saved submitted version. Your newer edits are still unsaved.' : 'Tool saved. Ready to Run / Test.');
+    try { await loadTools(); } catch { notify('Tool saved, but the library refresh failed. Retry from Tools; do not recreate it.',true); }
+  } catch (error) {
+    notify(error.message,true);
+    if (error.message.startsWith('HTTP 409:')) {
+      $('#nameError').textContent = 'That name is already taken. Choose a unique name; your draft is unchanged.';
+      $('#nameError').hidden = false; field('name').setAttribute('aria-invalid','true'); field('name').focus();
+    }
+  } finally { busy = false; updateState(); }
+}
+async function runSaved() {
+  if (busy || modalOpen() || !navigator.onLine || !current || reserved.has(current.name)) return;
+  if (dirty()) { notify('Save changes before testing.',true); return; }
+  let testArguments;
+  try {
+    testArguments = JSON.parse($('#testInputs').value);
+    if (!testArguments || Array.isArray(testArguments) || typeof testArguments !== 'object') throw new Error('Expected an object');
+  } catch {
+    $('#testInputsError').textContent = 'Enter a valid JSON object, for example {"name":"David"}. Arrays, null and scalar values are not test inputs.';
+    $('#testInputsError').hidden = false; $('#testInputs').setAttribute('aria-invalid','true'); $('#testInputs').focus(); return;
+  }
+  $('#testInputsError').hidden = true; $('#testInputs').removeAttribute('aria-invalid');
+  const executed = current;
+  outputSnapshot = {id:executed.id,revision:executed.revision,fingerprint:baseline,inputs:$('#testInputs').value};
+  outputSummary = 'Running…'; busy = true; updateState();
+  showOutput(JSON.parse(executed.requirements_json || '[]').length ? 'Preparing dependencies… First installation may take up to 120 seconds plus a bounded lock wait. Cached packages are reused. Then running the saved script…' : 'Running the saved script…');
+  try {
+    const result = await api(`/api/tools/${encodeURIComponent(executed.name)}/run`, {method:'POST',headers:{'Content-Type':'application/json',...revisionHeaders(executed)},body:JSON.stringify({arguments:testArguments})});
+    const failed = result.exit_code !== 0 || result.timed_out;
+    outputSummary = `${failed ? 'Failed' : 'Succeeded'} · exit ${result.exit_code} · ${result.duration_ms} ms${result.timed_out ? ' · timeout' : ''}`;
+    let stdout = result.stdout || '(no output — use print() in Python or console.log() in Node)';
+    try { stdout = JSON.stringify(JSON.parse(result.stdout),null,2); } catch { /* Plain text is valid output too. */ }
+    showOutput(stdout + (result.stderr ? '\n\n[stderr]\n' + result.stderr : ''),failed);
+  } catch (error) { outputSummary = 'Request failed'; showOutput(error.message,true); }
+  finally { busy = false; updateState(); }
+}
+async function deleteCurrent() {
+  if (busy || modalOpen() || !current || !navigator.onLine || reserved.has(current.name)) return;
+  const removed = current;
+  if (!await ask('Delete this tool?', `“${current.name}” will be permanently removed, including any open draft. This cannot be undone.`, 'Delete tool')) return;
+  if (busy || modalOpen() || current !== removed || !navigator.onLine) return;
+  busy = true; updateState();
+  try {
+    await api(`/api/tools/${encodeURIComponent(removed.name)}`,{method:'DELETE',headers:revisionHeaders(removed)});
+    tools = tools.filter(t => t.id !== removed.id); fillEditor(); renderTools();
+    busy = false; await activateRoute('tools',true); notify('Tool deleted.');
+    try { await loadTools(); } catch { notify('Tool deleted, but library refresh failed. Try again from Tools.',true); }
+  } catch (error) { notify(error.message,true); }
+  finally { busy = false; updateState(); }
+}
+async function installExamples() {
+  if (busy || modalOpen() || !navigator.onLine) return;
+  if (!await ask('Add the four examples?', 'Missing examples will be saved as enabled tools. Existing names are skipped, never overwritten. Packages install only when a tool is run.', 'Add examples')) return;
+  if (busy || modalOpen() || !navigator.onLine) return;
+  busy = true; updateState(); let created = 0, skipped = 0; const errors = [];
+  try {
+    const data = await api('/api/tools'); const names = new Set(data.tools.map(t => t.name));
+    for (const example of Object.values(EXAMPLES)) {
+      if (names.has(example.name)) { skipped++; continue; }
+      try { await api('/api/tools',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...example,json_schema:{},is_active:true})}); created++; }
+      catch (error) { if (error.message.startsWith('HTTP 409:')) skipped++; else errors.push(`${example.name}: ${error.message}`); }
+    }
+    await loadTools();
+    notify(`${created} saved, ${skipped} existing names skipped. No scripts executed.${errors.length ? ' ' + errors.join(' ') : ''}`,errors.length > 0);
+  } catch (error) { notify(`${created} saved, ${skipped} skipped. ${error.message}`,true); }
+  finally { busy = false; updateState(); }
+}
+async function loadConfig() {
+  $('#configLoading').hidden = false; $('#configError').hidden = true; $('#configContent').hidden = true;
+  try {
+    const config = await api('/api/config');
+    const endpoint = new URL(config.mcp_path,location.origin).href;
+    $('#endpointValue').value = endpoint; $('#transportValue').textContent = config.transport;
+    $('#authValue').textContent = config.auth_enabled ? 'Bearer key enabled · value hidden' : 'Disabled — no Bearer key required';
+    $('#methodsValue').textContent = config.methods.join(', ');
+    $('#authHelp').textContent = config.auth_enabled ? 'Replace <YOUR_API_KEY> locally in your client. Never paste it into tool code.' : 'MCP POST authentication is disabled. ' + config.auth_configuration;
+    $('#requestTemplate').textContent = JSON.stringify({endpoint,method:'POST',headers:config.auth_enabled ? {Authorization:'Bearer <YOUR_API_KEY>'} : {},
+      body:{jsonrpc:'2.0',id:1,method:'tools/list',params:{}}},null,2);
+    $('#configContent').hidden = false;
+  } catch (error) { $('#configError').hidden = false; $('#configErrorText').textContent = error.message; }
+  finally { $('#configLoading').hidden = true; }
+}
+async function copyText(value) {
+  try { await navigator.clipboard.writeText(value); notify('Copied.'); }
+  catch { notify('Clipboard access is unavailable. Select the text and copy it manually.',true); }
+}
+function updateGutter() {
+  const code = field('code'); $('#lineNumbers').textContent = Array.from({length:code.value.split('\n').length},(_,i) => i + 1).join('\n');
+  $('#lineNumbers').scrollTop = code.scrollTop;
+}
+const codeEditor = field('code'); let leaveEditor = false;
+codeEditor.addEventListener('input',updateGutter);
+codeEditor.addEventListener('scroll',() => { $('#lineNumbers').scrollTop = codeEditor.scrollTop; });
+codeEditor.addEventListener('blur',() => { leaveEditor = false; });
+codeEditor.addEventListener('keydown',e => {
+  if (e.key === 'Escape') { leaveEditor = true; return; }
+  if (e.key !== 'Tab') { leaveEditor = false; return; }
+  if (leaveEditor || e.ctrlKey || e.metaKey || e.altKey) { leaveEditor = false; return; }
+  e.preventDefault(); const start = codeEditor.selectionStart, end = codeEditor.selectionEnd;
+  if (start === end && !e.shiftKey) codeEditor.setRangeText('  ',start,end,'end');
+  else {
+    const text = codeEditor.value, lineStart = text.lastIndexOf('\n',start - 1) + 1;
+    const effectiveEnd = end > start && text[end - 1] === '\n' ? end - 1 : end;
+    const nextBreak = text.indexOf('\n',effectiveEnd), lineEnd = nextBreak === -1 ? text.length : nextBreak;
+    let delta = 0, firstDelta = 0;
+    const changed = text.slice(lineStart,lineEnd).split('\n').map((line,i) => {
+      const remove = e.shiftKey ? (line.match(/^(?: {1,2}|\t)/)?.[0].length || 0) : 0;
+      const diff = e.shiftKey ? -remove : 2; delta += diff; if (i === 0) firstDelta = diff;
+      return e.shiftKey ? line.slice(remove) : '  ' + line;
+    }).join('\n');
+    codeEditor.setRangeText(changed,lineStart,lineEnd,'preserve');
+    codeEditor.setSelectionRange(Math.max(lineStart,start + firstDelta),Math.max(lineStart,end + delta));
+  }
+  updateGutter(); updateState();
+});
+function applyTheme(preference) {
+  const resolved = preference === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
+  document.documentElement.dataset.theme = resolved;
+  $('meta[name="theme-color"]').content = resolved === 'dark' ? '#101a19' : '#116859';
+}
+function updateNetwork() {
+  $('#offlineBanner').hidden = navigator.onLine;
+  $('#connectionState').textContent = navigator.onLine ? 'Reconnecting…' : 'Offline'; updateState();
+  if (navigator.onLine) { loadTools().catch(() => {}); if (route === 'connect') loadConfig(); }
+}
+async function setupPWA() {
+  if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+    function offerUpdate() { if (registration.waiting && navigator.serviceWorker.controller) { waitingWorker = registration.waiting; $('#updateBtn').hidden = false; } }
+    offerUpdate(); registration.addEventListener('updatefound',() => {
+      const installing = registration.installing;
+      installing?.addEventListener('statechange',() => { if (installing.state === 'installed') offerUpdate(); });
     });
-    updateGutter();
-
-    loadTools().catch(err => showOutput(err.message, true));
-  </script>
+    // Do not reload other open tabs: their drafts must survive an update.
+  } catch { notify('Offline fallback isn’t available in this browser. The online workspace still works.',true); }
+}
+$('#updateBtn').addEventListener('click', async () => {
+  if (!waitingWorker || busy) return;
+  if (dirty() && !await ask('Reload to update?', 'Unsaved changes in this tab will be lost. Cancel to keep working.', 'Reload & update')) return;
+  navigator.serviceWorker.addEventListener('controllerchange',() => location.reload(),{once:true});
+  waitingWorker.postMessage({type:'SKIP_WAITING'});
+});
+window.addEventListener('beforeinstallprompt',e => { e.preventDefault(); pendingInstall = e; $('#installBtn').hidden = false; });
+window.addEventListener('appinstalled',() => { pendingInstall = null; $('#installBtn').hidden = true; notify('OmniForge installed. Tool execution still needs the server.'); });
+$('#installBtn').addEventListener('click',async () => {
+  if (!pendingInstall) return;
+  const prompt = pendingInstall; pendingInstall = null; $('#installBtn').hidden = true;
+  try { await prompt.prompt(); await prompt.userChoice; } catch { notify('Use your browser’s install menu instead.',true); }
+});
+$('#confirmDialog').addEventListener('cancel',e => { e.preventDefault(); finishConfirm(false); });
+$('#acceptConfirm').addEventListener('click',() => finishConfirm(true)); $('#cancelConfirm').addEventListener('click',() => finishConfirm(false));
+$('#closeTemplates').addEventListener('click',() => $('#templateDialog').close());
+$$('[data-templates]').forEach(button => button.addEventListener('click',() => $('#templateDialog').showModal()));
+$$('[data-new]').forEach(button => button.addEventListener('click',async () => {
+  if (!await canLeave()) return; await activateRoute('tools/new');
+}));
+document.addEventListener('click',e => {
+  const anchor = e.target.closest('a[href^="#"]');
+  if (anchor?.getAttribute('href') === '#main') { e.preventDefault(); $('#main').focus(); return; }
+  if (!anchor || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  e.preventDefault(); navigate(normalizedRoute(anchor.getAttribute('href')));
+});
+window.addEventListener('hashchange',async () => {
+  const target = normalizedRoute(location.hash); if (target === route) return;
+  if (!await canLeave()) { history.replaceState(null,'','#' + route); return; }
+  await activateRoute(target,true);
+});
+window.addEventListener('beforeunload',e => { if (dirty() || busy) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('online',updateNetwork); window.addEventListener('offline',updateNetwork);
+document.addEventListener('keydown',e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && route.startsWith('tools/')) { e.preventDefault(); save(); }
+});
+$('#toolForm').addEventListener('submit',e => { e.preventDefault(); save(); });
+$('#testInputs').addEventListener('input',() => { $('#testInputsError').hidden = true; $('#testInputs').removeAttribute('aria-invalid'); updateOutputState(); });
+$('#toolForm').addEventListener('input',updateState); $('#toolLanguage').addEventListener('change',updateState);
+$('#toolName').addEventListener('input',() => { $('#nameError').hidden = true; field('name').removeAttribute('aria-invalid'); });
+$('#runBtn').addEventListener('click',runSaved); $('#delBtn').addEventListener('click',deleteCurrent);
+$('#installExamplesBtn').addEventListener('click',installExamples);
+$('#retryToolsBtn').addEventListener('click',() => loadTools().catch(() => {}));
+$('#toolSearch').addEventListener('input',renderTools); $('#toolFilter').addEventListener('change',renderTools);
+$('#retryConfigBtn').addEventListener('click',loadConfig);
+$('#copyEndpointBtn').addEventListener('click',() => copyText($('#endpointValue').value));
+$('#copyRequestBtn').addEventListener('click',() => copyText($('#requestTemplate').textContent));
+$('#dismissStatus').addEventListener('click',() => { $('#status').hidden = true; });
+let preference = 'system'; try { const stored = localStorage.getItem('omniforge-theme'); if (['system','light','dark'].includes(stored)) preference = stored; } catch { /* Storage may be disabled. */ }
+$('#themeSelect').value = preference; applyTheme(preference);
+$('#themeSelect').addEventListener('change',() => { preference = $('#themeSelect').value; applyTheme(preference); try { localStorage.setItem('omniforge-theme',preference); } catch {} });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',() => { if (preference === 'system') applyTheme(preference); });
+fillEditor(); renderTemplates(); $('#offlineBanner').hidden = navigator.onLine;
+(async () => {
+  await activateRoute(normalizedRoute(location.hash),true);
+  if (!listReady) { try { await loadTools(); } catch {} }
+})();
+setupPWA();
+</script>
 </body>
 </html>

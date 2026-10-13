@@ -89,27 +89,45 @@ omniforge/
 └── .env.example
 ```
 
-## Dashboard example and connection settings
+## Product dashboard and PWA
 
-- **Load working example** fills the editor with a no-dependency Python tool that
-  prints a greeting and UTC timestamp as JSON. Click **Save**, then **Run / Test**.
-  Loading the example does not automatically create or overwrite a saved tool.
-- **Run / Test** executes saved code via POST and shows stdout, stderr, exit status,
-  execution time and HTTP errors. Save changes before running.
-- **Config** shows the endpoint for the dashboard's current origin, Bearer auth
-  status, supported methods and an HTTP request template. It never displays the
-  configured API key. Set `OMNIFORGE_API_KEY` in the server environment and recreate
-  the container to change it.
-- The current MCP implementation is limited HTTP JSON-RPC, not a complete
-  Streamable HTTP transport. OAuth and connected-client/session tracking are not
-  implemented; the panel explicitly reports these limitations.
+The dashboard is organized into **Overview, Tools, Connect and Help**, with a
+separate tool studio instead of permanent editor side panels. Start with a template,
+save, then Run / Test. The tool library supports search and state/runtime filters.
+Enabled scripts become discoverable on the client's next tool-list refresh.
 
-**Current security limitations:** the execution engine uses subprocesses inside
-one shared application container, not per-run containers. Dependency installation
-is implemented, but neither scripts nor their dependencies are isolated from
-the application filesystem. The dashboard and management API are unauthenticated. Only run trusted code and keep the service on a trusted
-network. A Bearer key on MCP alone does not secure the management API.
+- **Overview:** first-use create/test/connect guide and real library counts.
+- **Tools:** searchable saved scripts; dedicated editor with folded packages,
+  dirty-state safeguards, independent save/test and explicit output/error feedback.
+- **Connect:** current-origin endpoint, real POST auth status and copyable HTTP
+  request metadata. Configured API keys are never returned or displayed.
+- **Help:** the four original templates, input/output/package contracts,
+  troubleshooting, keyboard shortcuts and app installation instructions.
 
+Self-hosted Manrope and JetBrains Mono fonts include their OFL licenses. An original
+geometric logo, SVG/PNG favicons, Apple touch icon and regular/maskable app icons
+are included. Light, dark and system appearance are supported. Phone navigation
+has four labelled destinations; keyboard editing and reduced motion are supported.
+
+**PWA:** on eligible HTTPS browsers, use Install app when shown; Safari users can
+use Share → Add to Home Screen. HTTP LAN addresses generally aren't eligible;
+localhost is usable for development. Saving, package installation and execution
+require the server. Offline navigation shows a generic reconnect page. The worker
+caches only known public static assets — never dashboard HTML, API/MCP responses,
+code, results or credentials. Updates are opt-in; unsaved drafts are guarded. Theme
+is the only localStorage preference; drafts live only in the current tab.
+
+**Security limitations remain unchanged:** dashboard and management API are
+unauthenticated. Optional Bearer auth protects POST /mcp only, not GET /mcp or the
+management API. Scripts share the application container, environment and writable
+data; they are not isolated sandboxes. Keep the service on a trusted network.
+
+Transport is limited HTTP JSON-RPC, not full Streamable HTTP. OAuth and connected
+client/session tracking are not implemented. Verify your client's compatibility.
+
+See `docs/product-design.md` for architecture, cache/update semantics, accessibility
+choices and repeatable browser tests. No auth migration or deployment is required
+by the UI architecture itself.
 
 ## Built-in MCP script authoring
 
@@ -181,14 +199,13 @@ single-worker design. The existing script timeout starts after preparation.
 
 `inputSchema` must be a JSON Schema Draft 2020-12 object schema. Omitted/empty
 schemas mean no inputs (`additionalProperties: false`). Only local references
-are accepted: validation does not fetch remote schemas. MCP validates arguments
+are accepted: validation does not fetch remote schemas. MCP and dashboard tests validate arguments
 before execution; formats are annotations, and schema defaults are not inserted.
 Invalid arguments/metadata return MCP text content with `isError: true` and do
 not execute code. Syntax and runtime errors are reported only on execution.
 
 Arguments are encoded as **one JSON object on stdin**, without shell interpolation
-or converting inputs to environment variables. Dashboard Run / Test supplies `{}`
-without schema validation; use fallback values or MCP to test required inputs.
+or converting inputs to environment variables. Dashboard Run / Test accepts a JSON object in Test inputs (default `{}`) and validates it against the saved schema before executing. Invalid inputs are rejected without running code.
 Stdout is returned as MCP text; print JSON if clients need structured data.
 A function's return value is not captured. Avoid printing secrets.
 
@@ -232,10 +249,27 @@ is limited to the validated package requirements described above. Keep both auth
 
 ### Starting a new tool and loading examples
 
-Use **+ New Tool** to leave an existing tool and clear the editor. Confirming
-clears only the editor, not the saved tool; cancelling preserves the editor.
-Select one of the four examples, click **Load example**, then **Save → Run / Test**.
-Loading an example prepares a NEW tool, never edits the previously selected tool.
-The Python and Node basic examples need no requirements. The `requests` and
-`lodash` examples fill Requirements automatically and install on first execution.
-Changing code, language, name or requirements must be saved before running.
+Use **Create a tool** in Overview or Tools to enter the focused studio. Choose
+**Use a template** or a template in Help, then **Save tool → Run / Test**. Templates
+always prepare a new draft; replacing dirty fields requires confirmation. Saved
+tools are unchanged until Save. Changing name, code, description, runtime or
+requirements disables testing until those changes are saved.
+
+The four original examples remain unchanged. Python and Node greeting examples
+need no packages; requests and lodash examples fill Packages automatically and
+install on first execution. **Add all missing examples** in Help saves missing
+names only; existing/customized examples are never overwritten or executed.
+
+### Concurrent edits and testing
+
+Tool metadata includes a content revision. The dashboard sends it with
+`If-Match` for updates, deletion, enabling/disabling and tests. Stale operations
+return HTTP 412 without changing the tool or discarding the draft. Update, delete
+and toggle guards run within SQLite write transactions; tests read a fresh saved
+snapshot. Existing API callers may omit the header for backward compatibility.
+The guard is not authentication or authorization. No database migration is needed.
+
+Browser test request: `POST /api/tools/{name}/run` with JSON
+`{"arguments":{"name":"Ada"}}`. An omitted body defaults to empty arguments.
+Required arguments must match the saved schema. Code, inputs and results remain
+in tab memory and are never written to the PWA cache or browser storage.

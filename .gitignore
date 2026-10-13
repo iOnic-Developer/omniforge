@@ -22,3 +22,7 @@ omniforge_scripts/
 .vscode/
 .idea/
 .DS_Store
+
+# Development-only browser tooling and test artifacts
+node_modules/
+test-artifacts/

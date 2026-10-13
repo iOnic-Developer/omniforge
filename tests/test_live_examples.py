@@ -46,7 +46,11 @@ class LiveExampleTests(unittest.TestCase):
                             installer_calls.clear()
                             cached = mcp_server.MCPHandler().call_tool(example['name'], {})
                             self.assertFalse(cached['isError'], cached)
-                            self.assertTrue(json.loads(cached['content'][0]['text'])['ok'])
+                            # MCP intentionally appends stderr diagnostics to stdout.
+                            # Successful dependencies may emit warnings; assert the JSON
+                            # stdout contract without pretending the whole MCP text is JSON.
+                            cached_text = cached['content'][0]['text']
+                            self.assertTrue(json.loads(cached_text.split('\n[stderr] ', 1)[0])['ok'])
                             self.assertEqual(installer_calls, [])
                             print(f'LIVE PASS {key}: first dashboard run + cached MCP run', flush=True)
                 self.assertEqual(len(list(Path(lib).rglob('.complete'))), 2)
