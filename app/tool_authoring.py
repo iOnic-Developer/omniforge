@@ -9,9 +9,10 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError as SchemaValidationError
 from referencing import Registry
 from referencing.exceptions import Unresolvable
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.database import Tool, db
+from app.dependencies import validate_requirements
 
 BUILTIN_NAMES = frozenset({'omniforge_instructions', 'omniforge_create_tool'})
 EMPTY_SCHEMA = {'type': 'object', 'properties': {}, 'additionalProperties': False}
@@ -75,7 +76,7 @@ class ToolIn(BaseModel):
     description: str = ''
     language: str = 'python3'
     code: str
-    requirements: list[str] = Field(default_factory=list)
+    requirements: list[str] = Field(default_factory=list, max_length=50)
     json_schema: dict = Field(default_factory=dict)
     is_active: bool = True
 
@@ -102,6 +103,11 @@ class ToolIn(BaseModel):
     @classmethod
     def check_schema(cls, value: dict) -> dict:
         return validate_schema(value)
+
+    @model_validator(mode='after')
+    def check_requirements(self):
+        self.requirements = validate_requirements(self.requirements, self.language)
+        return self
 
 
 def save_tool(body: ToolIn, existing: Tool | None = None) -> Tool:

@@ -62,7 +62,7 @@ class AuthoringTests(unittest.TestCase):
         self.assertNotIn(sentinel, exposed)
         data = json.loads(self.text(result))
         self.assertEqual(len(data['examples']), 2)
-        self.assertIn('NOT implemented', data['contract']['requirements'])
+        self.assertIn('install on first execution', data['contract']['requirements'])
         self.assertIn('stdin', data['contract']['inputs'])
         self.assertIn('Streamable HTTP', ' '.join(data['limitations']))
         self.assertIn('inherit', ' '.join(data['limitations']))
@@ -127,11 +127,12 @@ class AuthoringTests(unittest.TestCase):
             with self.subTest(args=args):
                 self.assertTrue(self.call('omniforge_create_tool', args)['isError'])
 
-    def test_nonempty_requirements_explicitly_rejected(self):
-        result = self.create(requirements=['requests'])
-        self.assertTrue(result['isError'])
-        self.assertIn('dynamic dependency installation is not implemented', self.text(result))
-        self.assertEqual(self.db.get_tool_list(), [])
+    def test_nonempty_requirements_saved_without_installing(self):
+        with patch('app.dependencies.subprocess.run') as install:
+            result = self.create(requirements=['requests'])
+            install.assert_not_called()
+        self.assertFalse(result['isError'], self.text(result))
+        self.assertEqual(json.loads(self.db.get_tool('sample').requirements_json), ['requests'])
 
     def test_invalid_argument_container_types_and_names(self):
         for name in ('omniforge_instructions', 'omniforge_create_tool', 'missing'):

@@ -15,9 +15,10 @@ import subprocess
 import tempfile
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 from app.database import Tool
+from app.dependencies import ensure_dependencies
 
 MAX_TIMEOUT_MS = int(os.environ.get("OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS", "30000"))
 MAX_MEMORY_MB = int(os.environ.get("OMNIFORGE_MAX_SCRIPT_MEMORY_MB", "512"))
@@ -52,27 +53,19 @@ def _runtime(language: str) -> tuple[str, str]:
     raise ValueError(f"Unsupported language: {language!r}")
 
 
-def _parse_requirements(raw: str) -> List[str]:
-    """Parse requirement metadata only; execution does not install packages."""
-    try:
-        data = __import__("json").loads(raw)
-    except (ValueError, TypeError):
-        return []
-    if isinstance(data, list):
-        return [str(x) for x in data]
-    if isinstance(data, dict):
-        return [f"{k}=={v}" for k, v in data.items()]
-    return []
-
-
 def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
     """Execute saved code; JSON stdin defaults to {} for dashboard runs."""
     start = time.monotonic()
     try:
         runtime_bin, ext = _runtime(tool.language)
+        packages = ensure_dependencies(tool, runtime_bin)
+        environment = os.environ.copy()
+        if packages is not None:
+            key = 'PYTHONPATH' if ext == '.py' else 'NODE_PATH'
+            environment[key] = str(packages) + (os.pathsep + environment[key] if environment.get(key) else '')
     except Exception as exc:
         return RunResult(
-            tool=tool.name, language=tool.language, stdout="", stderr="",
+            tool=tool.name, language=tool.language, stdout="", stderr=str(exc),
             exit_code=1, timed_out=False,
             duration_ms=int((time.monotonic() - start) * 1000),
             error=str(exc),
@@ -91,6 +84,7 @@ def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
             text=True,
             timeout=MAX_TIMEOUT_MS / 1000 + 15,
             cwd=SCRATCH_ROOT,
+            env=environment,
         )
         exit_code = proc.returncode
         stdout = proc.stdout or ""

@@ -21,8 +21,8 @@ CREATE_SCHEMA = {
         "language": {"type": "string", "enum": ["python", "python3", "node", "js", "javascript"], "default": "python3"},
         "code": {"type": "string", "minLength": 1},
         "inputSchema": {"type": "object", "description": "JSON Schema Draft 2020-12, type object; only local references. Omit for no inputs."},
-        "requirements": {"type": "array", "items": {"type": "string"}, "maxItems": 0,
-                         "description": "Must be empty: dynamic dependency installation is not implemented."},
+        "requirements": {"type": "array", "items": {"type": "string"}, "maxItems": 50,
+                         "description": "Package names: Python name or name==version; Node name or @scope/name with optional @1.2.3. Installed lazily on first execution; URLs, paths, flags and binaries unsupported."},
         "is_active": {"type": "boolean", "default": True},
     },
     "required": ["name", "code"],
@@ -45,7 +45,7 @@ BUILTIN_TOOLS = [
 INSTRUCTIONS = {
     "workflow": [
         "Only register code the user trusts and has authorised. Obtain approval for the script's intended side effects.",
-        "Call omniforge_create_tool with name, code and optional description, language, inputSchema, requirements=[], is_active=true.",
+        "Call omniforge_create_tool with name, code and optional description, language, inputSchema, requirements (optional package-name array), is_active=true.",
         "Creation saves metadata only: it does not run, syntax-check or install anything. Duplicate and built-in names are rejected; edit existing tools in the dashboard.",
         "Call tools/list again after saving: active scripts appear immediately without restarting. There are no list-change notifications; clients may need a refresh.",
         "Execute separately with tools/call using the saved name and arguments. Dashboard Run / Test always supplies {} and does not validate it against inputSchema; handle missing values or test required inputs via MCP.",
@@ -56,7 +56,7 @@ INSTRUCTIONS = {
         "code": "Nonempty trusted script. Print JSON to stdout using print(json.dumps(...)) or console.log(JSON.stringify(...)). A returned object alone is not captured. stderr is captured; nonzero exits and timeouts become tool errors.",
         "inputSchema": "JSON Schema Draft 2020-12 with type object. Omitted/{} means no inputs (additionalProperties=false). Only local references are allowed. MCP validates arguments before execution; format is annotation-only. Schema defaults are not inserted into arguments.",
         "inputs": "One JSON object is supplied on stdin, not interpolated into code, shell commands or environment variables. Do not log credentials in stdout/stderr.",
-        "requirements": "Dynamic pip/npm/binary installation is NOT implemented. The built-in rejects nonempty requirements. Use standard-library or already-installed packages; dashboard requirements are only stored metadata.",
+        "requirements": "Packages install on first execution into persistent per-tool, per-language requirements-hash caches under OMNIFORGE_LIB_ROOT. Python: name or name==version, wheels only from PyPI; Node: name or @scope/name with optional exact @1.2.3 pin, official npm registry, lifecycle scripts disabled. CommonJS require is supported; NODE_PATH does not resolve ESM imports. No URLs, VCS, paths, flags, aliases or system binaries. Install timeout 120 seconds, bounded lock wait 125 seconds, then the existing script timeout. Failed installs never execute the script or publish a cache. Requirements are validated on save; creation does not install.",
     },
     "examples": [
         {
@@ -78,7 +78,7 @@ INSTRUCTIONS = {
         "Scripts are subprocesses in the shared application container, NOT isolated sandboxes. They inherit the application environment and can access credentials, network and writable data. JSON stdin does not fix this isolation issue.",
         "Dashboard and management API are unauthenticated. Keep the service on a trusted network. Existing optional Bearer auth protects MCP POST only, not management or GET /mcp.",
         "Transport is limited HTTP JSON-RPC POST /mcp, not full MCP Streamable HTTP. OAuth, sessions and list-change notifications are not implemented. GET /mcp is only an initial SSE stub; real-client compatibility must be verified.",
-        "Timeout is configured duration plus 15 seconds. Per-script memory limits, process-tree termination and output caps are not implemented.",
+        "Dependency installation is synchronous and can block requests. Runtime timeout is configured duration plus 15 seconds after dependency preparation. Per-script memory limits, process-tree termination and output caps are not implemented.",
     ],
 }
 
@@ -116,8 +116,6 @@ class MCPHandler:
                 validate_arguments(arguments, EMPTY_SCHEMA)
                 return tool_result(json.dumps(INSTRUCTIONS, indent=2))
             if name == 'omniforge_create_tool':
-                if arguments.get('requirements'):
-                    raise ValueError('Nonempty requirements are not supported: dynamic dependency installation is not implemented')
                 validate_arguments(arguments, CREATE_SCHEMA)
                 values = dict(arguments)
                 values['json_schema'] = values.pop('inputSchema', {})

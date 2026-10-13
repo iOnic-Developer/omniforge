@@ -17,8 +17,7 @@ services:
       - omniforge_data:/opt/omniforge/data
       - omniforge_lib:/opt/omniforge/lib
       - omniforge_scripts:/opt/omniforge/scripts
-    # Ephemeral runtime containers spawned by the runner use these named volumes.
-    # They are declared here so docker-compose creates them.
+    # Scripts run in this container; dependency caches persist in omniforge_lib.
 volumes:
   omniforge_data:
   omniforge_lib:

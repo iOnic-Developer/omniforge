@@ -59,8 +59,16 @@
   <div class="wrap">
     <div class="panel">
       <h2>Tools</h2>
-      <button type="button" class="btn-ghost" id="exampleBtn">Load working example</button>
-      <p class="hint">Example uses Python's standard library. Save it, then Run / Test. Print JSON to return output.</p>
+      <button type="button" class="btn-primary" id="newBtn">+ New Tool</button>
+      <label for="exampleSelect">Choose an example</label>
+      <select id="exampleSelect">
+        <option value="python_basic">Python — no requirements (ready to run)</option>
+        <option value="node_basic">Node — no requirements (ready to run)</option>
+        <option value="python_packages">Python — with requests (installs on first run)</option>
+        <option value="node_packages">Node — with lodash (installs on first run)</option>
+      </select>
+      <button type="button" class="btn-ghost" id="exampleBtn">Load example</button>
+      <p class="hint">1. New Tool or Load example. 2. Save. 3. Run / Test. Results appear below the editor. Loading never changes a saved tool until you save.</p>
       <ul class="tool-list" id="toolList"></ul>
     </div>
 
@@ -88,7 +96,8 @@
         <label>Code</label>
         <textarea name="code" rows="12" placeholder="# Print the current date&#10;import datetime&#10;print(datetime.date.today())"></textarea>
         <label>Requirements (one per line, optional)</label>
-        <textarea name="requirements" rows="2" placeholder="requests&#10;pandas"></textarea>
+        <textarea name="requirements" rows="2" placeholder="Leave empty for the ready-to-run examples"></textarea>
+        <p class="hint">Package names, one per line: Python requests or requests==2.32.5; Node lodash or lodash@4.17.21 (scoped names supported). First run installs into a persistent per-tool cache (up to 120 seconds); later runs reuse it. No URLs, commands, system binaries, source builds or npm install scripts. Saving alone does not install.</p>
         <div class="actions">
           <button type="submit" class="btn-primary" id="saveBtn">Save</button>
           <button type="button" class="btn-ghost" id="runBtn">Run / Test</button>
@@ -134,6 +143,8 @@
       el('#formTitle').textContent = 'New Tool';
       el('#closeForm').style.display = 'none';
       el('#delBtn').style.display = 'none';
+      el('#out').style.display = 'none';
+      document.querySelectorAll('#toolList li').forEach(li => li.classList.remove('active'));
     }
 
     async function loadTools() {
@@ -149,12 +160,15 @@
         const name = document.createElement('span'); name.textContent = `${t.name} (${t.language})`;
         const badge = document.createElement('span'); badge.className = `badge ${t.is_active ? 'on' : 'off'}`;
         badge.textContent = t.is_active ? 'active' : 'off';
+        li.dataset.toolId = t.id;
+        li.classList.toggle('active', current?.id === t.id);
         li.append(name, badge); li.onclick = () => selectTool(t); list.appendChild(li);
       });
     }
 
     function selectTool(t) {
       current = t;
+      document.querySelectorAll('#toolList li').forEach(li => li.classList.toggle('active', li.dataset.toolId === t.id));
       el('#formTitle').textContent = 'Edit Tool';
       el('#closeForm').style.display = 'inline';
       el('#delBtn').style.display = 'inline-block';
@@ -163,13 +177,60 @@
       el('#out').style.display = 'none';
     }
 
+    const EXAMPLES = {
+  "python_basic": {
+    "name": "example_python_basic",
+    "language": "python3",
+    "description": "Return a greeting and UTC time. No packages needed.",
+    "requirements": [],
+    "code": "import json\nfrom datetime import datetime, timezone\n\nprint(json.dumps({\"message\": \"Hello from Python!\", \"utc_time\": datetime.now(timezone.utc).isoformat(), \"ok\": True}))\n"
+  },
+  "node_basic": {
+    "name": "example_node_basic",
+    "language": "node",
+    "description": "Return a greeting and UTC time. No packages needed.",
+    "requirements": [],
+    "code": "console.log(JSON.stringify({message: \"Hello from Node!\", utc_time: new Date().toISOString(), ok: true}));\n"
+  },
+  "python_packages": {
+    "name": "example_python_requests",
+    "language": "python3",
+    "description": "Prepare an HTTP request using requests; needs requests installed. Does not send a network request.",
+    "requirements": [
+      "requests"
+    ],
+    "code": "import json\nimport requests\n\nrequest = requests.Request(\"GET\", \"https://example.com\", params={\"hello\": \"David\"}).prepare()\nprint(json.dumps({\"method\": request.method, \"url\": request.url, \"ok\": True}))\n"
+  },
+  "node_packages": {
+    "name": "example_node_lodash",
+    "language": "node",
+    "description": "Sort unique numbers using lodash; needs lodash installed.",
+    "requirements": [
+      "lodash"
+    ],
+    "code": "const _ = require(\"lodash\");\nconsole.log(JSON.stringify({numbers: _.sortBy(_.uniq([3, 1, 3, 2])), ok: true}));\n"
+  }
+};
+
+    function newTool() {
+      if ((val('code') || val('name')) && !confirm('Clear the editor to start a new tool? Saved tools are unchanged.')) return;
+      resetForm();
+      el('[name="name"]').focus();
+    }
+    el('#newBtn').addEventListener('click', newTool);
+    el('#closeForm').addEventListener('click', newTool);
+
     el('#exampleBtn').addEventListener('click', () => {
       if ((val('code') || val('name')) && !confirm('Replace the editor contents with the example? Saved tools are unchanged.')) return;
+      const example = EXAMPLES[el('#exampleSelect').value];
       resetForm();
-      el('[name="name"]').value = 'example_hello';
-      el('[name="description"]').value = 'Return a greeting and the current UTC time as JSON. No packages required.';
-      el('[name="code"]').value = 'import json\nfrom datetime import datetime, timezone\n\nprint(json.dumps({\n    "message": "Hello from OmniForge!",\n    "utc_time": datetime.now(timezone.utc).isoformat(),\n    "ok": True\n}))\n';
-      showOutput('Example loaded. Click Save, then Run / Test. This tool needs no requirements.');
+      ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = example[key]; });
+      el('[name="requirements"]').value = example.requirements.join('\n');
+      if (example.requirements.length) {
+        showOutput('Example loaded. Save, then Run / Test. First run installs ' + example.requirements.join(', ') + ' (up to 120 seconds); subsequent runs reuse the per-tool cache. Expected output: JSON with ok: true.');
+      } else {
+        showOutput('Example loaded. Click Save, then Run / Test. Expected output: a JSON object containing message, utc_time and ok: true. No requirements needed.');
+      }
     });
 
     el('#toolForm').addEventListener('submit', async (e) => {
@@ -193,11 +254,11 @@
 
     el('#runBtn').addEventListener('click', async () => {
       if (!current) { showOutput('Save or select a tool before running it.', true); return; }
-      if (val('name') !== current.name || val('code') !== current.code || val('language') !== current.language) {
+      if (val('name') !== current.name || val('code') !== current.code || val('language') !== current.language || JSON.stringify(val('requirements').split('\n').map(x => x.trim()).filter(Boolean).sort()) !== JSON.stringify(JSON.parse(current.requirements_json || '[]').sort())) {
         showOutput('Save your changes before running this tool.', true); return;
       }
       const button = el('#runBtn'); button.disabled = true;
-      showOutput('Running…');
+      showOutput(JSON.parse(current.requirements_json || '[]').length ? 'Preparing dependencies… First installation may take up to 120 seconds (plus a bounded lock wait if another run is installing); cached packages are reused. Then running script…' : 'Running…');
       try {
         const d = await api(`/api/tools/${encodeURIComponent(current.name)}/run`, { method: 'POST' });
         showOutput(`${d.exit_code === 0 ? 'OK' : 'ERROR'} (exit ${d.exit_code}${d.timed_out ? ', timeout' : ''}, ${d.duration_ms} ms)\n\n${(d.stdout || '') + (d.stderr ? '\n' + d.stderr : '') || '(no output — use print() in Python or console.log() in Node)'}`, d.exit_code !== 0);
@@ -212,7 +273,6 @@
         resetForm(); await loadTools();
       } catch (err) { showOutput(err.message, true); }
     });
-    el('#closeForm').addEventListener('click', resetForm);
 
     el('#configBtn').addEventListener('click', async () => {
       const dialog = el('#configDialog'); const content = el('#configContent');

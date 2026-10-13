@@ -8,7 +8,8 @@ from a single container.
 
 - **Web dashboard** to create, edit, test, and delete tools.
 - **Trusted-script execution** via Python/Node subprocesses in the application container (not isolated sandboxes).
-- **Built-in MCP authoring tools** for instructions and create-only registration; available even with an empty database. Dynamic dependency installation is not implemented.
+- **Built-in MCP authoring tools** for instructions and create-only registration; available even with an empty database.
+- **Lazy dependency installation**: per-tool persistent pip/npm caches, strict package names, wheels-only Python installs and disabled npm lifecycle scripts.
 - **Hot-reload**: tool registry is read per request — no restart needed.
 - **MCP endpoint** (`/mcp`) exposing tools to external LLM clients.
 - **SQLite metadata** with atomic writes.
@@ -34,7 +35,7 @@ docker compose up --build
 | `OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS` | `30000` | Configured timeout (ms); runner currently adds 15 seconds. |
 | `OMNIFORGE_MAX_SCRIPT_MEMORY_MB` | `512` | Declared value only; not enforced per script. |
 | `OMNIFORGE_DB_PATH` | `/opt/omniforge/data/omniforge.db` | SQLite database path. |
-| `OMNIFORGE_LIB_ROOT` | `/opt/omniforge/lib` | Historical library volume setting; no dynamic installer is wired in. |
+| `OMNIFORGE_LIB_ROOT` | `/opt/omniforge/lib` | Writable persistent per-tool pip/npm dependency caches. |
 | `OMNIFORGE_SCRIPT_HOST` | `/opt/omniforge/scripts` | Historical setting; runner uses OMNIFORGE_SCRATCH_ROOT instead. |
 | `OMNIFORGE_SCRATCH_ROOT` | `/tmp/omniforge` | Shared scratch directory for subprocess scripts. |
 
@@ -104,9 +105,9 @@ omniforge/
   implemented; the panel explicitly reports these limitations.
 
 **Current security limitations:** the execution engine uses subprocesses inside
-one shared application container, not per-run containers. The original ephemeral-container and automatic-installer
-architecture are historical goals, not runtime guarantees. The dashboard and management API
-are unauthenticated. Only run trusted code and keep the service on a trusted
+one shared application container, not per-run containers. Dependency installation
+is implemented, but neither scripts nor their dependencies are isolated from
+the application filesystem. The dashboard and management API are unauthenticated. Only run trusted code and keep the service on a trusted
 network. A Bearer key on MCP alone does not secure the management API.
 
 
@@ -122,7 +123,7 @@ SQLite database:
 
 1. Read `omniforge_instructions`.
 2. Submit `name`, `code`, optional `description`, `language` (default `python3`),
-   `inputSchema`, `requirements: []`, and `is_active` (default `true`) to
+   `inputSchema`, `requirements` (optional package-name array), and `is_active` (default `true`) to
    `omniforge_create_tool`. Code must be nonempty and contain no NUL characters.
    Languages `python`/`python3` and `node`/`js`/`javascript` are accepted and normalised.
 3. Refresh `tools/list`. Active tools are available immediately; inactive tools
@@ -137,9 +138,44 @@ writes reject duplicate names (including inactive tools and rename collisions)
 inside a serialized SQLite transaction. Existing legacy duplicates are preserved;
 there is no destructive database migration.
 
-Nonempty requirements are rejected by the create built-in because automatic
-pip/npm/binary installation is **not implemented**. Dashboard requirements are
-stored metadata only. Use standard libraries or packages already in the image.
+### Requirements: install on first execution
+
+Both dashboard and MCP creation accept up to 50 package names. Saving validates
+names but never installs or runs code. The first Run / Test or MCP call installs
+missing environments; subsequent calls reuse a completed cache.
+
+- Python: `requests` or `requests==2.32.5`. Strict package names and optional
+  exact numeric/release-version pins only; no extras, ranges or markers.
+  `pip --target --only-binary=:all: --no-cache-dir --disable-pip-version-check`
+  uses the official PyPI index. No source builds or system binaries.
+- Node (CommonJS `require`): `lodash`, `lodash@4.17.21`, or
+  `@scope/package@1.2.3`. Exact semver pins only, not ranges or tags.
+  `npm --prefix --ignore-scripts --no-audit --no-fund` uses the official registry
+  and a writable cache. Packages requiring lifecycle scripts/native builds are
+  unsupported; ESM imports do not resolve through `NODE_PATH`.
+- URLs, VCS, paths, flags, aliases, tarballs and installation commands are rejected.
+
+Environments live at `OMNIFORGE_LIB_ROOT/<tool-id-hash>/<language>/<requirements-hash>`.
+Each install uses a unique staging directory and an `fcntl` file lock (125-second
+bounded wait). A success marker is published atomically only after the installer
+finishes. Failed/120-second timed-out installs abort execution, return bounded
+sanitized diagnostics and remove only their own staging directory. Existing
+unmarked directories are never deleted automatically. Changed requirements make
+another environment; old caches remain until an administrator removes them.
+Unpinned names reuse their first resolved versions, not automatically updated ones.
+
+The library volume must be writable by UID 1000. New image directories are owned
+by UID 1000; existing bind mounts need matching ownership configured separately.
+Read-only root filesystems and a 128 MiB `noexec` `/tmp` tmpfs are supported: package
+installation staging, HOME, TMPDIR and npm cache use the writable library volume.
+Do not mount the Docker socket. No packages install on the NAS host.
+
+Installer children receive a minimal environment, no app API keys or inherited
+pip/npm configuration. Script children still inherit the application environment
+with their own dependency directory prepended to `PYTHONPATH`/`NODE_PATH`:
+**trusted code and trusted dependencies only; this is not sandbox isolation**.
+Dependency preparation is synchronous and may block other requests in the current
+single-worker design. The existing script timeout starts after preparation.
 
 ### Input and output contract
 
@@ -191,5 +227,15 @@ locally when enabled; never put credential values in source or tool instructions
 GET `/mcp` is an initial SSE stub. OAuth, sessions and list-change notifications
 are absent. JSON stdin does not fix subprocess isolation: scripts still inherit
 the application environment and can access credentials/data. No shell/host,
-credential configuration, deployment or automatic dependency-install tools are
-added. Keep both authors and clients trusted and the service on a trusted network.
+credential configuration or deployment tools are added. Dependency installation
+is limited to the validated package requirements described above. Keep both authors and clients trusted and the service on a trusted network.
+
+### Starting a new tool and loading examples
+
+Use **+ New Tool** to leave an existing tool and clear the editor. Confirming
+clears only the editor, not the saved tool; cancelling preserves the editor.
+Select one of the four examples, click **Load example**, then **Save → Run / Test**.
+Loading an example prepares a NEW tool, never edits the previously selected tool.
+The Python and Node basic examples need no requirements. The `requests` and
+`lodash` examples fill Requirements automatically and install on first execution.
+Changing code, language, name or requirements must be saved before running.
