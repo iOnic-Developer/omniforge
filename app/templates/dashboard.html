@@ -5,17 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OmniForge</title>
   <style>
-    :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --red:#f85f2f; }
+    :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --muted:#a6b0bb; --accent:#58a6ff; --green:#3fb950; --red:#f85f2f; }
     * { box-sizing: border-box; }
     body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
     header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); }
     header h1 { font-size:20px; margin:0; }
     header .tag { color:var(--muted); font-size:13px; }
-    .wrap { display:grid; grid-template-columns:320px 1fr; gap:20px; padding:24px; max-width:1400px; margin:0 auto; }
+    .wrap { --left:280px; --right:300px; display:grid; grid-template-columns:var(--left) minmax(0,1fr) var(--right); gap:16px; padding:16px; margin:0; align-items:start; }
+    .wrap.left-collapsed { --left:64px; }
+    .wrap.right-collapsed { --right:64px; }
+    .panel { min-width:0; }
+    .sidebar.collapsed .sidebar-content, .sidebar.collapsed .sidebar-title { display:none; }
+    .sidebar.collapsed { padding:9px; }
+    .panel-heading, .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .panel-heading { justify-content:space-between; margin-bottom:12px; }
+    .panel .panel-heading h2 { margin:0; }
+    .sidebar.collapsed .toolbar { flex-direction:column; }
+    .icon-btn { width:44px; padding:10px; flex-shrink:0; }
+    .icon-btn svg { width:20px; height:20px; display:block; }
+    .toolbar { margin-bottom:12px; }
+    .sidebar.collapsed .toolbar { margin-bottom:0; }
+    .sidebar.collapsed .panel-heading { margin-bottom:0; }
+    .install-btn { width:100%; margin-bottom:12px; }
+    .tool-list .tool-select { flex:1; min-width:0; padding:8px; text-align:left; background:transparent; color:var(--text); }
+    .tool-select .name, .tool-select .description { display:block; overflow-wrap:anywhere; }
+    .tool-select .description { font-size:12px; font-weight:400; color:var(--muted); margin-top:4px; }
+    .toggle-btn { flex-shrink:0; padding:8px; font-size:12px; min-width:58px; background:transparent; border:1px solid var(--border); }
+    .toggle-btn.on { color:var(--green); }
+    .toggle-btn.off { color:var(--muted); }
+    .editor-shell { display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:minmax(0,1fr); height:clamp(360px,58vh,900px); border:1px solid var(--border); border-radius:6px; overflow:hidden; background:var(--bg); }
+    .line-numbers, #toolCode { font:14px/22px ui-monospace,Menlo,Consolas,monospace; tab-size:2; padding:12px; }
+    .line-numbers { margin:0; text-align:right; color:var(--muted); background:var(--card); border-right:1px solid var(--border); overflow:hidden; min-height:0; padding-bottom:34px; user-select:none; }
+    #toolCode { border:0; border-radius:0; resize:none; height:100%; white-space:pre; overflow:auto; }
+    #toolCode:focus-visible { outline-offset:-3px; }
+    .editor-hint { margin:8px 0; }
+    .actions { flex-wrap:wrap; }
+    .out pre { overflow-wrap:anywhere; }
+    input, select, textarea { min-width:0; }
+    button, input, select { min-height:44px; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    button:disabled { opacity:.6; cursor:wait; }
+    button:hover:not(:disabled) { filter:brightness(1.15); }
+    .btn-primary { color:var(--bg); }
+    .dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .dialog-heading h2 { font-size:18px; }
+    .tips { border-top:1px solid var(--border); margin-top:16px; padding-top:8px; }
+    .tips h3 { font-size:14px; }
+    @media (max-width:1100px) { .wrap { --left:230px; --right:250px; gap:12px; padding:12px; } }
+    @media (max-width:860px) { .wrap, .wrap.left-collapsed, .wrap.right-collapsed { grid-template-columns:minmax(0,1fr); } .sidebar.collapsed .toolbar { flex-direction:row; } .editor-shell { height:420px; } .sidebar .tool-list { max-height:260px; } header { padding:16px; } }
+    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
     .panel { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
     .panel h2 { margin:0 0 12px; font-size:15px; }
     .tool-list { list-style:none; padding:0; margin:0; max-height:60vh; overflow:auto; }
-    .tool-list li { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border:1px solid transparent; border-radius:6px; cursor:pointer; margin-bottom:4px; }
+    .tool-list li { display:flex; align-items:center; justify-content:space-between; padding:0; gap:8px; border:1px solid transparent; border-radius:6px; margin-bottom:4px; }
     .tool-list li:hover, .tool-list li.active { border-color:var(--accent); background:#1c2128; }
     .tool-list .name { font-weight:500; }
     .tool-list .lang { color:var(--muted); font-size:12px; }
@@ -28,7 +70,7 @@
     .row { display:flex; gap:10px; }
     .row > * { flex:1; }
     button { cursor:pointer; border:none; border-radius:6px; padding:9px 16px; font-size:14px; font-weight:500; }
-    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary { background:var(--accent); color:var(--bg); }
     .btn-ghost { background:transparent; color:var(--text); border:1px solid var(--border); }
     .btn-danger { background:transparent; color:var(--red); border:1px solid var(--red); }
     .actions { display:flex; gap:8px; margin-top:16px; }
@@ -43,64 +85,101 @@
     dialog::backdrop { background:#000a; }
     dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; }
     .hint { color:var(--muted); font-size:13px; }
-    @media (max-width:700px) { .wrap { grid-template-columns:1fr; padding:12px; } }
+
 
   </style>
 </head>
 <body>
   <header>
     <div>
-      <h1>🛠️ OmniForge</h1>
+      <h1>OmniForge</h1>
       <div class="tag">Write, test, and deploy scripts as live MCP tools</div>
     </div>
-    <button type="button" class="btn-ghost" id="configBtn">Config</button>
   </header>
 
-  <div class="wrap">
-    <div class="panel">
-      <h2>Tools</h2>
-      <button type="button" class="btn-ghost" id="exampleBtn">Load working example</button>
-      <p class="hint">Example uses Python's standard library. Save it, then Run / Test. Print JSON to return output.</p>
-      <ul class="tool-list" id="toolList"></ul>
-    </div>
+  <form id="toolForm" class="wrap">
+    <aside class="panel sidebar" id="leftPanel" aria-label="Tool library">
+      <div class="toolbar">
+        <button type="button" class="btn-ghost icon-btn" id="collapseLeft" aria-label="Collapse tool library" title="Collapse tool library" aria-expanded="true" aria-controls="leftContent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+        <button type="button" class="btn-ghost icon-btn" id="configBtn" aria-label="MCP configuration" title="MCP configuration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-2-1-3 2-2-2-3-3-1-1-3Z"/><circle cx="10" cy="11" r="3"/></svg></button>
+        <button type="button" class="btn-ghost icon-btn" id="newBtn" aria-label="New tool" title="New tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button type="button" class="btn-ghost icon-btn" id="helpBtn" aria-label="Help and examples" title="Help and examples"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17h.01"/></svg></button>
+      </div>
+      <div class="sidebar-content" id="leftContent">
+        <h2>Tools</h2>
+        <button type="button" class="btn-ghost install-btn" id="installExamplesBtn" title="Save missing examples. Packages install lazily on first Run / Test, not now.">Install examples</button>
+        <p class="hint">Name | enabled state. Disabled scripts stay here but are hidden from MCP discovery.</p>
+        <ul class="tool-list" id="toolList" aria-label="Saved scripts"></ul>
+      </div>
+    </aside>
 
-    <div class="panel">
-      <h2>
-        <span id="formTitle">New Tool</span>
-        <span class="close-x" id="closeForm" style="float:right;display:none">×</span>
-      </h2>
-      <form id="toolForm">
-        <div class="row">
-          <div>
-            <label>Tool Name</label>
-            <input name="name" placeholder="e.g. weather" required>
-          </div>
-          <div>
-            <label>Language</label>
-            <select name="language">
-              <option value="python3">Python</option>
-              <option value="node">Node.js</option>
-            </select>
-          </div>
-        </div>
-        <label>Description</label>
-        <input name="description" placeholder="What does this tool do?">
-        <label>Code</label>
-        <textarea name="code" rows="12" placeholder="# Print the current date&#10;import datetime&#10;print(datetime.date.today())"></textarea>
-        <label>Requirements (one per line, optional)</label>
-        <textarea name="requirements" rows="2" placeholder="requests&#10;pandas"></textarea>
-        <div class="actions">
-          <button type="submit" class="btn-primary" id="saveBtn">Save</button>
-          <button type="button" class="btn-ghost" id="runBtn">Run / Test</button>
-          <button type="button" class="btn-danger" id="delBtn" style="display:none">Delete</button>
-        </div>
-      </form>
-      <div class="out" id="out" style="display:none"></div>
-    </div>
-  </div>
+    <section class="panel" aria-label="Code editor">
+      <div class="panel-heading">
+        <h2 id="formTitle">New Tool</h2>
+        <button type="button" class="btn-ghost" id="closeForm" style="display:none">Cancel / New</button>
+      </div>
+      <label for="toolCode">Code</label>
+      <div class="editor-shell">
+        <pre class="line-numbers" id="lineNumbers" aria-hidden="true">1</pre>
+        <textarea id="toolCode" name="code" wrap="off" spellcheck="false" aria-describedby="editorHint" placeholder="# Print the current date&#10;import datetime&#10;print(datetime.date.today())"></textarea>
+      </div>
+      <p class="hint editor-hint" id="editorHint">Plain-text code editor with line numbers. Tab indents; Shift+Tab unindents selected lines. Escape, then Tab leaves the editor.</p>
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="saveBtn">Save</button>
+        <button type="button" class="btn-ghost" id="runBtn">Run / Test</button>
+        <button type="button" class="btn-danger" id="delBtn" style="display:none">Delete</button>
+      </div>
+      <div class="out" id="out" style="display:none" role="status" aria-live="polite"></div>
+    </section>
 
-  <dialog id="configDialog">
-    <div class="row"><h2>MCP configuration &amp; connections</h2><button type="button" class="btn-ghost" id="closeConfig">Close</button></div>
+    <aside class="panel sidebar" id="rightPanel" aria-label="Tool settings">
+      <div class="panel-heading">
+        <h2 class="sidebar-title">Tool settings</h2>
+        <button type="button" class="btn-ghost icon-btn" id="collapseRight" aria-label="Collapse tool settings" title="Collapse tool settings" aria-expanded="true" aria-controls="rightContent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="sidebar-content" id="rightContent">
+        <label for="toolName">Tool name</label>
+        <input id="toolName" name="name" placeholder="e.g. weather" required>
+        <label for="toolLanguage">Language</label>
+        <select id="toolLanguage" name="language"><option value="python3">Python</option><option value="node">Node.js</option></select>
+        <label for="toolDescription">Description</label>
+        <input id="toolDescription" name="description" placeholder="What does this tool do?">
+        <label for="toolRequirements">Requirements (one per line, optional)</label>
+        <textarea id="toolRequirements" name="requirements" rows="4" aria-describedby="requirementsHint" placeholder="Leave empty for no packages"></textarea>
+        <p class="hint" id="requirementsHint">Python: requests or requests==2.32.5. Node: lodash or lodash@4.17.21; scoped names supported. Installs on first run into a persistent cache, not on save.</p>
+        <div class="tips">
+          <h3>Tips</h3>
+          <p class="hint">Save before testing. Print JSON with Python print() or Node console.log(). Run / Test executes the saved script with empty inputs.</p>
+          <p class="hint">Only run trusted scripts. Built-in MCP authoring tools are always available and cannot be toggled here.</p>
+          <button type="button" class="btn-ghost" id="tipsHelpBtn">Help / load an example</button>
+        </div>
+      </div>
+    </aside>
+  </form>
+
+  <dialog id="helpDialog" aria-labelledby="helpTitle">
+    <div class="dialog-heading"><h2 id="helpTitle">Help and examples</h2><button type="button" class="btn-ghost" id="closeHelp">Close</button></div>
+    <ol>
+      <li>Use New tool, enter a name, language, description and code, then Save.</li>
+      <li>Run / Test executes saved code; save edits first. Results and errors appear below the editor.</li>
+      <li>Enabled scripts appear in MCP discovery. Disable hides discovery, not the dashboard or manual testing. Refresh your client's tool list after changes.</li>
+    </ol>
+    <p class="hint">Install examples saves the four missing examples after confirmation; existing names are never overwritten. It does not install packages. Load example below only changes the editor until you Save.</p>
+    <label for="exampleSelect">Choose an example</label>
+    <select id="exampleSelect">
+      <option value="python_basic">Python — no requirements (ready to run)</option>
+      <option value="node_basic">Node — no requirements (ready to run)</option>
+      <option value="python_packages">Python — with requests (installs on first run)</option>
+      <option value="node_packages">Node — with lodash (installs on first run)</option>
+    </select>
+    <button type="button" class="btn-ghost" id="exampleBtn">Load example</button>
+    <h3>Packages and safety</h3>
+    <p class="hint">Package names, one per line: Python requests or requests==2.32.5; Node lodash or lodash@4.17.21 (scoped names supported). First run installs into a persistent per-tool cache (up to 120 seconds); later runs reuse it. No URLs, commands, system binaries, source builds or npm install scripts. Saving alone does not install. CommonJS require() is supported for Node packages.</p>
+    <p class="hint">Scripts share the application container. Dashboard/API authentication is not implemented: keep this service on a trusted network. Config shows connection metadata, never the API key.</p>
+  </dialog>
+
+  <dialog id="configDialog" aria-labelledby="configTitle">
+    <div class="dialog-heading"><h2 id="configTitle">MCP configuration &amp; connections</h2><button type="button" class="btn-ghost" id="closeConfig">Close</button></div>
     <div id="configContent"></div>
   </dialog>
 
@@ -131,45 +210,157 @@
     function resetForm() {
       current = null;
       el('#toolForm').reset();
+      updateGutter();
       el('#formTitle').textContent = 'New Tool';
       el('#closeForm').style.display = 'none';
       el('#delBtn').style.display = 'none';
+      el('#out').style.display = 'none';
+      document.querySelectorAll('#toolList li').forEach(li => li.classList.remove('active'));
     }
 
     async function loadTools() {
       const { tools } = await api('/api/tools');
+      // Refresh metadata only, never replace the editor's unsaved fields.
+      const selected = tools.find(t => t.id === current?.id);
+      if (selected) current = selected;
       const list = el('#toolList'); list.replaceChildren();
       if (!tools.length) {
         const li = document.createElement('li');
-        li.className = 'empty'; li.textContent = 'No tools yet — load the example or create one.';
+        li.className = 'empty'; li.textContent = 'No tools yet — install examples or create one.';
         list.appendChild(li);
       }
       tools.forEach(t => {
         const li = document.createElement('li');
-        const name = document.createElement('span'); name.textContent = `${t.name} (${t.language})`;
-        const badge = document.createElement('span'); badge.className = `badge ${t.is_active ? 'on' : 'off'}`;
-        badge.textContent = t.is_active ? 'active' : 'off';
-        li.append(name, badge); li.onclick = () => selectTool(t); list.appendChild(li);
+        const select = document.createElement('button'); select.type = 'button'; select.className = 'tool-select';
+        const name = document.createElement('span'); name.className = 'name'; name.textContent = t.name;
+        const description = document.createElement('span'); description.className = 'description';
+        description.textContent = t.description || 'No description';
+        select.append(name, description);
+        select.addEventListener('click', () => selectTool(t));
+        const toggle = document.createElement('button'); toggle.type = 'button';
+        toggle.className = `toggle-btn ${t.is_active ? 'on' : 'off'}`;
+        toggle.textContent = t.is_active ? 'On' : 'Off';
+        toggle.setAttribute('role', 'switch'); toggle.setAttribute('aria-checked', String(t.is_active));
+        const builtin = ['omniforge_instructions', 'omniforge_create_tool'].includes(t.name);
+        toggle.disabled = builtin;
+        toggle.setAttribute('aria-label', `${t.is_active ? 'Disable' : 'Enable'} ${t.name}`);
+        toggle.title = builtin ? 'Built-in MCP tools cannot be toggled' : 'Enable or disable MCP discovery; keep this script in the dashboard';
+        toggle.addEventListener('click', async () => {
+          if (builtin) return;
+          toggle.disabled = true;
+          try {
+            await api(`/api/tools/${encodeURIComponent(t.name)}/toggle`, { method: 'POST' });
+            await loadTools();
+          } catch (err) { showOutput(err.message, true); }
+          finally { toggle.disabled = builtin; }
+        });
+        li.dataset.toolId = t.id;
+        li.classList.toggle('active', current?.id === t.id);
+        li.append(select, toggle); list.appendChild(li);
       });
+      return tools;
     }
 
     function selectTool(t) {
       current = t;
+      document.querySelectorAll('#toolList li').forEach(li => li.classList.toggle('active', li.dataset.toolId === t.id));
       el('#formTitle').textContent = 'Edit Tool';
       el('#closeForm').style.display = 'inline';
       el('#delBtn').style.display = 'inline-block';
       ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = t[key]; });
       el('[name="requirements"]').value = JSON.parse(t.requirements_json || '[]').join('\n');
       el('#out').style.display = 'none';
+      updateGutter();
     }
+
+    const EXAMPLES = {
+  "python_basic": {
+    "name": "example_python_basic",
+    "language": "python3",
+    "description": "Return a greeting and UTC time. No packages needed.",
+    "requirements": [],
+    "code": "import json\nfrom datetime import datetime, timezone\n\nprint(json.dumps({\"message\": \"Hello from Python!\", \"utc_time\": datetime.now(timezone.utc).isoformat(), \"ok\": True}))\n"
+  },
+  "node_basic": {
+    "name": "example_node_basic",
+    "language": "node",
+    "description": "Return a greeting and UTC time. No packages needed.",
+    "requirements": [],
+    "code": "console.log(JSON.stringify({message: \"Hello from Node!\", utc_time: new Date().toISOString(), ok: true}));\n"
+  },
+  "python_packages": {
+    "name": "example_python_requests",
+    "language": "python3",
+    "description": "Prepare an HTTP request using requests; needs requests installed. Does not send a network request.",
+    "requirements": [
+      "requests"
+    ],
+    "code": "import json\nimport requests\n\nrequest = requests.Request(\"GET\", \"https://example.com\", params={\"hello\": \"David\"}).prepare()\nprint(json.dumps({\"method\": request.method, \"url\": request.url, \"ok\": True}))\n"
+  },
+  "node_packages": {
+    "name": "example_node_lodash",
+    "language": "node",
+    "description": "Sort unique numbers using lodash; needs lodash installed.",
+    "requirements": [
+      "lodash"
+    ],
+    "code": "const _ = require(\"lodash\");\nconsole.log(JSON.stringify({numbers: _.sortBy(_.uniq([3, 1, 3, 2])), ok: true}));\n"
+  }
+};
+
+    function newTool() {
+      if ((val('code') || val('name')) && !confirm('Clear the editor to start a new tool? Saved tools are unchanged.')) return;
+      resetForm();
+      setSidebar('right', false);
+      el('[name="name"]').focus();
+    }
+    el('#newBtn').addEventListener('click', newTool);
+    el('#closeForm').addEventListener('click', newTool);
 
     el('#exampleBtn').addEventListener('click', () => {
       if ((val('code') || val('name')) && !confirm('Replace the editor contents with the example? Saved tools are unchanged.')) return;
+      const example = EXAMPLES[el('#exampleSelect').value];
       resetForm();
-      el('[name="name"]').value = 'example_hello';
-      el('[name="description"]').value = 'Return a greeting and the current UTC time as JSON. No packages required.';
-      el('[name="code"]').value = 'import json\nfrom datetime import datetime, timezone\n\nprint(json.dumps({\n    "message": "Hello from OmniForge!",\n    "utc_time": datetime.now(timezone.utc).isoformat(),\n    "ok": True\n}))\n';
-      showOutput('Example loaded. Click Save, then Run / Test. This tool needs no requirements.');
+      ['name', 'description', 'language', 'code'].forEach(key => { el(`[name="${key}"]`).value = example[key]; });
+      el('[name="requirements"]').value = example.requirements.join('\n');
+      updateGutter();
+      el('#helpDialog').close();
+      setSidebar('right', false);
+      codeEditor.focus();
+      if (example.requirements.length) {
+        showOutput('Example loaded. Save, then Run / Test. First run installs ' + example.requirements.join(', ') + ' (up to 120 seconds); subsequent runs reuse the per-tool cache. Expected output: JSON with ok: true.');
+      } else {
+        showOutput('Example loaded. Click Save, then Run / Test. Expected output: a JSON object containing message, utc_time and ok: true. No requirements needed.');
+      }
+    });
+
+    el('[name="name"]').addEventListener('invalid', () => setSidebar('right', false));
+
+    el('#installExamplesBtn').addEventListener('click', async () => {
+      if (!confirm('Save the four missing examples? Existing names will be skipped, never overwritten. Packages install only on first Run / Test.')) return;
+      const button = el('#installExamplesBtn'); button.disabled = true;
+      let created = 0, skipped = 0;
+      const errors = [];
+      try {
+        const { tools } = await api('/api/tools');
+        const names = new Set(tools.map(t => t.name));
+        for (const example of Object.values(EXAMPLES)) {
+          if (names.has(example.name)) { skipped++; continue; }
+          try {
+            await api('/api/tools', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...example, json_schema: {}, is_active: true }) });
+            names.add(example.name); created++;
+          } catch (err) {
+            // A concurrent creator may claim this name; POST is create-only.
+            if (err.message.startsWith('HTTP 409:')) skipped++;
+            else errors.push(`${example.name}: ${err.message}`);
+          }
+        }
+        await loadTools();
+        showOutput(`Examples: ${created} saved, ${skipped} existing names skipped. Packages install only on first Run / Test.` +
+          (errors.length ? '\n' + errors.join('\n') : ''), errors.length > 0);
+      } catch (err) { showOutput(`Examples: ${created} saved, ${skipped} skipped. ${err.message}`, true); }
+      finally { button.disabled = false; }
     });
 
     el('#toolForm').addEventListener('submit', async (e) => {
@@ -184,8 +375,7 @@
         await api(current ? `/api/tools/${encodeURIComponent(current.name)}` : '/api/tools', {
           method: current ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
-        await loadTools();
-        const { tools } = await api('/api/tools');
+        const tools = await loadTools();
         selectTool(tools.find(t => t.name === body.name));
         showOutput('Saved. Click Run / Test to execute the saved code.');
       } catch (err) { showOutput(err.message, true); }
@@ -193,11 +383,11 @@
 
     el('#runBtn').addEventListener('click', async () => {
       if (!current) { showOutput('Save or select a tool before running it.', true); return; }
-      if (val('name') !== current.name || val('code') !== current.code || val('language') !== current.language) {
+      if (val('name') !== current.name || val('code') !== current.code || val('language') !== current.language || JSON.stringify(val('requirements').split('\n').map(x => x.trim()).filter(Boolean).sort()) !== JSON.stringify(JSON.parse(current.requirements_json || '[]').sort())) {
         showOutput('Save your changes before running this tool.', true); return;
       }
       const button = el('#runBtn'); button.disabled = true;
-      showOutput('Running…');
+      showOutput(JSON.parse(current.requirements_json || '[]').length ? 'Preparing dependencies… First installation may take up to 120 seconds (plus a bounded lock wait if another run is installing); cached packages are reused. Then running script…' : 'Running…');
       try {
         const d = await api(`/api/tools/${encodeURIComponent(current.name)}/run`, { method: 'POST' });
         showOutput(`${d.exit_code === 0 ? 'OK' : 'ERROR'} (exit ${d.exit_code}${d.timed_out ? ', timeout' : ''}, ${d.duration_ms} ms)\n\n${(d.stdout || '') + (d.stderr ? '\n' + d.stderr : '') || '(no output — use print() in Python or console.log() in Node)'}`, d.exit_code !== 0);
@@ -212,7 +402,6 @@
         resetForm(); await loadTools();
       } catch (err) { showOutput(err.message, true); }
     });
-    el('#closeForm').addEventListener('click', resetForm);
 
     el('#configBtn').addEventListener('click', async () => {
       const dialog = el('#configDialog'); const content = el('#configContent');
@@ -238,6 +427,64 @@
       } catch (err) { content.textContent = err.message; }
     });
     el('#closeConfig').addEventListener('click', () => el('#configDialog').close());
+
+    function setSidebar(side, collapsed) {
+      const title = side === 'left' ? 'tool library' : 'tool settings';
+      const control = el(side === 'left' ? '#collapseLeft' : '#collapseRight');
+      el(`#${side}Panel`).classList.toggle('collapsed', collapsed);
+      el('#toolForm').classList.toggle(`${side}-collapsed`, collapsed);
+      control.setAttribute('aria-expanded', String(!collapsed));
+      control.setAttribute('aria-label', `${collapsed ? 'Expand' : 'Collapse'} ${title}`);
+      control.title = `${collapsed ? 'Expand' : 'Collapse'} ${title}`;
+    }
+    for (const side of ['left', 'right']) {
+      const control = el(side === 'left' ? '#collapseLeft' : '#collapseRight');
+      control.addEventListener('click', () => setSidebar(side, control.getAttribute('aria-expanded') === 'true'));
+    }
+    el('#helpBtn').addEventListener('click', () => el('#helpDialog').showModal());
+    el('#tipsHelpBtn').addEventListener('click', () => el('#helpDialog').showModal());
+    el('#closeHelp').addEventListener('click', () => el('#helpDialog').close());
+
+    function updateGutter() {
+      const code = el('[name="code"]');
+      el('#lineNumbers').textContent = Array.from({ length: code.value.split('\n').length }, (_, i) => i + 1).join('\n');
+      el('#lineNumbers').scrollTop = code.scrollTop;
+    }
+    const codeEditor = el('[name="code"]');
+    codeEditor.addEventListener('input', updateGutter);
+    codeEditor.addEventListener('scroll', () => { el('#lineNumbers').scrollTop = codeEditor.scrollTop; });
+    let leaveEditor = false;
+    codeEditor.addEventListener('blur', () => { leaveEditor = false; });
+    codeEditor.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { leaveEditor = true; return; }
+      if (e.key !== 'Tab') { leaveEditor = false; return; }
+      if (leaveEditor || e.ctrlKey || e.metaKey || e.altKey) { leaveEditor = false; return; }
+      e.preventDefault();
+      const start = codeEditor.selectionStart, end = codeEditor.selectionEnd;
+      if (start === end && !e.shiftKey) {
+        codeEditor.setRangeText('  ', start, end, 'end');
+      } else {
+        const text = codeEditor.value;
+        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+        // Exclude the next line when selection ends exactly at its beginning.
+        const effectiveEnd = end > start && text[end - 1] === '\n' ? end - 1 : end;
+        const nextBreak = text.indexOf('\n', effectiveEnd);
+        const lineEnd = nextBreak === -1 ? text.length : nextBreak;
+        const lines = text.slice(lineStart, lineEnd).split('\n');
+        let delta = 0, firstDelta = 0;
+        const changed = lines.map((line, i) => {
+          const remove = e.shiftKey ? (line.match(/^(?: {1,2}|\t)/)?.[0].length || 0) : 0;
+          const diff = e.shiftKey ? -remove : 2;
+          delta += diff;
+          if (i === 0) firstDelta = diff;
+          return e.shiftKey ? line.slice(remove) : '  ' + line;
+        }).join('\n');
+        codeEditor.setRangeText(changed, lineStart, lineEnd, 'preserve');
+        codeEditor.setSelectionRange(Math.max(lineStart, start + firstDelta), Math.max(lineStart, end + delta));
+      }
+      updateGutter();
+    });
+    updateGutter();
 
     loadTools().catch(err => showOutput(err.message, true));
   </script>

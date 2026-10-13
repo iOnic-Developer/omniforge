@@ -18,7 +18,7 @@ ENV VIRTUAL_ENV=/opt/venv \
     PYTHONPATH=/app
 COPY --from=build /opt/venv /opt/venv
 # Create the runtime data dir as root, then hand ownership to uid 1000.
-RUN mkdir -p /opt/omniforge/data && chown -R 1000:1000 /opt/omniforge
+RUN mkdir -p /opt/omniforge/data /opt/omniforge/lib /opt/omniforge/scripts && chown -R 1000:1000 /opt/omniforge
 USER 1000:1000
 WORKDIR /app
 COPY --chown=1000:1000 app ./app
