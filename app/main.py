@@ -82,6 +82,26 @@ async def dashboard():
         return fh.read()
 
 
+@app.get("/api/config")
+async def api_config():
+    """Public connection metadata only: never return credentials."""
+    return {
+        "mcp_path": "/mcp",
+        "transport": "HTTP JSON-RPC POST (limited MCP implementation)",
+        "auth_enabled": bool(API_KEY),
+        "auth_header": "Authorization: Bearer <YOUR_API_KEY>",
+        "auth_configuration": "Set OMNIFORGE_API_KEY in the server environment and recreate the container.",
+        "dashboard_auth_enabled": False,
+        "connection_tracking": False,
+        "methods": ["initialize", "tools/list", "tools/call", "ping"],
+        "warnings": [
+            "Dashboard and tool-management API are unauthenticated. Keep this server on a trusted network.",
+            "Scripts share the application container; only run trusted code.",
+            "OAuth, client/session tracking and full Streamable HTTP transport are not implemented.",
+        ],
+    }
+
+
 @app.get("/api/tools")
 async def api_list_tools():
     return {"tools": db.get_tool_list()}
