@@ -1,0 +1,285 @@
+{
+  "formatVersion": 2,
+  "provenance": {
+    "capturedAt": "2026-10-16T12:40:39.649Z",
+    "sourceCommit": "b71cad3a30b2325fa8e26574d432593816fdb108",
+    "baseRevision": "4ae443d26601c217d33aec77fa5002a7dc3dac2e",
+    "appVersion": "0.1.0",
+    "snapshotFields": {
+      "app/main.py": "1f3dc9170c4590943697a25da81f39bb6e4ebac034714842cb32f9fed2adc88c",
+      "app/tool_authoring.py": "d94d6ecd3177bfebd2b8d453a95580dec08df1cbaf8e72883b77b527235a79f7",
+      "app/templates/dashboard.html": "edf9dcfacab5bcaee687025cd220169f25b2288d2c1b381fea77e55fc162f969",
+      "app/runner.py": "6b3da1e913b074d17af51c4cb1ba463310bc56530f9f5e03b5512ee35ba1e747",
+      "app/static/product.css": "ad812a888427a97c10fea3daaa007fc56ff68b6bf7f3c6ce3e4d2081555cf295"
+    },
+    "source": "Actual worktree app via loopback uvicorn; no mocked API or fabricated output",
+    "annotation": "Example workspace · sample tools is a capture-only DOM badge, not product UI",
+    "data": "Temporary SQLite, library and scratch; three fixed baked-in examples, two actual built-in helpers",
+    "desktop": {
+      "width": 1440,
+      "height": 1000
+    },
+    "mobile": {
+      "width": 375,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "externalBrowserRequests": 0,
+    "browserErrors": [],
+    "expectedUnauthenticatedMcpStatus": 401,
+    "gifSha256": "e817764f8034311bb7bcbea505fa830def0d4b9a8b2b9c2a5bdb2f4c3bb67745",
+    "gif": "Refreshed from actual browser frames"
+  },
+  "runs": [
+    {
+      "tool": "slugify_text",
+      "arguments": {
+        "text": "Build useful tools, simply!"
+      },
+      "stdout": "{\"slug\": \"build-useful-tools-simply\"}",
+      "exit_code": 0
+    },
+    {
+      "tool": "summarize_json",
+      "arguments": {
+        "record": {
+          "title": "Sample report",
+          "items": [
+            1,
+            2,
+            3
+          ],
+          "ready": true
+        }
+      },
+      "stdout": "{\"fields\":3,\"types\":[{\"key\":\"items\",\"type\":\"array\"},{\"key\":\"ready\",\"type\":\"boolean\"},{\"key\":\"title\",\"type\":\"string\"}]}",
+      "exit_code": 0
+    },
+    {
+      "tool": "summarize_csv",
+      "arguments": {
+        "csv": "item,quantity,price\nNotebook,3,4.50\nPencil,6,0.75\nFolder,2,2.00\n"
+      },
+      "stdout": "{\"rows\": 3, \"quantity\": 11, \"total\": \"22.00\"}",
+      "exit_code": 0
+    },
+    {
+      "via": "UI Run / Test",
+      "tool": "summarize_json",
+      "arguments": {
+        "record": {
+          "title": "Sample report",
+          "items": [
+            1,
+            2,
+            3
+          ],
+          "ready": true
+        }
+      },
+      "stdout": "{\"fields\":3,\"types\":[{\"key\":\"items\",\"type\":\"array\"},{\"key\":\"ready\",\"type\":\"boolean\"},{\"key\":\"title\",\"type\":\"string\"}]}",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "via": "UI Run / Test",
+      "tool": "summarize_csv",
+      "arguments": {
+        "csv": "item,quantity,price\nNotebook,3,4.50\nPencil,6,0.75\nFolder,2,2.00\n"
+      },
+      "stdout": "{\"rows\": 3, \"quantity\": 11, \"total\": \"22.00\"}",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "via": "UI Run / Test",
+      "tool": "summarize_csv",
+      "arguments": {
+        "csv": "invalid example"
+      },
+      "stdout": "",
+      "stderr": "Example error: CSV needs item,quantity,price headers.",
+      "exit_code": 2
+    },
+    {
+      "via": "UI Run / Test",
+      "tool": "summarize_json",
+      "arguments": {
+        "record": {
+          "title": "Sample report",
+          "items": [
+            1,
+            2,
+            3
+          ],
+          "ready": true
+        }
+      },
+      "stdout": "{\"fields\":3,\"types\":[{\"key\":\"items\",\"type\":\"array\"},{\"key\":\"ready\",\"type\":\"boolean\"},{\"key\":\"title\",\"type\":\"string\"}]}",
+      "stderr": "",
+      "exit_code": 0
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "overview-desktop.png",
+      "alt": "Real OmniForge 0.1.0 overview: three saved, enabled sample tools and two built-in helpers.",
+      "width": 1440,
+      "height": 1000,
+      "route": "#overview",
+      "theme": "light",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1093,
+      "sha256": "1a11de44234857bfe36a4d1ff85ea0da112dfbe71c848ffb1c702f1583fa2bd8"
+    },
+    {
+      "file": "overview-dark-desktop.png",
+      "alt": "The same isolated example workspace in the dark theme.",
+      "width": 1440,
+      "height": 1000,
+      "route": "#overview",
+      "theme": "dark",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1093,
+      "sha256": "e0016aee9b9c05c5282cc93ef9909e40de4b4b69eb00a52926ce0e2150eba683"
+    },
+    {
+      "file": "tools-desktop.png",
+      "alt": "Actual library of Python slug, Node JSON and Python CSV sample tools; no installed packages.",
+      "width": 1440,
+      "height": 1000,
+      "route": "#tools",
+      "theme": "light",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1000,
+      "sha256": "99f4fe2a98abd80bcb25ef5e4179179a9952aaeb299b1bc2f0be203ec5b430f6"
+    },
+    {
+      "file": "studio-desktop.png",
+      "alt": "Saved Python CSV tool, standard-library source, JSON inputs and real stdout: three rows, quantity eleven, total 22.00.",
+      "width": 1440,
+      "height": 1755,
+      "route": "#tools/edit/summarize_csv",
+      "theme": "light",
+      "fullPage": true,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1755,
+      "sha256": "429ecc8619671f420dc7ec8ed10abceb8cb5d82705c590928fc2aa62b208558a"
+    },
+    {
+      "file": "studio-error-desktop.png",
+      "alt": "Controlled schema-valid CSV input runs the saved Python script: actual exit code 2 and safe explanatory stderr.",
+      "width": 1440,
+      "height": 1733,
+      "route": "#tools/edit/summarize_csv",
+      "theme": "light",
+      "fullPage": true,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1733,
+      "sha256": "85ea804f490d526dd52311b742358bb04e367e20110b0ddcb0ee82c2c6ec475e"
+    },
+    {
+      "file": "connect-desktop.png",
+      "alt": "Real Connect screen with fixture auth enabled, loopback endpoint and safe Authorization placeholder; no token displayed.",
+      "width": 1440,
+      "height": 1432,
+      "route": "#connect",
+      "theme": "light",
+      "fullPage": true,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1432,
+      "sha256": "97110b2865f4e686f18a8e99b2da10f33f995b9a60f0188d9164361d83fe329e"
+    },
+    {
+      "file": "help-desktop.png",
+      "alt": "Actual Help page with first-tool guidance, templates and security limitations.",
+      "width": 1440,
+      "height": 1000,
+      "route": "#help",
+      "theme": "light",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "scrollY": 0,
+      "documentHeight": 1702,
+      "sha256": "496a337a9aa162b5b292dd21aa23c21f60ca5f76db4bda6467aae212d68ae7a6"
+    },
+    {
+      "file": "overview-mobile.png",
+      "alt": "Actual overview at 375 by 900 CSS pixels with mobile navigation.",
+      "width": 375,
+      "height": 900,
+      "route": "#overview",
+      "theme": "light",
+      "fullPage": false,
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "scrollY": 0,
+      "documentHeight": 1631,
+      "sha256": "c97c33382b476d10537c00e2812a0ea8573b7cd8809bc6b436ebcb860390049c"
+    },
+    {
+      "file": "tools-mobile.png",
+      "alt": "Three real saved standard-library sample tools in the phone library at 375 by 900.",
+      "width": 375,
+      "height": 900,
+      "route": "#tools",
+      "theme": "light",
+      "fullPage": false,
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "scrollY": 0,
+      "documentHeight": 1290,
+      "sha256": "317c9c4873e18dd043b727466d837db60f2342266dc58ff2ca9f6acd1dbef464"
+    },
+    {
+      "file": "studio-mobile.png",
+      "alt": "Saved Node JSON tool on a 375 by 900 viewport, with schema-valid JSON and genuine successful subprocess output.",
+      "width": 375,
+      "height": 2340,
+      "route": "#tools/edit/summarize_json",
+      "theme": "light",
+      "fullPage": true,
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "scrollY": 0,
+      "documentHeight": 2340,
+      "sha256": "b2f14073bd5e728644a8017d8516ecd35f1d621ed4b148c690efd09f0516d24e"
+    }
+  ]
+}

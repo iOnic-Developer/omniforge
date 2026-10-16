@@ -1,0 +1,25 @@
+/* Public guide layout, layered over the product page's local design tokens. */
+.guide-header { padding-block: 2rem; border-bottom: 1px solid currentColor; }
+.guide-layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 3rem; padding-block: 3rem; }
+.guide-nav { display: flex; flex-direction: column; gap: .5rem; align-self: start; }
+.guide-nav a { padding: .6rem; min-height: 44px; }
+.guide-nav a[aria-current] { font-weight: 800; text-decoration-thickness: 3px; }
+.guide-content { min-width: 0; overflow-wrap: anywhere; }
+.guide-content h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.15; }
+.guide-content h2 { font-size: 1.8rem; margin-block: 2rem 1rem; }
+.guide-content h3 { margin-top: 1.5rem; }
+.guide-content p, .guide-content ul, .guide-content ol { margin-block: 1rem; }
+.guide-content li { margin-block: .4rem; }
+.guide-content ul, .guide-content ol { padding-left: 1.5rem; }
+.guide-content pre { max-width: 100%; overflow: auto; padding: 1rem; }
+.guide-content img { max-width: 100%; height: auto; }
+.guide-content table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin-block: 1.5rem; }
+.guide-content th, .guide-content td { padding: .7rem; border: 1px solid currentColor; text-align: left; min-width: 8rem; }
+.guide-content blockquote { border-left: 3px solid currentColor; padding-left: 1rem; margin-inline: 0; }
+.guide-content pre:focus-visible, .guide-content table:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+.repository-required { font-style: italic; }
+.guide-footer { padding-block: 2rem; border-top: 1px solid currentColor; }
+@media (max-width: 800px) {
+  .guide-layout { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .guide-nav { flex-direction: row; flex-wrap: wrap; }
+}
