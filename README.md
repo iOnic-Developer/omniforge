@@ -1,275 +1,174 @@
+<p align="center"><img src="docs/assets/banner.png" width="1280" alt="OmniForge — Your scripts. Your AI’s tools. Create, test, discover."></p>
+
 # OmniForge
 
-A self-updating, Dockerized MCP server platform. Write, test, and deploy custom
-Python/Node scripts as live tools for LLMs over the Model Context Protocol — all
-from a single container.
+**Turn your Python and Node scripts into tools for your AI.**
 
-## Features
+A self-hosted workspace for trusted code: author a script, save it, test the saved
+version with JSON, then let an MCP client discover and call it. One container;
+a browser dashboard; your own tool library.
 
-- **Web dashboard** to create, edit, test, and delete tools.
-- **Trusted-script execution** via Python/Node subprocesses in the application container (not isolated sandboxes).
-- **Built-in MCP authoring tools** for instructions and create-only registration; available even with an empty database.
-- **Lazy dependency installation**: per-tool persistent pip/npm caches, strict package names, wheels-only Python installs and disabled npm lifecycle scripts.
-- **Hot-reload**: tool registry is read per request — no restart needed.
-- **MCP endpoint** (`/mcp`) exposing tools to external LLM clients.
-- **SQLite metadata** with atomic writes.
+<p align="center">
+  <a href="https://ionic-developer.github.io/omniforge/site/"><strong>Product page</strong></a> ·
+  <a href="#get-started">Get started</a> ·
+  <a href="https://ionic-developer.github.io/omniforge/site/guides/Getting-Started.html">Guides</a> ·
+  <a href="docs/wiki/Home.md">Full documentation</a> ·
+  <a href="https://hub.docker.com/r/dbzocchi/omniforge">Docker Hub</a>
+</p>
 
-## Quick start
+<p align="center"><img src="docs/assets/screenshots/overview-desktop.png" width="1100" alt="OmniForge Overview: saved tools and a clear create, test and connect workflow, using example data"></p>
+
+## Inside OmniForge
+
+| Find your tools | Write, save and test |
+| --- | --- |
+| <img src="docs/assets/screenshots/tools-desktop.png" width="540" alt="Searchable Python and Node tool library with runtime and enabled-state controls"> | <img src="docs/assets/screenshots/studio-desktop.png" width="540" alt="Python Tool studio with source, JSON test inputs and an actual successful result"> |
+| Search by name and purpose. Filter by runtime. Choose what your client can discover. | Test the saved version and inspect stdout, stderr, exit status and timing. |
+
+| Light or dark | The same workflow on your phone |
+| --- | --- |
+| <img src="docs/assets/screenshots/overview-dark-desktop.png" width="640" alt="OmniForge Overview in its dark theme"> | <img src="docs/assets/screenshots/tools-mobile.png" width="230" alt="OmniForge Tools library at a phone viewport with labelled bottom navigation"> |
+
+<details>
+<summary><strong>Watch the workflow</strong> — library, studio, saved-code test and connection details</summary>
+
+![Real application demonstration using local example tools](docs/assets/demo.gif)
+
+</details>
+
+*Screenshots and animation are captured from the real application using a disposable example workspace—not customer data, invented usage or verified third-party connections.*
+
+## Your code, callable by your AI
+
+Use OmniForge for small, focused actions: normalise text, summarise JSON or wrap
+an internal task you already trust. Scripts receive one JSON object on stdin and
+print their result to stdout. Enabled tools appear on the next `tools/list`;
+clients may need a refresh, but the server needs no restart.
+
+**MCP Station connects integrations. OmniForge turns code you author into tools.**
+Choose the former to connect services; choose the latter when the action is a
+Python or Node script you want to own, test and expose deliberately.
+
+- **Author and organise.** Overview, tool library, Tool studio, Connect and Help;
+  light/dark themes, responsive layout and an installable PWA on localhost/HTTPS.
+- **Save, then test.** Run / Test executes the saved version and shows stdout,
+  stderr, exit code and duration. Saving alone never executes code.
+- **Define the contract.** JSON Schema Draft 2020-12 validates inputs before a
+  run. Create parameterised tools through the API or built-in authoring helper;
+  the dashboard currently preserves schemas but cannot edit them.
+- **Keep packages per tool.** Validated pip/npm requirements install on first
+  execution into persistent caches. Standard-library tools need no install.
+- **Author through MCP too.** `omniforge_instructions` explains the contract;
+  `omniforge_create_tool` saves a new tool without running it.
+
+These capabilities describe this application source; published image tags may differ. See [image provenance](docs/wiki/Release-and-Deployment.md#published-image-inventory).
+
+## Before you install
+
+> **Single-admin, trusted-network use only.** There are no human logins or user
+> accounts. The dashboard and management API are unauthenticated. Scripts share
+> the app container, environment, network and writable data; this is **not a
+> sandbox**. The optional key protects only `POST /mcp`. Start on localhost;
+> never port-forward the service or expose it to cloud clients as-is.
+>
+> [Security model and limits](docs/wiki/Security-and-Limitations.md) ·
+> [Transport and client compatibility](docs/wiki/Connecting-MCP-Clients.md)
+
+## Get started
+
+You need Docker on a Linux/amd64 host. In a **new deployment directory**, generate
+an MCP key without putting a credential in the command or Compose file:
 
 ```bash
-# Create a private key (or leave OMNIFORGE_API_KEY empty for local testing)
-cp .env.example .env
-
-# Build and run
-docker compose up --build
-
-# Dashboard: http://localhost:8000
-# MCP endpoint: http://localhost:8000/mcp
+umask 077
+printf 'OMNIFORGE_API_KEY=%s\n' "$(openssl rand -hex 32)" > .env
 ```
 
-## Configuration
+Save this as `compose.yaml` alongside `.env`:
 
-| Variable | Default | Description |
-|---|---|---|
-| `OMNIFORGE_API_KEY` | *(empty)* | Bearer key required on POST `/mcp`. Empty disables auth. |
-| `OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS` | `30000` | Configured timeout (ms); runner currently adds 15 seconds. |
-| `OMNIFORGE_MAX_SCRIPT_MEMORY_MB` | `512` | Declared value only; not enforced per script. |
-| `OMNIFORGE_DB_PATH` | `/opt/omniforge/data/omniforge.db` | SQLite database path. |
-| `OMNIFORGE_LIB_ROOT` | `/opt/omniforge/lib` | Writable persistent per-tool pip/npm dependency caches. |
-| `OMNIFORGE_SCRIPT_HOST` | `/opt/omniforge/scripts` | Historical setting; runner uses OMNIFORGE_SCRATCH_ROOT instead. |
-| `OMNIFORGE_SCRATCH_ROOT` | `/tmp/omniforge` | Shared scratch directory for subprocess scripts. |
-
-## Architecture
-
+```yaml
+services:
+  omniforge:
+    image: dbzocchi/omniforge:latest
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      OMNIFORGE_API_KEY: ${OMNIFORGE_API_KEY:?Generate a key in .env first}
+    volumes:
+      - omniforge_data:/opt/omniforge/data
+      - omniforge_lib:/opt/omniforge/lib
+    restart: unless-stopped
+volumes:
+  omniforge_data:
+  omniforge_lib:
 ```
-Browser / LLM Client
-  ├── Dashboard (GET /)  → FastAPI web UI
-  ├── API (POST/PUT/DELETE /api/tools)  → tool CRUD
-  └── MCP (POST /mcp)  → JSON-RPC tools/list, tools/call
-        ↓
-        FastAPI app (app/main.py)
-        ├── database.py  → SQLite storage + hot-reload cache
-        ├── runner.py    → shared-container subprocess execution engine
-        └── mcp_server.py → MCP tool schema + routing
-```
-
-## Security
-
-- Scripts share the application environment, network and writable data, including
-  potential credentials. Only allow trusted authors. Container-level protections
-  are not a per-script sandbox; memory/output limits and process-tree termination
-  are not implemented.
-- Tool names are validated against a strict regex.
-- The `/mcp` endpoint accepts an optional Bearer API key.
-
-## Deployment to Docker Hub
 
 ```bash
-docker buildx build --load -t dbzocchi/omniforge:latest .
-docker push dbzocchi/omniforge:latest
+docker compose up -d
 ```
 
-## Project layout
+Open **http://localhost:8000** on the Docker host. In the reviewed dashboard,
+choose **Start with a template → Python greeting → Save tool → Run / Test**.
+Only run scripts you have reviewed and authorised.
 
+**Choose an image deliberately.** On October 16, 2026, Docker Hub had both
+`latest` (last published October 13) and `0.2.0_beta` (October 16), each with a
+Linux/amd64 runtime image. `latest` is a moving main-channel tag, not a stable
+release promise. The beta tag's presence is not feature or compatibility
+verification. Pin a tested digest for repeatable deployments.
+[Inventory, provenance and upgrades](docs/wiki/Release-and-Deployment.md).
+
+This quickstart uses the published image, **not** the repository's source-build
+`docker-compose.yml`. Keep `.env` private and out of version control. Named
+volumes persist tools and package caches; [back up the database](docs/wiki/Backup-and-Restore.md).
+For source access, Unraid, bind-mount ownership and optional container hardening,
+see [Installation](docs/wiki/Installation.md).
+
+## Connect and verify
+
+OmniForge implements **limited HTTP JSON-RPC POST**, not full MCP Streamable
+HTTP. The supported methods are `initialize`, `tools/list`, `tools/call` and
+`ping`. `GET /mcp` is only a one-event SSE stub. There is no OAuth, session
+tracking or tool-list change notification. Third-party client compatibility
+must be tested; a client displaying “HTTP” support is not sufficient.
+
+From the deployment directory, using the generated key:
+
+```bash
+set -a
+. ./.env
+set +a
+curl --fail-with-body -sS http://localhost:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $OMNIFORGE_API_KEY" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
-omniforge/
-├── app/
-│   ├── __init__.py
-│   ├── database.py       # SQLite storage + hot-reload cache
-│   ├── runner.py         # shared-container subprocess execution engine
-│   ├── mcp_server.py     # Built-ins, MCP tool schema + routing
-│   ├── tool_authoring.py # Shared metadata/input validation + save-only helper
-│   ├── main.py           # FastAPI app: dashboard, API, MCP endpoint
-│   └── templates/
-│       └── dashboard.html
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── .gitignore
-└── .env.example
-```
 
-## Product dashboard and PWA
+For local or trusted-network clients, follow
+[Connecting MCP clients](docs/wiki/Connecting-MCP-Clients.md). The localhost bind
+above is intentionally unreachable from another host/container. Remote cloud
+connectors need security work beyond these docs—not a tunnel to this open admin
+surface.
 
-The dashboard is organized into **Overview, Tools, Connect and Help**, with a
-separate tool studio instead of permanent editor side panels. Start with a template,
-save, then Run / Test. The tool library supports search and state/runtime filters.
-Enabled scripts become discoverable on the client's next tool-list refresh.
+## Learn, build, operate
 
-- **Overview:** first-use create/test/connect guide and real library counts.
-- **Tools:** searchable saved scripts; dedicated editor with folded packages,
-  dirty-state safeguards, independent save/test and explicit output/error feedback.
-- **Connect:** current-origin endpoint, real POST auth status and copyable HTTP
-  request metadata. Configured API keys are never returned or displayed.
-- **Help:** the four original templates, input/output/package contracts,
-  troubleshooting, keyboard shortcuts and app installation instructions.
-
-Self-hosted Manrope and JetBrains Mono fonts include their OFL licenses. An original
-geometric logo, SVG/PNG favicons, Apple touch icon and regular/maskable app icons
-are included. Light, dark and system appearance are supported. Phone navigation
-has four labelled destinations; keyboard editing and reduced motion are supported.
-
-**PWA:** on eligible HTTPS browsers, use Install app when shown; Safari users can
-use Share → Add to Home Screen. HTTP LAN addresses generally aren't eligible;
-localhost is usable for development. Saving, package installation and execution
-require the server. Offline navigation shows a generic reconnect page. The worker
-caches only known public static assets — never dashboard HTML, API/MCP responses,
-code, results or credentials. Updates are opt-in; unsaved drafts are guarded. Theme
-is the only localStorage preference; drafts live only in the current tab.
-
-**Security limitations remain unchanged:** dashboard and management API are
-unauthenticated. Optional Bearer auth protects POST /mcp only, not GET /mcp or the
-management API. Scripts share the application container, environment and writable
-data; they are not isolated sandboxes. Keep the service on a trusted network.
-
-Transport is limited HTTP JSON-RPC, not full Streamable HTTP. OAuth and connected
-client/session tracking are not implemented. Verify your client's compatibility.
-
-See `docs/product-design.md` for architecture, cache/update semantics, accessibility
-choices and repeatable browser tests. No auth migration or deployment is required
-by the UI architecture itself.
-
-## Built-in MCP script authoring
-
-Two tools are always discoverable through `tools/list`, including with an empty
-SQLite database:
-
-| Tool | Purpose |
+| Goal | Guide |
 |---|---|
-| `omniforge_instructions` | Call with `{}` for the contract, copyable Python/Node creation examples, workflow and safety/transport limitations. No environment or credential values are returned. |
-| `omniforge_create_tool` | Save a new script, **without executing it or installing dependencies**. It never overwrites an existing name. |
+| Make a first working tool | [Getting started](docs/wiki/Getting-Started.md) |
+| Try useful dependency-free scripts | [Examples and import payloads](examples/README.md) |
+| Understand stdin, stdout and schemas | [Writing tools](docs/wiki/Writing-Tools.md) |
+| Look up all routes and request fields | [API reference](docs/wiki/API-Reference.md) |
+| Manage packages and failures | [Dependencies](docs/wiki/Dependencies.md) |
+| Configure and back up a deployment | [Configuration](docs/wiki/Configuration.md) · [Backup](docs/wiki/Backup-and-Restore.md) |
+| Debug or develop | [Troubleshooting](docs/wiki/Troubleshooting-and-FAQ.md) · [Development and testing](docs/wiki/Development-and-Testing.md) |
 
-1. Read `omniforge_instructions`.
-2. Submit `name`, `code`, optional `description`, `language` (default `python3`),
-   `inputSchema`, `requirements` (optional package-name array), and `is_active` (default `true`) to
-   `omniforge_create_tool`. Code must be nonempty and contain no NUL characters.
-   Languages `python`/`python3` and `node`/`js`/`javascript` are accepted and normalised.
-3. Refresh `tools/list`. Active tools are available immediately; inactive tools
-   remain saved but cannot be called over MCP. There are no list-change notifications.
-4. Call the saved tool separately with an `arguments` JSON object. Existing tools
-   are edited via the dashboard, not the create built-in.
+The [full documentation](docs/wiki/Home.md) covers the dashboard, architecture, protocol,
+PWA, security and deployment. The [product website](https://ionic-developer.github.io/omniforge/site/)
+includes rendered getting-started, installation, script-writing and testing guides.
+The `docs/wiki/` folder is the complete reference; a separate native GitHub Wiki is not enabled.
 
-Names must match `[a-zA-Z][a-zA-Z0-9_-]{0,62}`. Both built-in names are reserved
-in dashboard creation/editing as well as MCP. Legacy rows using those names are
-not removed, but cannot shadow the built-ins or be run via the dashboard. New
-writes reject duplicate names (including inactive tools and rename collisions)
-inside a serialized SQLite transaction. Existing legacy duplicates are preserved;
-there is no destructive database migration.
+## Source and licence
 
-### Requirements: install on first execution
-
-Both dashboard and MCP creation accept up to 50 package names. Saving validates
-names but never installs or runs code. The first Run / Test or MCP call installs
-missing environments; subsequent calls reuse a completed cache.
-
-- Python: `requests` or `requests==2.32.5`. Strict package names and optional
-  exact numeric/release-version pins only; no extras, ranges or markers.
-  `pip --target --only-binary=:all: --no-cache-dir --disable-pip-version-check`
-  uses the official PyPI index. No source builds or system binaries.
-- Node (CommonJS `require`): `lodash`, `lodash@4.17.21`, or
-  `@scope/package@1.2.3`. Exact semver pins only, not ranges or tags.
-  `npm --prefix --ignore-scripts --no-audit --no-fund` uses the official registry
-  and a writable cache. Packages requiring lifecycle scripts/native builds are
-  unsupported; ESM imports do not resolve through `NODE_PATH`.
-- URLs, VCS, paths, flags, aliases, tarballs and installation commands are rejected.
-
-Environments live at `OMNIFORGE_LIB_ROOT/<tool-id-hash>/<language>/<requirements-hash>`.
-Each install uses a unique staging directory and an `fcntl` file lock (125-second
-bounded wait). A success marker is published atomically only after the installer
-finishes. Failed/120-second timed-out installs abort execution, return bounded
-sanitized diagnostics and remove only their own staging directory. Existing
-unmarked directories are never deleted automatically. Changed requirements make
-another environment; old caches remain until an administrator removes them.
-Unpinned names reuse their first resolved versions, not automatically updated ones.
-
-The library volume must be writable by UID 1000. New image directories are owned
-by UID 1000; existing bind mounts need matching ownership configured separately.
-Read-only root filesystems and a 128 MiB `noexec` `/tmp` tmpfs are supported: package
-installation staging, HOME, TMPDIR and npm cache use the writable library volume.
-Do not mount the Docker socket. No packages install on the NAS host.
-
-Installer children receive a minimal environment, no app API keys or inherited
-pip/npm configuration. Script children still inherit the application environment
-with their own dependency directory prepended to `PYTHONPATH`/`NODE_PATH`:
-**trusted code and trusted dependencies only; this is not sandbox isolation**.
-Dependency preparation is synchronous and may block other requests in the current
-single-worker design. The existing script timeout starts after preparation.
-
-### Input and output contract
-
-`inputSchema` must be a JSON Schema Draft 2020-12 object schema. Omitted/empty
-schemas mean no inputs (`additionalProperties: false`). Only local references
-are accepted: validation does not fetch remote schemas. MCP and dashboard tests validate arguments
-before execution; formats are annotations, and schema defaults are not inserted.
-Invalid arguments/metadata return MCP text content with `isError: true` and do
-not execute code. Syntax and runtime errors are reported only on execution.
-
-Arguments are encoded as **one JSON object on stdin**, without shell interpolation
-or converting inputs to environment variables. Dashboard Run / Test accepts a JSON object in Test inputs (default `{}`) and validates it against the saved schema before executing. Invalid inputs are rejected without running code.
-Stdout is returned as MCP text; print JSON if clients need structured data.
-A function's return value is not captured. Avoid printing secrets.
-
-Python example:
-
-```python
-import json
-import sys
-
-args = json.load(sys.stdin)
-print(json.dumps({"message": "Hello " + args.get("name", "world")}))
-```
-
-Node example (CommonJS):
-
-```javascript
-const fs = require('node:fs');
-const args = JSON.parse(fs.readFileSync(0, 'utf8'));
-console.log(JSON.stringify({message: 'Hello ' + (args.name || 'world')}));
-```
-
-For either example, supply this `inputSchema` when creating it:
-
-```json
-{"type":"object","properties":{"name":{"type":"string"}},"additionalProperties":false}
-```
-
-Then POST this JSON-RPC request to `/mcp` (use the existing Bearer credential
-locally when enabled; never put credential values in source or tool instructions):
-
-```json
-{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"greet_python","arguments":{"name":"David"}}}
-```
-
-**Important:** this is still limited HTTP JSON-RPC, not full MCP Streamable HTTP.
-GET `/mcp` is an initial SSE stub. OAuth, sessions and list-change notifications
-are absent. JSON stdin does not fix subprocess isolation: scripts still inherit
-the application environment and can access credentials/data. No shell/host,
-credential configuration or deployment tools are added. Dependency installation
-is limited to the validated package requirements described above. Keep both authors and clients trusted and the service on a trusted network.
-
-### Starting a new tool and loading examples
-
-Use **Create a tool** in Overview or Tools to enter the focused studio. Choose
-**Use a template** or a template in Help, then **Save tool → Run / Test**. Templates
-always prepare a new draft; replacing dirty fields requires confirmation. Saved
-tools are unchanged until Save. Changing name, code, description, runtime or
-requirements disables testing until those changes are saved.
-
-The four original examples remain unchanged. Python and Node greeting examples
-need no packages; requests and lodash examples fill Packages automatically and
-install on first execution. **Add all missing examples** in Help saves missing
-names only; existing/customized examples are never overwritten or executed.
-
-### Concurrent edits and testing
-
-Tool metadata includes a content revision. The dashboard sends it with
-`If-Match` for updates, deletion, enabling/disabling and tests. Stale operations
-return HTTP 412 without changing the tool or discarding the draft. Update, delete
-and toggle guards run within SQLite write transactions; tests read a fresh saved
-snapshot. Existing API callers may omit the header for backward compatibility.
-The guard is not authentication or authorization. No database migration is needed.
-
-Browser test request: `POST /api/tools/{name}/run` with JSON
-`{"arguments":{"name":"Ada"}}`. An omitted body defaults to empty arguments.
-Required arguments must match the saved schema. Code, inputs and results remain
-in tab memory and are never written to the PWA cache or browser storage.
+The source repository is publicly viewable. **All rights reserved**; public visibility
+and Docker image availability do not grant an open-source licence. Bundled Manrope and JetBrains Mono fonts have
+separate SIL Open Font Licence texts in `app/static/fonts/`.

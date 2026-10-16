@@ -1,0 +1,26 @@
+{
+  "name": "summarize_json",
+  "description": "Summarise an array of numbers. Returns count, total, min, max and mean; empty input has null min, max and mean.",
+  "language": "node",
+  "code": "// Summarise a JSON number array using Node's standard library only.\nconst fs = require('node:fs');\n\nconst { numbers } = JSON.parse(fs.readFileSync(0, 'utf8'));\nconst count = numbers.length;\nconst total = numbers.reduce((sum, number) => sum + number, 0);\nconsole.log(JSON.stringify({\n  count,\n  total,\n  min: count ? Math.min(...numbers) : null,\n  max: count ? Math.max(...numbers) : null,\n  mean: count ? total / count : null,\n}));\n",
+  "requirements": [],
+  "json_schema": {
+    "type": "object",
+    "properties": {
+      "numbers": {
+        "type": "array",
+        "items": {
+          "type": "number",
+          "minimum": -1000000000000.0,
+          "maximum": 1000000000000.0
+        },
+        "maxItems": 10000
+      }
+    },
+    "required": [
+      "numbers"
+    ],
+    "additionalProperties": false
+  },
+  "is_active": true
+}

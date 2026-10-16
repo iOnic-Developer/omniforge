@@ -26,3 +26,6 @@ omniforge_scripts/
 # Development-only browser tooling and test artifacts
 node_modules/
 test-artifacts/
+
+_site/
+.venv-docs/

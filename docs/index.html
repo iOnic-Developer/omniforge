@@ -1,0 +1,124 @@
+<!doctype html>
+<!-- Private-repository review build. No hosting or public origin is configured.
+     Metadata and documentation URLs intentionally remain relative. -->
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OmniForge — Your scripts. Your AI’s tools.</title>
+  <meta name="description" content="Turn your Python and Node scripts into tools for your AI. Create, test saved code and discover enabled tools with OmniForge on a trusted local network.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#153f36">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="OmniForge — Your scripts. Your AI’s tools.">
+  <meta property="og:description" content="A focused workspace for Python and Node scripts, saved-code tests and limited HTTP JSON-RPC tool discovery. Trusted networks only.">
+  <meta property="og:image" content="assets/social-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="OmniForge: Your scripts. Your AI’s tools. Create, test, discover.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="assets/social-preview.png">
+  <link rel="icon" href="site-assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="site.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="review-strip"><div class="wrap">Private repository · Product-page review · No public hosting configured</div></div>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top" aria-label="OmniForge home"><img src="site-assets/mark.svg" width="36" height="36" alt=""><span>OmniForge</span></a>
+    <nav aria-label="Main navigation"><a href="#workflow">How it works</a><a href="#workspace">Workspace</a><a href="#boundaries">Boundaries</a><a href="#start">Get started <span aria-hidden="true">↗</span></a></nav>
+  </div>
+</header>
+<main id="main">
+  <section class="hero wrap" id="top" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> A small workspace. A useful connection.</p>
+      <h1 id="hero-title">Your scripts.<br>Your AI’s <em>tools.</em></h1>
+      <p class="hero-statement">Turn your Python and Node scripts into tools for your AI.</p>
+      <p class="lead">Bring the logic you already know. Give it a name, test the saved code, then let a compatible MCP client discover it—all from one self-hosted workspace.</p>
+      <div class="actions"><a class="button primary" href="#start">Start locally <span aria-hidden="true">↗</span></a><a class="button secondary" href="https://hub.docker.com/r/dbzocchi/omniforge">View on Docker Hub <span aria-hidden="true">↗</span></a></div>
+      <p class="trust-tag"><span class="status-dot" aria-hidden="true"></span><strong>Trusted LAN only.</strong> Not an internet-facing service. <a href="#boundaries">Know the boundaries</a></p>
+    </div>
+    <div class="hero-art" aria-label="An overview of the OmniForge workflow">
+      <div class="art-top"><span class="mono">OMNIFORGE / WORKSPACE</span><span>01—03</span></div>
+      <div class="script-card"><div class="file-label"><span class="file-dot" aria-hidden="true"></span><span class="mono">summarise_orders.py</span><span class="runtime">PYTHON</span></div><pre aria-label="Python tool example"><code><span class="code-muted"># A small script. A clear contract.</span>
+<span class="code-keyword">import</span> json, sys
+
+orders = json.load(sys.stdin)
+print(json.dumps({
+  <span class="code-string">"total"</span>: sum(orders[<span class="code-string">"amounts"</span>])
+}))</code></pre></div>
+      <div class="result-card"><span class="mono">SAVED VERSION → TEST RESULT</span><strong><span aria-hidden="true">✓</span> stdout</strong><code>{"total": 42}</code><span class="example-label">Illustrative script and output</span></div>
+      <div class="discovery"><span class="discovery-line" aria-hidden="true"></span><img src="site-assets/mark.svg" width="40" height="40" alt=""><div><strong>Ready for discovery</strong><span>Enabled tools → <code>tools/list</code></span></div></div>
+      <div class="art-bottom"><span>Python + Node</span><span>JSON in. Useful output out.</span></div>
+    </div>
+  </section>
+  <div class="principles wrap" aria-label="Product essentials"><span>01 <strong>Write ordinary scripts</strong></span><span>02 <strong>Inspect real results</strong></span><span>03 <strong>Keep control locally</strong></span></div>
+
+  <section class="section wrap" id="workflow" aria-labelledby="workflow-title">
+    <div class="section-heading"><div><p class="eyebrow">From an idea to a callable tool</p><h2 id="workflow-title">A short path.<br>No hidden steps.</h2></div><p class="lead">Creation, saving and execution are separate actions. You see what runs before you put it in an assistant’s hands.</p></div>
+    <div class="steps">
+      <article><span class="step-number">01 / CREATE</span><h3>Make one thing useful.</h3><p>Write Python or Node, or begin with a template. Name the tool, describe its purpose and declare the packages it needs.</p><span class="step-detail">Your logic, not a new framework.</span></article>
+      <article><span class="step-number">02 / TEST SAVED CODE</span><h3>Know what comes back.</h3><p>Save first, then run with JSON inputs. Inspect stdout, stderr, exit status and timing. Retained results are labelled when the code or inputs change.</p><span class="step-detail">A test runs the saved tool—not a draft.</span></article>
+      <article><span class="step-number">03 / DISCOVER</span><h3>Connect on your terms.</h3><p>Enable the tool and refresh <code>tools/list</code> in a compatible client. Calls pass a JSON object on stdin and return the script’s printed output.</p><span class="step-detail">Limited HTTP JSON-RPC at <code>/mcp</code>.</span></article>
+    </div>
+    <figure class="workflow-figure"><img src="assets/how-it-works.png" width="1600" height="560" alt="Create a Python or Node script, test the saved version with JSON, then discover enabled tools through limited HTTP JSON-RPC." loading="lazy" decoding="async"><figcaption>A deliberately small contract: a named script, JSON input and printed output.</figcaption></figure>
+  </section>
+
+  <section class="workspace-section" id="workspace" aria-labelledby="workspace-title"><div class="wrap section">
+    <div class="section-heading"><div><p class="eyebrow">Inside the workspace</p><h2 id="workspace-title">Less setup.<br>More making.</h2></div><p class="lead">A library when you need to find something. A studio when you need to focus. Connection details when you are ready.</p></div>
+    <figure class="overview-shot"><div class="frame-heading"><span>THE WORKSPACE</span><span>Local demo · light theme</span></div><img src="assets/screenshots/overview-desktop.png" width="1440" height="1000" alt="OmniForge Overview with saved-tool counts and the create, test and connect journey." loading="lazy" decoding="async"><figcaption>Start with the next useful action, not a wall of configuration.</figcaption></figure>
+    <div class="feature-grid">
+      <article><span class="feature-index">/01</span><h3>Scripts stay familiar</h3><p>Python and Node with JSON on stdin. Per-tool pip and npm requirements install on first use and remain cached for later calls.</p></article>
+      <article><span class="feature-index">/02</span><h3>Results have context</h3><p>Explicit save and test controls, visible errors and previous-version labels help distinguish a current result from an earlier run.</p></article>
+      <article><span class="feature-index">/03</span><h3>Your library, organised</h3><p>Search by name or description. Filter by runtime or enabled state. Choose which saved tools appear in discovery.</p></article>
+      <article><span class="feature-index">/04</span><h3>A calmer everyday workspace</h3><p>Light, dark and system themes, a phone layout and PWA support on HTTPS or localhost. Saving and execution still require the server online.</p></article>
+    </div>
+    <div class="gallery">
+      <figure><a class="image-link" href="assets/screenshots/tools-desktop.png" aria-label="Open full Tools library screenshot"><img src="assets/screenshots/tools-desktop.png" width="1440" height="1000" alt="Tools library with search, runtime filters and enabled-state controls." loading="lazy" decoding="async"></a><figcaption><span>01 / LIBRARY</span>Find it. Enable it. Keep it organised.</figcaption></figure>
+      <figure><a class="image-link" href="assets/screenshots/studio-desktop.png" aria-label="Open full Tool studio screenshot"><img src="assets/screenshots/studio-desktop.png" width="1440" height="1755" alt="Tool studio showing saved Python code, JSON test inputs and attributed execution output." loading="lazy" decoding="async"></a><figcaption><span>02 / STUDIO</span>Code and its result, in the same context.</figcaption></figure>
+      <figure><a class="image-link" href="assets/screenshots/connect-desktop.png" aria-label="Open full Connect screenshot"><img src="assets/screenshots/connect-desktop.png" width="1440" height="1432" alt="Connect screen with endpoint details, authentication status and transport limitations." loading="lazy" decoding="async"></a><figcaption><span>03 / CONNECT</span>The endpoint—and the limits—made explicit.</figcaption></figure>
+    </div>
+    <div class="mobile-story"><figure><img src="assets/screenshots/overview-mobile.png" width="375" height="900" alt="OmniForge Overview on a phone with labelled bottom navigation." loading="lazy" decoding="async"></figure><div><p class="eyebrow">Same workspace. Smaller screen.</p><h3>Keep the next step<br>within reach.</h3><p>The interface adapts to a phone without turning into a different product. Labelled navigation, readable controls and the same saved-tool workflow.</p><p class="muted">Screenshots use local demo data, not a live service. The app supports light and dark themes; captures here show the local review build.</p><a class="text-link" href="wiki/PWA-and-Themes.md">PWA and theme notes <span aria-hidden="true">↗</span></a></div></div>
+  </div></section>
+
+  <section class="section wrap" id="connect" aria-labelledby="connect-title"><div class="section-heading"><div><p class="eyebrow">A clear connection contract</p><h2 id="connect-title">Bring a client.<br>Check the transport.</h2></div><p class="lead">Local or cloud model choice belongs to your MCP client. It does not imply a cloud service can reach—or safely expose—OmniForge.</p></div>
+    <div class="connection-grid"><div><h3>Small, explicit HTTP surface</h3><p><code>POST /mcp</code> accepts one JSON-RPC request at a time for <code>initialize</code>, <code>tools/list</code>, <code>tools/call</code> and <code>ping</code>.</p><p>This is <strong>limited HTTP JSON-RPC, not full Streamable HTTP</strong>. There is no OAuth, session tracking or working SSE channel. Third-party client compatibility has not been live-verified; a client must accept this limited transport.</p><a class="text-link" href="wiki/MCP-Protocol-Support.md">Read the exact protocol support <span aria-hidden="true">↗</span></a></div><div class="protocol-card"><p class="code-label">DISCOVERY REQUEST / ILLUSTRATIVE</p><pre tabindex="0" aria-label="JSON-RPC discovery request"><code>{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list",
+  "params": {}
+}</code></pre><p>Refresh discovery after enabling a tool. Do not assume automatic client compatibility.</p></div></div>
+  </section>
+
+  <section class="boundaries-section" id="boundaries" aria-labelledby="boundaries-title"><div class="wrap section">
+    <p class="eyebrow">Before you run it</p><h2 id="boundaries-title">Local control.<br>Honest boundaries.</h2><p class="lead">For trusted people running trusted code. Not a hosted multi-user service, not a sandbox and not safe for public exposure.</p>
+    <div class="boundary-grid"><article><h3>Keep access private</h3><p>The dashboard and management API are <strong>unauthenticated</strong>. Anyone who can reach them can read, edit and run tools. Bind locally or restrict access to a trusted LAN. <strong>Do not port-forward or expose a public reverse proxy.</strong></p></article><article><h3>A key is not dashboard auth</h3><p>Set <code>OMNIFORGE_API_KEY</code> to require a Bearer key on <code>POST /mcp</code>. That key does <strong>not</strong> protect the dashboard, management API or <code>GET /mcp</code>. No OAuth is provided.</p></article><article><h3>Scripts share the container</h3><p>Scripts inherit the app’s environment, including its MCP key, and can access its writable data and network. Only run trusted scripts and packages. Do not place unrelated secrets in the environment.</p></article></div>
+    <details><summary>Execution and hosting constraints</summary><div class="details-body"><p>Runs and dependency installs block the single worker. Output is not capped, per-script memory limits are not enforced and timeouts do not kill descendant processes. There are no CSRF, Origin or Host checks.</p><p>Container hardening is not per-script isolation. PWA installation requires HTTPS or localhost; its offline screen cannot execute or save tools. Public-safe hosting and security gaps are not solved by this page.</p></div></details>
+    <a class="text-link" href="wiki/Security-and-Limitations.md">Full security model and checklist <span aria-hidden="true">↗</span></a>
+  </div></section>
+
+  <section class="section wrap" id="start" aria-labelledby="start-title"><div class="section-heading"><div><p class="eyebrow">Start on your machine</p><h2 id="start-title">One container.<br>Your first useful tool.</h2></div><p class="lead">Use Docker on an amd64 host. Keep the published port bound to localhost, and require a key for MCP POST requests.</p></div>
+    <div class="install-grid"><div><h3>Pull the image</h3><p>Start with the image on Docker Hub. Review the constraints above before starting the container.</p><div class="command-heading"><span class="code-label">TERMINAL</span><button type="button" data-copy="pull-command" hidden>Copy pull command</button></div><pre tabindex="0" aria-label="Docker pull command"><code id="pull-command">docker pull dbzocchi/omniforge:latest</code></pre><p class="muted">Use a digest when you need a reproducible image. This page previews the local review build; a pulled image may differ.</p><a class="text-link" href="https://hub.docker.com/r/dbzocchi/omniforge">Image and tags on Docker Hub <span aria-hidden="true">↗</span></a></div>
+    <div><h3>Run with local-only access</h3><p>The shell check below requires your key to be set first. It does not add authentication to the dashboard.</p><div class="command-heading"><span class="code-label">POSIX SHELL</span><button type="button" data-copy="run-command" hidden>Copy run command</button></div><pre tabindex="0" aria-label="Local-only Docker run command"><code id="run-command"># Set OMNIFORGE_API_KEY to a strong random value first.
+: "${OMNIFORGE_API_KEY:?Set a strong random key first}"
+export OMNIFORGE_API_KEY
+docker run -d --name omniforge \
+  -p 127.0.0.1:8000:8000 \
+  -e OMNIFORGE_API_KEY \
+  -v omniforge_data:/opt/omniforge/data \
+  -v omniforge_lib:/opt/omniforge/lib \
+  --restart unless-stopped \
+  dbzocchi/omniforge:latest</code></pre><p>Open <code>http://localhost:8000</code>. Create a tool, save it, then choose <strong>Run / Test</strong>.</p></div></div>
+    <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
+    <div class="install-note"><strong>Need LAN access or hardening?</strong><p>The local bind above intentionally prevents other machines connecting. Review network restrictions, container permissions and resource limits before changing it.</p><a class="text-link" href="wiki/Installation.md">Private installation guide <span aria-hidden="true">↗</span></a></div>
+  </section>
+
+  <section class="docs-section" id="guides" aria-labelledby="guides-title"><div class="section wrap"><div class="section-heading"><div><p class="eyebrow">Go a little deeper</p><h2 id="guides-title">The details are here.</h2></div><p class="muted">These relative Markdown links are private repository documentation, not a publicly hosted documentation site.</p></div><nav class="guide-grid" aria-label="Private documentation"><a href="wiki/Getting-Started.md"><span>01 / FIRST STEPS</span><strong>Make your first tool ↗</strong></a><a href="wiki/Writing-Tools.md"><span>02 / THE CONTRACT</span><strong>Write a useful script ↗</strong></a><a href="wiki/Testing-Tools.md"><span>03 / VERIFY</span><strong>Understand test results ↗</strong></a><a href="wiki/Connecting-MCP-Clients.md"><span>04 / COMPATIBILITY</span><strong>Review client connections ↗</strong></a></nav></div></section>
+</main>
+<footer class="wrap site-footer"><a class="brand" href="#top"><img src="site-assets/mark.svg" width="28" height="28" alt=""><span>OmniForge</span></a><p>Private repository · Access required.<br>Prepared for review only. No hosting or deployment enabled.</p><p>Local fonts, no CDN.<br><a href="site-assets/fonts/OFL-Manrope.txt">Manrope licence</a> · <a href="site-assets/fonts/OFL-JetBrainsMono.txt">JetBrains Mono licence</a></p></footer>
+</body>
+</html>
