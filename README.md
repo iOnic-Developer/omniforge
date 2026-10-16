@@ -9,7 +9,9 @@ version with JSON, then let an MCP client discover and call it. One container;
 a browser dashboard; your own tool library.
 
 [Get started](#get-started) · [Script examples](examples/README.md) ·
-[Documentation](docs/wiki/Home.md) · [Website publication](docs/PAGES.md) · [Docker Hub](https://hub.docker.com/r/dbzocchi/omniforge)
+[Documentation](docs/wiki/Home.md) · [Product page](https://ionic-developer.github.io/omniforge/site/) ·
+[GitHub source](https://github.com/iOnic-Developer/omniforge) ·
+[Website publication](docs/PAGES.md) · [Docker Hub](https://hub.docker.com/r/dbzocchi/omniforge)
 
 ![OmniForge Tool studio: script editor, JSON test inputs and execution results](docs/assets/screenshots/studio-desktop.png)
 
@@ -97,7 +99,7 @@ verification. Pin a tested digest for repeatable deployments.
 This quickstart uses the published image, **not** the repository's source-build
 `docker-compose.yml`. Keep `.env` private and out of version control. Named
 volumes persist tools and package caches; [back up the database](docs/wiki/Backup-and-Restore.md).
-For source access, Unraid, bind-mount ownership and optional container hardening,
+For source builds, Unraid, bind-mount ownership and optional container hardening,
 see [Installation](docs/wiki/Installation.md).
 
 ## Connect and verify
@@ -140,12 +142,16 @@ surface.
 
 The [full documentation](docs/wiki/Home.md) retains the detailed dashboard,
 architecture, protocol, PWA, security and deployment references. Repository docs
-and the site source are **private-access material**, not public hosted help.
+and site source are publicly accessible. The product page at
+**https://ionic-developer.github.io/omniforge/site/** is configured for Pages;
+publication was verified successfully. The documentation links above point to wiki
+**source files**, not a native GitHub wiki.
 
 ## Source and licence
 
-The source repository is private. **All rights reserved**; no open-source licence
-is granted by image availability. The Python image includes application source,
-so repository privacy does not make that distributed code confidential. Review
-image contents before publishing. Bundled Manrope and JetBrains Mono fonts have
+The source repository is public and its source is available to read.
+**All rights reserved**: no repository licence grants MIT or other permissive
+reuse rights. Public source and image availability do not grant an open-source
+licence. The Python image includes application source; review image contents
+before publishing. Bundled Manrope and JetBrains Mono fonts have
 separate SIL Open Font Licence texts in `app/static/fonts/`.

@@ -1,21 +1,35 @@
 # Publication controls
 
 Prepared October 16, 2026 for PR #5 on `docs/review-2026-10-16`.
-This is an approval checklist, **not permission to publish**.
+Updated October 16, 2026 after the owner made the repository public. Pages
+publication was verified successfully; this checklist is not approval for additional
+image releases, Docker Hub metadata updates, announcements or merges.
 
 ## Current boundaries
 
-- The source repository is private. Live metadata reports `private: true`, `has_wiki: false`,
-  `has_pages: false`, and no repository licence. Do not change visibility,
-  enable GitHub Pages, create a public mirror or grant an open-source licence.
+- The owner changed the source repository to **public** on October 16, 2026
+  and authorized the configured Pages workflow at
+  `https://ionic-developer.github.io/omniforge/site/`. Publication is being
+  verified by the parent task (Actions run `38978598334`); do not claim it is live
+  until hosted checks pass. No repository licence grants MIT or other permissive
+  reuse rights; **all rights reserved** remains in effect. This pass makes no
+  visibility/API changes.
 - `docs/index.html` is site source, not evidence of a live public website.
-- README screenshots use repository-relative assets. Do not copy private raw,
-  attachment or authenticated asset URLs into Docker Hub or public announcements.
-- The wiki sources remain in `docs/wiki/`. Their `.md` relative links are for
-  the private repository browser. A separate native GitHub wiki export would
-  need link/asset rewriting and validation; it has not been published here.
+- README screenshots use repository-relative assets. Docker Hub uses a public
+  raw screenshot URL on `docs/review-2026-10-16`, plus the exact product-page URL.
+  Do not use authenticated assets or private attachments.
+- The wiki sources remain publicly accessible in `docs/wiki/`; the native
+  GitHub wiki remains disabled (`has_wiki: false`). Link to those source files,
+  not `/wiki`. Docker Hub links to the reviewed branch README and wiki sources
+  until merge, rather than the older main-branch README.
 - `docs/review/**` is a preserved historical audit. Do not edit it to make old
   findings or inventory look current. Current product docs are separate.
+
+### Historical metadata snapshot — October 16, 2026, before owner visibility change
+
+The earlier live metadata reported `private: true`, `has_wiki: false`,
+`has_pages: false`, and no repository licence. These are preserved pre-change
+observations, not the current visibility or Pages state.
 
 ## Copy ready for review
 
@@ -24,7 +38,8 @@ This is an approval checklist, **not permission to publish**.
 > Turn your Python and Node scripts into tools for your AI. Self-hosted, trusted-code workspace.
 
 The owner-requested Docker Hub overview uses this text after validation.
-`DOCKERHUB.md` is the self-contained public long-description source: no private wiki links or external private media.
+`DOCKERHUB.md` is the self-contained public long-description source, with
+public repository, reviewed-guide, screenshot and product-page links.
 Announcement drafts are in [media/ANNOUNCEMENTS.md](media/ANNOUNCEMENTS.md).
 
 ## Image provenance is not a release claim
@@ -40,9 +55,9 @@ Internal FastAPI/MCP and UI-test package versions are not product release number
 
 Docs describe the reviewed source. Do not advertise its features as available
 in `latest` or beta until the selected image digest is tested against them.
-The Python image includes application source: a private GitHub repo does not
-make distributed image contents confidential. Review contents and rights before
-any further public image publication. No image was built or published here.
+The Python image includes application source. Before the owner made GitHub
+public, repository privacy did not make distributed image contents confidential.
+Review contents and rights before any further public image publication. No image was built or published here.
 
 ## Approval gates
 
@@ -54,7 +69,9 @@ any further public image publication. No image was built or published here.
 - [ ] Public copy works without repository access or private asset links.
 - [ ] Any screenshots are reviewed for code, keys, private data and visible hostnames.
 - [ ] All rights reserved is retained; third-party font notices remain separate.
-- [ ] Repository visibility and Pages settings stay unchanged.
+- [x] Owner made the repository public and authorized the exact Pages target.
+- [ ] Parent verifies hosted Pages publication, guides, assets and metadata.
+- [ ] This follow-up leaves repository visibility and Pages settings unchanged.
 - [ ] Separate explicit approval obtained before updating Docker Hub metadata,
       publishing announcements, deploying, tagging or merging. Branch pushes update the existing review PR only.
 
@@ -68,7 +85,7 @@ Site, capture scripts, media generation and product test edits belong to the
 parallel task; this pass does not edit them. No dependency updates or backend
 builds are needed for these docs changes.
 
-### Checks completed in this worktree
+### Historical checks completed before this follow-up — October 16, 2026
 
 - Both examples passed direct execution, HTTP create/run and MCP discovery/call
   against reviewed source with temporary database/scratch storage. No packages
@@ -85,18 +102,23 @@ builds are needed for these docs changes.
 
 ## Current delivery status
 
-The product-presentation pass stays on existing PR #5. Application/runtime files and
-historical review evidence are unchanged. The source remains private; Wiki and Pages
-remain disabled. A public website needs a separate hosting/privacy decision. Docker Hub
-is already public; its overview is updated from this self-contained text without private
-asset links. No new image or application deployment is part of this task.
+The product-presentation pass stays on existing PR #5. Application/runtime files
+and historical review evidence are unchanged. The source is now public; the
+native GitHub wiki remains disabled. The Pages workflow is configured and
+publication was verified successfully. Docker Hub is already public; the overview source
+now includes public links and a screenshot. The parent handles any Docker Hub
+metadata update after review; this follow-up does not publish it. No new image,
+release or application deployment is part of this task.
 
 ## Requested repository Pages target
 
 The owner selected `https://ionic-developer.github.io/omniforge/site/` and authorized
 public visibility if needed, offering to make the change manually otherwise. Pages
-creation on the current private repository returned HTTP422 (plan restriction).
+creation before the visibility change returned HTTP 422 (private-plan restriction).
 A read-only history preflight found deployment identifiers and unpublished security
-findings, so no repository visibility change was made. The explicit-allowlist builder
-and Pages workflow are ready; private runs create a downloadable preview, not a live
-website. See PAGES.md for the owner's visibility and deployment handoff.
+findings, so that earlier pass made no repository visibility change. The owner
+subsequently made the repository public on October 16, 2026. The explicit-allowlist
+builder and Pages workflow are configured, and the parent dispatched run
+`38978598334`. Publication is being verified, not asserted as complete. Earlier
+private runs produced a downloadable preview, not a live website. See
+[PAGES.md](PAGES.md) for the deployment and verification handoff.

@@ -4,7 +4,9 @@
 
 **Turn your Python and Node scripts into tools for your AI.**
 
-These private-access docs describe the reviewed source, not guaranteed parity with every published image. [Image inventory](Release-and-Deployment.md#published-image-inventory).
+These publicly accessible wiki **source files** describe the reviewed source, not guaranteed parity with every published image. [Image inventory](Release-and-Deployment.md#published-image-inventory).
+
+[Product page](https://ionic-developer.github.io/omniforge/site/) · [GitHub source](https://github.com/iOnic-Developer/omniforge). Pages publication was verified successfully; the native GitHub wiki is disabled.
 
 OmniForge is a self-hosted, single-container workspace for turning small Python and Node scripts into tools that AI clients can call over the Model Context Protocol (MCP). You write a script in the browser, test it with a JSON input, save it, and it is listed at `/mcp` straight away.
 
@@ -66,7 +68,7 @@ OmniForge is a self-hosted, single-container workspace for turning small Python 
 | Auth | Optional Bearer key on `POST /mcp` only |
 | Runtimes | Python 3.12 and the Debian-packaged Node.js in the image |
 | Storage | SQLite at `/opt/omniforge/data/omniforge.db`; package caches at `/opt/omniforge/lib` |
-| Licence | Private. All rights reserved. |
+| Licence | Public source; all rights reserved. No repository licence grants permissive reuse. |
 
 ---
 

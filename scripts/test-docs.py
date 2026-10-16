@@ -377,11 +377,21 @@ class DocumentationChecks(unittest.TestCase):
         LINK_COUNT = count
         self.assertFalse(broken, 'Broken local links:\n' + '\n'.join(broken))
 
-    def test_dockerhub_copy_is_self_contained_not_public_hosted_claim(self):
+    def test_dockerhub_links_use_approved_public_destinations(self):
         text = (ROOT / 'DOCKERHUB.md').read_text()
-        self.assertNotRegex(text, r'(?i)https?://(?:raw\.)?github(?:usercontent)?\.com/[^\s)]+')
-        self.assertNotRegex(text, r'(?i)https?://[^\s)]+\.github\.io[^\s)]*')
-        self.assertNotRegex(text, r'(?i)\b(?:publicly hosted|public (?:live )?demo|hosted demo|live demo (?:at|available))\b')
+        urls = re.findall(r'https?://[^\s)<>]+', text)
+        public_roots = (
+            'https://ionic-developer.github.io/omniforge/site/',
+            'https://github.com/iOnic-Developer/omniforge',
+            'https://raw.githubusercontent.com/iOnic-Developer/omniforge/',
+        )
+        for url in urls:
+            if 'github' in urlsplit(url).hostname:
+                self.assertTrue(url.startswith(public_roots), 'Unexpected publication destination')
+        self.assertIn(public_roots[0], text)
+        self.assertNotRegex(text, r'(?i)\b(?:public (?:live )?demo|hosted demo|live demo (?:at|available))\b')
+        self.assertIn('unauthenticated', text)
+        self.assertIn('127.0.0.1:8000:8000', text)
 
     def test_html_png_dimensions_and_bundled_font_licenses(self):
         for source in (ROOT / 'docs').rglob('*'):

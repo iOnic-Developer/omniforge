@@ -9,6 +9,18 @@ one self-hosted container.
 
 **MCP Station connects integrations. OmniForge turns code you author into tools.**
 
+[Product page](https://ionic-developer.github.io/omniforge/site/) ·
+[GitHub source](https://github.com/iOnic-Developer/omniforge) ·
+[Reviewed installation guide](https://github.com/iOnic-Developer/omniforge/blob/docs/review-2026-10-16/README.md) ·
+[Wiki source documentation](https://github.com/iOnic-Developer/omniforge/blob/docs/review-2026-10-16/docs/wiki/Home.md)
+
+![OmniForge Tool studio: script editor, JSON test inputs and execution results](https://raw.githubusercontent.com/iOnic-Developer/omniforge/docs/review-2026-10-16/docs/assets/screenshots/studio-desktop.png)
+
+The repository and screenshot are public. The reviewed guides above use the
+documentation branch pending merge, not the older main-branch README or a native
+GitHub wiki. Pages is configured at the exact product-page URL above; publication
+was verified successfully.
+
 ## Before you install
 
 **Single-admin, trusted-network use only.** There is no human login or account
@@ -151,7 +163,8 @@ Do not use `docker compose down -v` unless you intend to remove stored data.
 
 ## Source and rights
 
-Source and detailed docs are **private and require access**; this guide needs
-neither. Image availability is not an open-source licence: **all rights reserved**.
-The Python image includes application source; repository privacy does not make
-distributed image contents confidential.
+Source and detailed docs are publicly accessible through the links above.
+**All rights reserved**: no repository licence grants MIT or other permissive
+reuse rights. Public source and image availability do not grant an open-source
+licence. The Python image includes application source; review distributed image
+contents before publishing. Third-party font licences remain separate.

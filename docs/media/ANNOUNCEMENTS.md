@@ -1,8 +1,14 @@
 # Announcement drafts — not published
 
 These drafts describe the reviewed source. Publish only after approval and
-verification of the image digest being promoted. No public product-site or
-private-repository links are assumed. Do not add private raw asset URLs.
+verification of the image digest being promoted. The source repository is now
+public. The product page is configured at the exact URL below, but publication
+was verified successfully; do not describe it as live until the parent confirms it.
+Do not add authenticated assets or private attachments.
+
+[Product page](https://ionic-developer.github.io/omniforge/site/) ·
+[GitHub source](https://github.com/iOnic-Developer/omniforge) ·
+[Wiki source documentation](https://github.com/iOnic-Developer/omniforge/blob/docs/review-2026-10-16/docs/wiki/Home.md)
 
 ## Short
 
@@ -40,7 +46,9 @@ HTTP and OAuth are not implemented. Verify the exact client and image digest.
 - Docker Hub has `latest` and `0.2.0_beta` (inventory checked October 16, 2026).
   Tag existence does not establish feature parity or a stable product release.
 - Do not announce beta features until they have been tested in that image.
-- The source repo and detailed docs are private and require access. Image
-  availability is not an open-source licence; all rights reserved.
-- Do not claim a live public site, public wiki or universal ChatGPT/Claude support.
+- The source repo and detailed docs are public. Public visibility and image
+  availability do not grant MIT or another permissive licence; all rights reserved.
+- Pages publication was verified successfully; do not claim the site is live until
+  verified. Link to wiki source files, not a native GitHub wiki (it is disabled).
+  Do not claim universal ChatGPT/Claude support.
 - Review the [publication checklist](../PUBLICATION.md) before using this copy.

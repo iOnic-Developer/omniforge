@@ -4,16 +4,21 @@ Target: `https://ionic-developer.github.io/omniforge/site/`.
 
 ## Current status
 
-The build is public-ready, not a claim that a site is deployed. The repository
-remains private. Pages creation for the private repository returned HTTP 422
-because the current plan does not support it. This work does not change visibility.
+On **October 16, 2026**, the owner changed the repository to **public**. The
+Pages publishing workflow is configured for the exact target above. Publication
+is being verified by the parent task using Actions run `38978598334`; a
+configured workflow or dispatched run is not proof of a successful deployment.
+This documentation-only follow-up does not change visibility or dispatch runs.
 
-**Making the repository public exposes its existing history as well as the page.** The privacy preflight
-found NAS deployment identifiers and 53 unpublished audit findings in reachable
-history. It found no actual credential matches; that is not a guarantee that
-history is safe to disclose. The owner requested this exact repository URL and offered to change visibility manually
-if necessary. Review those records before using that fallback. A clean, separate public publishing repository is an alternative,
-but requires its own workflow and target configuration.
+### Historical private-repository preflight — October 16, 2026
+
+Before the owner changed visibility, Pages creation returned HTTP 422 because
+the current plan did not support Pages for this private repository. The privacy
+preflight found NAS deployment identifiers and 53 unpublished audit findings in
+reachable history. It found no actual credential matches; that is not a
+guarantee that history is safe to disclose. Making the repository public
+exposes its existing history as well as the page. Those historical findings
+remain preserved; the owner subsequently made the repository public manually.
 
 ## Build locally
 
@@ -38,7 +43,9 @@ and their two licences. Eight reviewed wiki pages become HTML guides. Raw HTML
 in Markdown is escaped; approved screenshot wrappers become Markdown images.
 Guide-to-guide links are rewritten and heading fragments checked. Home links
 return to the landing page. Links outside the eight-guide scope become plain
-text marked “repository access required”, not broken public links.
+text marked “repository access required”, not broken public links. That is the
+builder's existing fallback label, not a current access restriction: the public
+repository contains the full wiki source, and its native GitHub wiki is disabled.
 
 The build does not recurse through arbitrary asset folders. It does not copy
 application source, repository history, review evidence, capture manifests,
@@ -66,8 +73,8 @@ runs. It installs only `requirements-docs.txt` in a separate docs environment.
   Pages with Actions and deploy `_site`. The artifact root contains `site/`,
   so the product URL ends in `/omniforge/site/`, not `/omniforge/`.
 
-After the owner has resolved the history/privacy concerns and authorized public
-publication, confirm Pages uses GitHub Actions and the `github-pages` environment
+The owner has authorized publication and made the repository public. During
+publication verification, confirm Pages uses GitHub Actions and the `github-pages` environment
 allows the intended deployment branch (`docs/review-2026-10-16` for this review,
 or main after merge). Existing environment branch restrictions may otherwise
 block deployment. Then run the workflow on the approved ref and verify the exact
@@ -94,9 +101,19 @@ builder. Local validation is not a successful hosted deployment or CI run.
 - Browser results/screenshots are local only in
   `/workspace/scratch/omniforge-pages-qa/`; the independent QA runner is
   `/workspace/scratch/omniforge-pages-qa.cjs`. Neither enters the Pages artifact.
-- Hosted Actions/Pages deployment has not run. Environment approval and hosted
-  behavior remain to be verified after the owner's publication decision.
+- At the original local handoff, hosted Actions/Pages deployment had not run.
+  Since then the owner made the repository public and the parent task dispatched
+  run `38978598334`. Its result, environment approval and hosted behavior remain
+  to be verified by that task; this document does not claim deployment success.
 
-For the parent handoff, stage only the five owned source files: this document,
+The original builder handoff covered five source files: this document,
 `docs/site-docs.css`, `requirements-docs.txt`, `scripts/build-product-site.py`
-and `.github/workflows/product-site.yml`. Leave generated `_site/` untracked.
+and `.github/workflows/product-site.yml`. This follow-up changes documentation
+only, not those implementation files. Leave generated `_site/` untracked.
+
+## Verified live publication
+
+Owner made the repository public. Workflow run `38978598334` completed both build
+and deployment successfully. The exact `/omniforge/site/` page, CSS, studio PNG and
+Getting Started HTML guide all returned HTTP200. This is the static product site,
+not a public OmniForge application server. PR #5 remains unmerged.
