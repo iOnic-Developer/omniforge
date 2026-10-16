@@ -1,0 +1,566 @@
+<!doctype html>
+<!--
+  OmniForge landing page, kept ready for future hosting (GitHub Pages isn't available for this private repository yet).
+  Images load from relative assets/... paths. Documentation links point at wiki/*.md, which works on any static
+  host that serves Markdown files. If this is ever published through Jekyll (the GitHub Pages default), change
+  the links to the generated .html pages or add an empty .nojekyll file.
+  og:image needs an absolute URL once a public address exists.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OmniForge: scripts in, MCP tools out</title>
+<meta name="description" content="OmniForge is a self-hosted, single-container workspace for writing Python and Node scripts, testing them with JSON and publishing them as MCP tools. Built for a trusted LAN.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#116859" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101a19" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OmniForge: scripts in, MCP tools out">
+<meta property="og:description" content="Write a Python or Node script, test it with JSON and publish it as an MCP tool from one self-hosted container.">
+<meta property="og:image" content="assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/logo.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fallback only: the self-hosted fonts from ../app/static/fonts/ are tried first. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+@font-face {
+  font-family: "OmniForge Sans";
+  src: url("../app/static/fonts/manrope.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OmniForge Mono";
+  src: url("../app/static/fonts/jetbrains-mono.ttf") format("truetype");
+  font-weight: 100 800;
+  font-display: swap;
+}
+:root {
+  color-scheme: light;
+  --bg: #f7f8f5;
+  --surface: #ffffff;
+  --soft: #eef1ec;
+  --ink: #182c2a;
+  --muted: #536761;
+  --line: #c9d2cd;
+  --accent: #116859;
+  --accent-soft: #e2f2ec;
+  --on-accent: #ffffff;
+  --warn: #785616;
+  --danger: #b02d35;
+  --shadow: 0 16px 64px #172c2a24;
+  --radius: 4px;
+  --sans: "OmniForge Sans", Manrope, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "OmniForge Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --gutter: 16px;
+  --max: 1120px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #101a19;
+    --surface: #172422;
+    --soft: #20322e;
+    --ink: #ecf2ed;
+    --muted: #b1c3bc;
+    --line: #4c635b;
+    --accent: #9be2c8;
+    --accent-soft: #28473d;
+    --on-accent: #10251f;
+    --warn: #efcd8c;
+    --danger: #ffa6a7;
+    --shadow: 0 16px 64px #0006;
+  }
+}
+@media (min-width: 720px) {
+  :root { --gutter: 32px; }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: 24px; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 var(--sans);
+  overflow-wrap: break-word;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible, pre:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+h1, h2, h3, p, ul, ol, figure { margin-top: 0; }
+h1 {
+  font-size: clamp(34px, 6.4vw, 58px);
+  line-height: 1.1;
+  letter-spacing: -1.3px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-wrap: balance;
+}
+h2 {
+  font-size: clamp(26px, 3.6vw, 36px);
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-wrap: balance;
+}
+h3 { font-size: 17px; line-height: 1.4; margin-bottom: 8px; }
+p { margin-bottom: 16px; }
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--soft);
+  padding: 1px 5px;
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+pre {
+  margin: 0 0 16px;
+  padding: 16px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  max-width: 100%;
+  font: 13px/1.6 var(--mono);
+  tab-size: 2;
+}
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.wrap { width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
+.skip {
+  position: absolute; left: 8px; top: -60px; z-index: 10;
+  background: var(--accent); color: var(--on-accent);
+  padding: 10px 16px; border-radius: var(--radius); font-weight: 700;
+}
+.skip:focus { top: 8px; }
+.eyebrow {
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.lead { font-size: clamp(17px, 2vw, 20px); color: var(--muted); max-width: 640px; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); }
+
+/* Header */
+.site-header { border-bottom: 1px solid var(--line); background: var(--surface); }
+.site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding-top: 12px; padding-bottom: 12px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; color: var(--ink); text-decoration: none; min-height: 44px; }
+.brand svg { flex: none; }
+.site-nav ul { display: flex; flex-wrap: wrap; gap: 0 4px; list-style: none; margin: 0; padding: 0; }
+.site-nav a {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px;
+  color: var(--muted); font-size: 14px; font-weight: 700; text-decoration: none; border-radius: var(--radius);
+}
+.site-nav a:hover { color: var(--ink); background: var(--soft); }
+
+/* Buttons */
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 24px 0 16px; }
+.button {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 10px 18px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink);
+  font-size: 15px; font-weight: 700; text-decoration: none;
+}
+.button:hover { background: var(--soft); text-decoration: none; }
+.button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.button.primary:hover { filter: brightness(0.93); background: var(--accent); }
+
+/* Sections */
+section { padding: clamp(48px, 8vw, 88px) 0; border-bottom: 1px solid var(--line); }
+section:last-of-type { border-bottom: 0; }
+.section-intro { max-width: 720px; margin-bottom: 32px; }
+.section-intro p { color: var(--muted); }
+
+/* Hero */
+.hero { padding-top: clamp(40px, 7vw, 80px); }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 0 0 40px; list-style: none; font: 12px/1.6 var(--mono); color: var(--muted); }
+.hero-meta li::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; vertical-align: middle; background: var(--accent); }
+.frame { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; }
+.frame img { border-radius: 2px; }
+
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 24px; margin-top: 32px; }
+.step { border-top: 2px solid var(--line); padding-top: 20px; }
+.step-number { display: block; font: 12px/1.4 var(--mono); color: var(--accent); margin-bottom: 12px; }
+.step p { font-size: 15px; color: var(--muted); margin-bottom: 0; }
+
+/* Features */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.card { background: var(--surface); padding: 24px; min-width: 0; }
+.card p { font-size: 15px; color: var(--muted); margin-bottom: 0; }
+
+/* Security */
+.notice { border-left: 3px solid var(--warn); background: var(--soft); padding: 16px 20px; margin-bottom: 32px; border-radius: 0 var(--radius) var(--radius) 0; }
+.notice strong { display: block; margin-bottom: 4px; }
+.notice p { margin: 0; color: var(--muted); }
+.two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; min-width: 0; }
+.panel h3 { display: flex; align-items: center; gap: 8px; }
+.panel ul { margin: 0; padding-left: 20px; }
+.panel li { margin-bottom: 10px; color: var(--muted); }
+.panel li strong { color: var(--ink); }
+.tag { font: 11px/1 var(--mono); letter-spacing: 1px; text-transform: uppercase; padding: 4px 6px; border-radius: var(--radius); border: 1px solid currentColor; }
+.tag.no { color: var(--danger); }
+.tag.yes { color: var(--accent); }
+
+/* Code layout */
+.code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+.code-grid > div { min-width: 0; }
+.code-label { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+
+/* Gallery */
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; }
+.gallery figure, .phones figure { margin: 0; min-width: 0; }
+.gallery figcaption, .phones figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 24px; margin-top: 40px; max-width: 760px; }
+.demo { margin: 0 0 40px; }
+
+/* Docs */
+.docs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 32px; }
+.docs h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+.docs ul { list-style: none; margin: 0; padding: 0; }
+.docs li a { display: inline-flex; align-items: center; min-height: 40px; font-weight: 600; }
+
+/* Footer */
+.site-footer { background: var(--surface); border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 14px; color: var(--muted); }
+.site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; }
+.site-footer p { margin: 0; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="OmniForge home">
+      <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="4" fill="#116859"/><path fill="#f3f8f2" d="M16 16h32v10H26v12h12V28h10v20H16z"/></svg>
+      OmniForge
+    </a>
+    <nav class="site-nav" aria-label="Page sections">
+      <ul>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#quick-start">Quick start</a></li>
+        <li><a href="#connect">Connect</a></li>
+        <li><a href="#docs">Docs</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="wrap">
+    <p class="eyebrow">Self-hosted MCP tool workspace</p>
+    <h1 id="hero-title">Useful scripts.<br>Ready for your AI.</h1>
+    <p class="lead">Write a Python or Node script, test it with JSON and publish it as an MCP tool from one self-hosted container. Save it, and your AI client can call it on its next tool refresh.</p>
+    <div class="actions">
+      <a class="button primary" href="#quick-start">Quick start</a>
+      <a class="button" href="wiki/Getting-Started.md">Getting started guide</a>
+      <a class="button" href="#security">Read the security model</a>
+    </div>
+    <ul class="hero-meta" aria-label="Key facts">
+      <li>Docker · dbzocchi/omniforge</li>
+      <li>Python 3.12 + Node.js</li>
+      <li>MCP over HTTP JSON-RPC</li>
+      <li>Trusted LAN only</li>
+    </ul>
+    <div class="frame">
+      <picture>
+        <source srcset="assets/screenshots/overview-dark-desktop.png" media="(prefers-color-scheme: dark)">
+        <img src="assets/screenshots/overview-desktop.png" alt="The OmniForge Overview screen: saved and enabled tool counts and the create, test, connect steps" width="1440" height="900" decoding="async" fetchpriority="high">
+      </picture>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" aria-labelledby="how-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-title">From first script to first call</h2>
+      <p>A tool is a named script. When an AI client calls it, OmniForge passes the arguments as one JSON object on stdin, runs the script and returns whatever it prints.</p>
+    </div>
+    <div class="frame">
+      <img src="assets/how-it-works.png" alt="Diagram in three panels: write the script with pinned packages, test it in the browser with JSON input, then connect an AI client to /mcp and discover the tools" width="1280" height="560" loading="lazy" decoding="async">
+    </div>
+    <div class="steps">
+      <article class="step">
+        <span class="step-number">01 / CREATE</span>
+        <h3>Make it do one thing</h3>
+        <p>Start from a working template or write a short Python or Node script. Declare packages by name; they install on the first run.</p>
+      </article>
+      <article class="step">
+        <span class="step-number">02 / TEST</span>
+        <h3>See what comes back</h3>
+        <p>Save, then Run / Test with a JSON input. Check stdout, stderr, the exit code and the timing before an assistant ever uses it.</p>
+      </article>
+      <article class="step">
+        <span class="step-number">03 / CONNECT</span>
+        <h3>Let your client discover it</h3>
+        <p>Point your MCP client at <code>/mcp</code> and refresh its tool list. Enabled tools are available straight away, with no restart.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="features" aria-labelledby="features-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">Features</p>
+      <h2 id="features-title">Small surface, honest behaviour</h2>
+    </div>
+    <div class="grid">
+      <article class="card"><h3>Five focused screens</h3><p>Overview, Tools, Tool studio, Connect and Help, designed for people who have never set up an MCP server.</p></article>
+      <article class="card"><h3>Python and Node</h3><p>Python 3.12 and Node.js (CommonJS). Arguments arrive on stdin and are never put through a shell.</p></article>
+      <article class="card"><h3>Test before you trust</h3><p>Run the saved version with JSON inputs and see stdout, stderr, the exit code and the duration. Stale results are clearly labelled.</p></article>
+      <article class="card"><h3>Packages on demand</h3><p>Up to 50 pip or npm packages per tool, installed on the first run into a persistent per-tool cache. Wheels only, with no install scripts.</p></article>
+      <article class="card"><h3>Validated inputs</h3><p>JSON Schema Draft 2020-12 with local references only, checked before any code runs.</p></article>
+      <article class="card"><h3>Built-in authoring</h3><p><code>omniforge_instructions</code> and <code>omniforge_create_tool</code> let an AI client learn the contract and save tools without running them.</p></article>
+      <article class="card"><h3>Safe concurrent edits</h3><p>Content revisions with <code>If-Match</code> stop a stale tab from overwriting, deleting or testing a changed tool.</p></article>
+      <article class="card"><h3>Installable PWA</h3><p>Light, dark and system themes, a phone layout and an offline reconnect page. Code and results are never cached.</p></article>
+      <article class="card"><h3>One non-root container</h3><p>Runs as UID 1000 and works with a read-only root, a <code>noexec</code> <code>/tmp</code> and all capabilities dropped. No Docker socket needed.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="security" aria-labelledby="security-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">Security model</p>
+      <h2 id="security-title">Built for your LAN</h2>
+      <p>OmniForge is a workspace for trusted people on a trusted network. It isn't a public or isolated code-execution service, and these limits are also shown in the product itself.</p>
+    </div>
+    <div class="notice" role="note">
+      <strong>Don't expose it to the internet.</strong>
+      <p>Anyone who can reach the port can read, change and run every tool. Every tool can read everything the app can, including its MCP key.</p>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <h3><span class="tag no">Not provided</span> Limits today</h3>
+        <ul>
+          <li><strong>No authentication</strong> on the dashboard or the management API. <code>GET /mcp</code> is unauthenticated too.</li>
+          <li><strong>No isolation.</strong> Scripts are subprocesses in the app container. They inherit its whole environment, including <code>OMNIFORGE_API_KEY</code>, and can reach its data and network.</li>
+          <li><strong>One slow tool stalls the server.</strong> Runs and installs block the single worker.</li>
+          <li><strong>Few resource limits.</strong> Output isn't capped, the memory setting isn't enforced, and timeouts kill only the direct child process.</li>
+          <li><strong>A partial MCP transport</strong>: HTTP JSON-RPC POST only, not full Streamable HTTP. No OAuth or sessions.</li>
+          <li><strong>No CSRF or Origin checks.</strong> PWA installation needs HTTPS or localhost.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3><span class="tag yes">Provided</span> Safeguards</h3>
+        <ul>
+          <li>An optional Bearer key on <code>POST /mcp</code>. It's never returned by any route.</li>
+          <li>Arguments are validated against the schema before execution and delivered on stdin, never through a shell.</li>
+          <li>Strict tool and package names. Installers run with a scrubbed environment and redacted errors.</li>
+          <li>Atomic, never-destructive dependency caches.</li>
+          <li>A 14-file static allow-list, a <code>textContent</code>-only dashboard and parameterised SQL.</li>
+          <li>A non-root image that supports a read-only root and dropped capabilities.</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:24px"><a href="wiki/Security-and-Limitations.md">Read the full security model and deployment checklist →</a></p>
+  </div>
+</section>
+
+<section id="quick-start" aria-labelledby="quick-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">Quick start</p>
+      <h2 id="quick-title">Running in one command</h2>
+      <p>You'll need Docker on an amd64 host. Generate a key with <code>openssl rand -hex 32</code>, then:</p>
+    </div>
+    <div class="code-grid">
+      <div>
+        <p class="code-label">docker run</p>
+<pre tabindex="0" aria-label="docker run command"><code>docker run -d --name omniforge \
+  -p 8000:8000 \
+  -e OMNIFORGE_API_KEY='&lt;your-random-key&gt;' \
+  -v omniforge_data:/opt/omniforge/data \
+  -v omniforge_lib:/opt/omniforge/lib \
+  --restart unless-stopped \
+  dbzocchi/omniforge:latest</code></pre>
+      </div>
+      <div>
+        <p class="code-label">compose.yaml</p>
+<pre tabindex="0" aria-label="Docker Compose file"><code>services:
+  omniforge:
+    image: dbzocchi/omniforge:latest
+    ports: ["8000:8000"]
+    environment:
+      OMNIFORGE_API_KEY: ${OMNIFORGE_API_KEY:-}
+    volumes:
+      - omniforge_data:/opt/omniforge/data
+      - omniforge_lib:/opt/omniforge/lib
+    restart: unless-stopped
+volumes:
+  omniforge_data:
+  omniforge_lib:</code></pre>
+      </div>
+    </div>
+    <p>Open <code>http://localhost:8000</code>, choose <strong>Start with a template</strong>, then <strong>Save tool</strong> and <strong>Run / Test</strong>. Only <code>latest</code> is published, so pin by digest for reproducible deploys. <a href="wiki/Installation.md">Installation options, including Unraid and hardening →</a></p>
+  </div>
+</section>
+
+<section id="connect" aria-labelledby="connect-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">Connect clients</p>
+      <h2 id="connect-title">One endpoint for every client</h2>
+      <p>OmniForge accepts JSON-RPC over <code>POST /mcp</code> (<code>initialize</code>, <code>tools/list</code>, <code>tools/call</code>, <code>ping</code>) with an optional Bearer key. Client compatibility isn't verified by the project, so check yours with a <code>tools/list</code> first.</p>
+    </div>
+    <div class="code-grid">
+      <div>
+        <p class="code-label">Claude Code</p>
+<pre tabindex="0" aria-label="Claude Code command"><code>claude mcp add --transport http omniforge \
+  http://your-host:8000/mcp \
+  --header "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre>
+        <p class="code-label">LibreChat · librechat.yaml</p>
+<pre tabindex="0" aria-label="LibreChat configuration"><code>mcpServers:
+  omniforge:
+    type: streamable-http
+    url: http://your-host:8000/mcp
+    headers:
+      Authorization: "Bearer ${OMNIFORGE_API_KEY}"</code></pre>
+      </div>
+      <div>
+        <p class="code-label">Any HTTP client</p>
+<pre tabindex="0" aria-label="curl request"><code>curl -s http://your-host:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer &lt;YOUR_API_KEY&gt;' \
+  -d '{"jsonrpc":"2.0","id":1,
+       "method":"tools/list","params":{}}'</code></pre>
+        <p class="muted">Claude Desktop reaches HTTP servers through a stdio bridge such as <code>mcp-remote</code>. Every configuration is in the <a href="wiki/Connecting-MCP-Clients.md">connection guide</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gallery" aria-labelledby="gallery-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">Gallery</p>
+      <h2 id="gallery-title">A closer look</h2>
+    </div>
+    <figure class="demo frame">
+      <img src="assets/demo.gif" alt="Animated demo: searching the Tools library, editing a Node tool, saving it, running it with JSON test inputs and opening the Connect screen" width="900" height="563" loading="lazy" decoding="async">
+    </figure>
+    <div class="gallery">
+      <figure>
+        <img class="frame" src="assets/screenshots/tools-desktop.png" alt="Tools library with search, filters and enable switches" width="1440" height="900" loading="lazy" decoding="async">
+        <figcaption>Tools: search, filter and enable for AI discovery.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/studio-desktop.png" alt="Tool studio with the code editor, a pinned package, the read-only saved schema, JSON test inputs and a successful result" width="1440" height="1852" loading="lazy" decoding="async">
+        <figcaption>Tool studio: write, save, then Run / Test.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/studio-error-desktop.png" alt="Tool studio showing a failed run: exit code 2 with an explanatory stderr message" width="1440" height="900" loading="lazy" decoding="async">
+        <figcaption>Failures are explicit: stderr, the exit code and the timing.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/connect-desktop.png" alt="Connect screen with the MCP endpoint, auth status and request template" width="1440" height="900" loading="lazy" decoding="async">
+        <figcaption>Connect: the endpoint, auth status and a copyable request.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/help-desktop.png" alt="Help screen with templates, guidance and installation tips" width="1440" height="900" loading="lazy" decoding="async">
+        <figcaption>Help: working templates and plain-language guidance.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/overview-dark-desktop.png" alt="Overview screen in the dark theme" width="1440" height="900" loading="lazy" decoding="async">
+        <figcaption>Dark theme, following your system or chosen by hand.</figcaption>
+      </figure>
+    </div>
+    <div class="phones">
+      <figure>
+        <img class="frame" src="assets/screenshots/overview-mobile.png" alt="Overview on a phone with bottom navigation" width="780" height="1688" loading="lazy" decoding="async">
+        <figcaption>Overview on a phone.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/tools-mobile.png" alt="Tools library on a phone" width="780" height="1688" loading="lazy" decoding="async">
+        <figcaption>Tools on a phone.</figcaption>
+      </figure>
+      <figure>
+        <img class="frame" src="assets/screenshots/studio-mobile.png" alt="Tool studio on a phone, testing a Node tool with JSON inputs" width="780" height="1688" loading="lazy" decoding="async">
+        <figcaption>Tool studio on a phone.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="docs" aria-labelledby="docs-title">
+  <div class="wrap">
+    <div class="section-intro">
+      <p class="eyebrow">Documentation</p>
+      <h2 id="docs-title">Everything else</h2>
+      <p>Task-based guides for first-timers, plus a full reference. Start at the <a href="wiki/Home.md">documentation home</a>.</p>
+    </div>
+    <div class="docs">
+      <nav aria-label="Using OmniForge">
+        <h3>Using</h3>
+        <ul>
+          <li><a href="wiki/Getting-Started.md">Getting started</a></li>
+          <li><a href="wiki/Installation.md">Installation</a></li>
+          <li><a href="wiki/Configuration.md">Configuration</a></li>
+          <li><a href="wiki/Dashboard-Guide.md">Dashboard guide</a></li>
+          <li><a href="wiki/Writing-Tools.md">Writing tools</a></li>
+          <li><a href="wiki/Dependencies.md">Dependencies</a></li>
+          <li><a href="wiki/Testing-Tools.md">Testing tools</a></li>
+          <li><a href="wiki/Connecting-MCP-Clients.md">Connecting MCP clients</a></li>
+          <li><a href="wiki/Built-in-Authoring-Tools.md">Built-in authoring tools</a></li>
+          <li><a href="wiki/PWA-and-Themes.md">PWA and themes</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Operating OmniForge">
+        <h3>Operating</h3>
+        <ul>
+          <li><a href="wiki/Security-and-Limitations.md">Security and limitations</a></li>
+          <li><a href="wiki/Backup-and-Restore.md">Backup and restore</a></li>
+          <li><a href="wiki/Troubleshooting-and-FAQ.md">Troubleshooting and FAQ</a></li>
+          <li><a href="wiki/Release-and-Deployment.md">Release and deployment</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Reference">
+        <h3>Reference</h3>
+        <ul>
+          <li><a href="wiki/Architecture.md">Architecture</a></li>
+          <li><a href="wiki/API-Reference.md">API reference</a></li>
+          <li><a href="wiki/MCP-Protocol-Support.md">MCP protocol support</a></li>
+          <li><a href="wiki/Development-and-Testing.md">Development and testing</a></li>
+          <li><a href="wiki/Glossary.md">Glossary</a></li>
+          <li><a href="product-design.md">Product design notes</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>OmniForge · <span class="mono">dbzocchi/omniforge</span> · Private. All rights reserved.</p>
+    <p>Manrope and JetBrains Mono are used under the SIL Open Font Licence.</p>
+  </div>
+</footer>
+</body>
+</html>

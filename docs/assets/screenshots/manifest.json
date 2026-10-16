@@ -1,0 +1,12 @@
+{
+  "overview-desktop.png": "Overview: what OmniForge does, live tool counts and the create, test and connect journey (light theme).",
+  "overview-dark-desktop.png": "The same Overview in the dark theme.",
+  "tools-desktop.png": "Tools library: a searchable list of Python and Node tools with runtime badges and enable/disable switches.",
+  "studio-desktop.png": "Tool studio: a Python script with a pinned package (packaging==26.3), JSON test inputs and a successful result.",
+  "studio-error-desktop.png": "A failed test run: the script exits with code 2 and its stderr says which years are supported.",
+  "connect-desktop.png": "Connect: the MCP endpoint, transport and auth status, and an HTTP request template with a <YOUR_API_KEY> placeholder.",
+  "help-desktop.png": "Help: a first-tool guide, working templates, install notes and keyboard essentials.",
+  "overview-mobile.png": "Overview on a phone, with the bottom navigation bar.",
+  "studio-mobile.png": "Testing a Node tool on a phone: JSON inputs, Run / Test and the result.",
+  "tools-mobile.png": "The Tools library on a phone: search, filter and per-tool switches."
+}
