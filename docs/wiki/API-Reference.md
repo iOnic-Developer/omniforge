@@ -56,7 +56,7 @@ Returned by `GET /api/tools`:
 
 ## The tool input (`ToolIn`)
 
-The body for `POST /api/tools` and `PUT /api/tools/{name}`:
+The body for `POST /api/tools` and `PUT /api/tools/{name}`. Use **`json_schema`**, not `inputSchema` (the latter is the MCP authoring field). Types are strict and extra fields are rejected:
 
 | Field | Type | Required | Default | Rules |
 |---|---|---|---|---|

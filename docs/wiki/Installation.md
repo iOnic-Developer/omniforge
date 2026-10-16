@@ -1,6 +1,6 @@
 # Installation
 
-OmniForge ships as one image, `dbzocchi/omniforge`, with one tag: `latest`. It is built for `linux/amd64` only. Everything listens on port **8000**: the dashboard, the REST API and `/mcp`.
+OmniForge has published `latest` and `0.2.0_beta` tags, both with Linux/amd64 runtime images (checked October 16, 2026). Tag availability is not feature verification; see [image inventory and provenance](Release-and-Deployment.md#published-image-inventory). This guide describes reviewed source behaviour. Everything listens on port **8000**: the dashboard, the REST API and `/mcp`.
 
 | Method | Best for |
 |---|---|
@@ -20,20 +20,30 @@ OmniForge ships as one image, `dbzocchi/omniforge`, with one tag: `latest`. It i
 
 ## docker run
 
+In a new deployment directory, generate and load a private MCP key first:
+
+```bash
+umask 077
+printf 'OMNIFORGE_API_KEY=%s\n' "$(openssl rand -hex 32)" > .env
+set -a
+. ./.env
+set +a
+```
+
 ```bash
 docker volume create omniforge_data
 docker volume create omniforge_lib
 
 docker run -d --name omniforge \
-  -p 8000:8000 \
-  -e OMNIFORGE_API_KEY='replace-with-a-long-random-key' \
+  -p 127.0.0.1:8000:8000 \
+  -e OMNIFORGE_API_KEY="$OMNIFORGE_API_KEY" \
   -v omniforge_data:/opt/omniforge/data \
   -v omniforge_lib:/opt/omniforge/lib \
   --restart unless-stopped \
   dbzocchi/omniforge:latest
 ```
 
-Open `http://localhost:8000`. To limit who can connect, bind to one interface: `-p 127.0.0.1:8000:8000` makes it local-only, and `-p <lan-ip>:8000:8000` listens on one LAN address.
+Open `http://localhost:8000` on the Docker host. The default bind is local-only. To make it reachable on a trusted LAN, explicitly choose `-p <lan-ip>:8000:8000` and firewall access. This does not authenticate the dashboard.
 
 ### Hardened variant
 
@@ -41,8 +51,8 @@ The project's Docker test runs used UID 1000, a read-only root filesystem and re
 
 ```bash
 docker run -d --name omniforge \
-  -p 8000:8000 \
-  -e OMNIFORGE_API_KEY='replace-with-a-long-random-key' \
+  -p 127.0.0.1:8000:8000 \
+  -e OMNIFORGE_API_KEY="$OMNIFORGE_API_KEY" \
   -v omniforge_data:/opt/omniforge/data \
   -v omniforge_lib:/opt/omniforge/lib \
   --read-only \
@@ -72,9 +82,9 @@ services:
     # image: dbzocchi/omniforge@sha256:<digest>
     container_name: omniforge
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      OMNIFORGE_API_KEY: ${OMNIFORGE_API_KEY:-}
+      OMNIFORGE_API_KEY: ${OMNIFORGE_API_KEY:?Generate a key in .env first}
       OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS: "30000"
     volumes:
       - omniforge_data:/opt/omniforge/data
@@ -92,7 +102,7 @@ volumes:
   omniforge_lib:
 ```
 
-Put the key in a `.env` file next to it (`OMNIFORGE_API_KEY=…`), then:
+Generate `.env` with the commands above, next to `compose.yaml`, then:
 
 ```bash
 docker compose up -d
@@ -104,16 +114,26 @@ docker compose logs -f omniforge
 The repository's `docker-compose.yml` **builds the image from source**. It doesn't pull from Docker Hub. It tags the local build as `ionic-developer/omniforge:latest`.
 
 ```bash
-cp .env.example .env      # then replace OMNIFORGE_API_KEY=change-me with a real key
+umask 077
+printf 'OMNIFORGE_API_KEY=%s\n' "$(openssl rand -hex 32)" > .env
+set -a
+. ./.env
+set +a
+# First change the source file's port mapping to 127.0.0.1:8000:8000.
 docker compose up --build -d
 ```
 
 > [!CAUTION]
-> `.env.example` sets `OMNIFORGE_API_KEY=change-me`. If you copy it without editing, your MCP key is literally `change-me`.
+> Do not copy the sample credential from `.env.example`. Generate a fresh key. The source Compose file also binds all interfaces by default: change its port mapping to `127.0.0.1:8000:8000` before starting. Keep `.env` private and out of version control.
 
 That file also sets `OMNIFORGE_RUNTIME_IMAGE` and `OMNIFORGE_SCRIPT_HOST`, and mounts an `omniforge_scripts` volume at `/opt/omniforge/scripts`. **The current code uses none of these.** They are leftovers from an earlier design. You can delete them from your own compose file without any effect. See [Configuration](Configuration.md#variables-that-have-no-effect).
 
 ## Unraid
+
+This optional template exposes a LAN port, unlike the local-only quickstart.
+Restrict access to a trusted admin network. Generate a fresh key with the
+commands above and enter it in the masked MCP API key field; it does not
+protect the dashboard. Do not publish this port through a tunnel.
 
 Unraid has no Community Applications listing for OmniForge. Add it with a user template.
 
@@ -147,7 +167,7 @@ Save the XML below as `/boot/config/plugins/dockerMan/templates-user/my-OmniForg
   <Config Name="Web UI and MCP port" Target="8000" Default="8000" Mode="tcp" Description="Dashboard, REST API and /mcp" Type="Port" Display="always" Required="true" Mask="false">8000</Config>
   <Config Name="Data" Target="/opt/omniforge/data" Default="/mnt/user/appdata/omniforge/data" Mode="rw" Description="SQLite database. Must be writable by UID 1000." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/omniforge/data</Config>
   <Config Name="Package caches" Target="/opt/omniforge/lib" Default="/mnt/user/appdata/omniforge/lib" Mode="rw" Description="Per-tool pip/npm caches. Must be writable by UID 1000." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/omniforge/lib</Config>
-  <Config Name="MCP API key" Target="OMNIFORGE_API_KEY" Default="" Mode="" Description="Bearer key for POST /mcp. Empty disables MCP auth. Does not protect the dashboard." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="MCP API key" Target="OMNIFORGE_API_KEY" Default="" Mode="" Description="Bearer key for POST /mcp. Empty disables MCP auth. Does not protect the dashboard." Type="Variable" Display="always" Required="true" Mask="true"></Config>
   <Config Name="Script timeout (ms)" Target="OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS" Default="30000" Mode="" Description="Runner adds 15 seconds to this value." Type="Variable" Display="advanced" Required="false" Mask="false">30000</Config>
 </Container>
 ```

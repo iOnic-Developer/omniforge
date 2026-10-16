@@ -8,6 +8,12 @@ http://your-host:8000/mcp
 
 The **Connect** screen in the dashboard shows the exact URL, based on the address you opened it from, and whether a key is required.
 
+> **Local/trusted clients only.** The quickstart binds to `127.0.0.1`; another
+> host or container cannot use that host-local address. Cloud connectors need
+> authentication and isolation work beyond this guide. Never make the open
+> dashboard public just to satisfy a remote connector. There are no human
+> logins, per-user accounts or tenant boundaries.
+
 ## What the endpoint actually speaks
 
 Read this before choosing a client. OmniForge's MCP transport is **handwritten and partial**.
@@ -32,6 +38,8 @@ Full details are in [MCP protocol support](MCP-Protocol-Support.md).
 - **Refresh after changes.** OmniForge never announces new or changed tools, so reconnect or refresh the client's tool list.
 
 ## Claude Code
+
+**Unverified configuration:** test your exact client version.
 
 Add the server with the CLI:
 
@@ -62,7 +70,9 @@ Check it with `claude mcp list`, or with `/mcp` inside a session. If first calls
 
 ## Claude Desktop
 
-Claude Desktop's `claude_desktop_config.json` starts **local** (stdio) servers. To reach an HTTP server on your LAN, run a stdio-to-HTTP bridge. The community package [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) is the usual choice, and needs Node.js on the desktop machine.
+**Unverified bridge configuration:** test your exact client and bridge versions.
+
+The configuration below starts a **local** (stdio) bridge through `claude_desktop_config.json`. To reach an HTTP server on your LAN, run a stdio-to-HTTP bridge. The community package [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) is the usual choice, and needs Node.js on the desktop machine.
 
 Config file locations:
 
@@ -98,9 +108,11 @@ Config file locations:
 - With no key set, drop the `--header` pair and the `env` block.
 - Fully quit and restart Claude Desktop after editing the file.
 
-Custom connectors added in Claude's settings are aimed at internet-reachable remote servers, and OmniForge must not be one. Use the bridge.
+Do not expose OmniForge publicly for a cloud connector. A local bridge does not add server authentication or guarantee transport compatibility.
 
 ## LibreChat
+
+**Unverified configuration:** test your exact client version.
 
 In `librechat.yaml`:
 

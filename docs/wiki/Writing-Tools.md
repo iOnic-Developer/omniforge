@@ -111,6 +111,11 @@ Need a temporary file? Use Python's `tempfile` or Node's `os.tmpdir()`, both of 
 
 ## Examples
 
+For dependency-free scripts, complete create payloads and sample input/output,
+see [runnable Python and Node examples](../../examples/README.md). Those examples
+use standard libraries only and do not install packages or access the network.
+
+
 ### Python, no packages, with inputs: add VAT
 
 ```python

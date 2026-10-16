@@ -2,6 +2,10 @@
 
 # OmniForge documentation
 
+**Turn your Python and Node scripts into tools for your AI.**
+
+These private-access docs describe the reviewed source, not guaranteed parity with every published image. [Image inventory](Release-and-Deployment.md#published-image-inventory).
+
 OmniForge is a self-hosted, single-container workspace for turning small Python and Node scripts into tools that AI clients can call over the Model Context Protocol (MCP). You write a script in the browser, test it with a JSON input, save it, and it is listed at `/mcp` straight away.
 
 > [!WARNING]
@@ -26,7 +30,7 @@ OmniForge is a self-hosted, single-container workspace for turning small Python 
 2. [Installation](Installation.md): Docker, Docker Compose, an Unraid template and running from source.
 3. [Configuration](Configuration.md): every environment variable, port and path.
 4. [Dashboard guide](Dashboard-Guide.md): Overview, Tools, Tool studio, Connect and Help, screen by screen.
-5. [Writing tools](Writing-Tools.md): the script contract (stdin JSON, stdout, stderr, exit codes, timeouts) with examples.
+5. [Writing tools](Writing-Tools.md) and [runnable examples](../../examples/README.md): the script contract (stdin JSON, stdout, stderr, exit codes, timeouts) with examples.
 6. [Dependencies](Dependencies.md): package syntax, per-tool caches, accepted forms and failure modes.
 7. [Testing tools](Testing-Tools.md): Run / Test in the browser, plus testing with `curl`.
 8. [Connecting MCP clients](Connecting-MCP-Clients.md): Claude Code, Claude Desktop, LibreChat and plain HTTP.
@@ -56,7 +60,7 @@ OmniForge is a self-hosted, single-container workspace for turning small Python 
 
 | | |
 |---|---|
-| Image | `dbzocchi/omniforge:latest` (Docker Hub, `linux/amd64`, the only tag) |
+| Image | `dbzocchi/omniforge:latest` and `0.2.0_beta` (inventory checked October 16, 2026; Linux/amd64) |
 | Port | `8000` (dashboard, REST API and MCP on one port) |
 | MCP endpoint | `POST /mcp`: HTTP JSON-RPC (`initialize`, `tools/list`, `tools/call`, `ping`) |
 | Auth | Optional Bearer key on `POST /mcp` only |

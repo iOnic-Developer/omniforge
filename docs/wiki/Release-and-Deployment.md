@@ -23,16 +23,55 @@ The exact test commands are in [Development and testing](Development-and-Testing
 
 Things to know:
 
-- **Only `latest` is published.** There are no version or SHA tags and no release notes.
+- The checked-in workflow publishes **`latest` only**; this is workflow behaviour, not the complete registry inventory. A separately published `0.2.0_beta` tag also exists. See the dated inventory below.
 - **Tests don't run on the push to `main`.** The image is built from whatever lands on `main`. Merge through a pull request so the tests have run first.
 - Changes only to docs, tests or `docker-compose.yml` **don't** trigger a new image.
 - The image is built for **`linux/amd64`** only. The build step doesn't set `platforms`.
 - Python dependencies in `requirements.txt` are unpinned, so two builds of the same commit can differ.
 - Docker Hub credentials come from the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`.
 
+## Published image inventory
+
+Registry and OCI configuration checked **October 16, 2026**. This is an inventory,
+not a runtime certification or a promise of feature parity with this branch.
+
+| Tag | Last published (UTC) | Runtime platform | OCI revision |
+|---|---|---|---|
+| `latest` | 2026-10-13 02:43 | Linux/amd64 | No revision label |
+| `0.2.0_beta` | 2026-10-16 09:44 | Linux/amd64 | `6466945aef5a6854d241c286e0579db57bc50f42` |
+
+Registry index digests observed:
+
+- `latest`: `sha256:5fba6e224b0e4f46518efa570f6910a075d0c876c0a97266c9f15e72b7d1b123`
+- `0.2.0_beta`: `sha256:7f66f403b571d062ebf6736c1a87b5116afed17b6a3861a7d811957dfc5a74fe`
+
+The beta index also includes an unknown-platform attestation entry; that is not
+an additional supported runtime architecture. `latest` is a moving main-channel
+tag, **not a stable release designation**. The beta's version/source/revision
+labels identify a declared build provenance, not an executed feature test.
+FastAPI/MCP server `0.1.0` and UI-test package `0.1.0` are internal values, not
+product release numbers. Do not infer beta features from the tag name.
+
+A read-only source check on October 16 found remote `main` at
+`4ae443d26601c217d33aec77fa5002a7dc3dac2e`; `app/main.py` and `app/runner.py`
+matched the reviewed worktree byte-for-byte. This identifies source, **not** the
+October 13 image contents. The beta's declared revision could not be resolved
+through the authorised repository API (HTTP 404); its source parity remains
+unverified. No image was rebuilt or runtime-tested in this documentation pass.
+
+The source walkthroughs describe the reviewed branch. The older `latest` image
+must not be assumed to contain its dashboard, authoring, validation or dependency
+changes. Without a revision label or a verified source comparison, its exact
+parity is unproven. Test the selected digest independently before deployment.
+The workflow does not automatically publish the beta tag.
+
+Source repository visibility remains private; GitHub Pages is disabled. Public
+Docker availability is not an open-source licence or a privacy boundary: the
+Python image contains application code. See [publication controls](../PUBLICATION.md).
+
 ## Pin by digest for reproducible deploys
 
-`latest` moves every time `main` changes. To know exactly what you're running, and to roll back, deploy by **digest**.
+`latest` can move when a matching-path push to `main` or a manual workflow dispatch publishes it. To know exactly what you're running, and to roll back, deploy by **digest**.
 
 Find the digest of the current `latest`:
 
@@ -80,7 +119,7 @@ Record each digest you deploy, with the date, so you have a list of rollback tar
 3. Open the dashboard. If the service worker changed, **Update available** appears. Accept it in one tab and reload any others.
 4. Run one or two tools from the dashboard to confirm they still work.
 
-There are no database migrations. The schema is created if it's missing and otherwise left alone, so updates and downgrades don't touch your data.
+There are no database migrations. The reviewed source creates the schema if missing and otherwise leaves it alone. This is not a guarantee that an unverified image upgrade or downgrade is data-compatible; keep a restorable backup.
 
 ## Rolling back
 
