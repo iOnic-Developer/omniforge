@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="OmniForge", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="OmniForge", version="0.2.1", lifespan=lifespan)
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 STATIC_DIR = Path(__file__).parent / "static"
@@ -51,7 +51,7 @@ PUBLIC_ASSETS = {
     "icon-512.png": "image/png", "icon-maskable-512.png": "image/png",
     "manifest.webmanifest": "application/manifest+json",
     "offline.html": "text/html", "fonts/manrope.ttf": "font/ttf",
-    "fonts/jetbrains-mono.ttf": "font/ttf",
+    "fonts/jetbrains-mono.ttf": "font/ttf", "fonts/museomoderno-latin.woff2": "font/woff2",
     "fonts/OFL-Manrope.txt": "text/plain", "fonts/OFL-JetBrainsMono.txt": "text/plain",
 }
 

@@ -154,5 +154,5 @@ class MCPHandler:
         return {
             "protocolVersion": protocol_version,
             "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": "omniforge-mcp", "version": "0.1.0"},
+            "serverInfo": {"name": "omniforge-mcp", "version": "0.2.1"},
         }

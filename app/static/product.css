@@ -1159,3 +1159,57 @@ code {
 .test-inputs { padding: 20px 24px; border-top: 1px solid var(--line); }
 #testInputs { font-family: "JetBrains Mono", monospace; }
 .rail > * { flex-shrink: 0; }
+/* Alternate styles: a font + light/dark palette per data-style; "default" is the stock look above. */
+@font-face {
+  font-family: MuseoModerno;
+  src: url("/assets/fonts/museomoderno-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+.style-swatches {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 2px 0 4px 2px;
+  margin-bottom: 12px;
+}
+/* One solid circle per style in the current mode's colour, ringed in the page's text colour. */
+.style-swatch {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: var(--l);
+  transition: transform 0.15s ease;
+}
+:root[data-theme="dark"] .style-swatch { background: var(--d); }
+.style-swatch:hover { transform: scale(1.12); }
+.style-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+.style-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.style-swatch[data-style-choice="default"] { --l: #bfe3cf; --d: #1f5a45; }
+.style-swatch[data-style-choice="mono"] { --l: #dddbd3; --d: #3a3a37; }
+.style-swatch[data-style-choice="paper"] { --l: #edd3b0; --d: #6b3f22; }
+.style-swatch[data-style-choice="moderno"] { --l: #e6c7e9; --d: #5e2a66; }
+.style-swatch[data-style-choice="ocean"] { --l: #bfe0e6; --d: #1d5866; }
+:root[data-style="mono"] body { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 15px; }
+:root[data-style="paper"] body { font-family: ui-serif, Charter, "Iowan Old Style", Georgia, serif; font-size: 17px; }
+:root[data-style="moderno"] body { font-family: MuseoModerno, Manrope, sans-serif; }
+:root[data-style="ocean"] body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+:root[data-style="mono"][data-theme="light"] { --bg: #f4f3ef; --surface: #fff; --soft: #ebe9e3; --ink: #1f1e1b; --muted: #5d5a52; --line: #d3d0c7; --accent: #2f63b5; --accent-soft: #e3ebf8; --on-accent: #fff; }
+:root[data-style="mono"][data-theme="dark"] { --bg: #131312; --surface: #1b1b1a; --soft: #242422; --ink: #ecebe6; --muted: #b0ada4; --line: #45443f; --accent: #9cc0f2; --accent-soft: #1f2a3b; --on-accent: #10213a; }
+:root[data-style="paper"][data-theme="light"] { --bg: #f7f2ea; --surface: #fffdf9; --soft: #efe7da; --ink: #2b2118; --muted: #6b5a49; --line: #dccfbc; --accent: #17767f; --accent-soft: #dcefee; --on-accent: #fff; }
+:root[data-style="paper"][data-theme="dark"] { --bg: #1a1511; --surface: #231c17; --soft: #2c241e; --ink: #f1e8dc; --muted: #c3b29e; --line: #54473b; --accent: #8fd3d9; --accent-soft: #1d3335; --on-accent: #0f2a2d; }
+:root[data-style="moderno"][data-theme="light"] { --bg: #f7f2f7; --surface: #fff; --soft: #efe4f0; --ink: #2a1a2c; --muted: #66506a; --line: #dac9db; --accent: #8a3f8f; --accent-soft: #f1e1f2; --on-accent: #fff; }
+:root[data-style="ocean"][data-theme="light"] { --bg: #f1f6f7; --surface: #fff; --soft: #e3eef0; --ink: #12303a; --muted: #4a6670; --line: #c3d7da; --accent: #1d6b7a; --accent-soft: #dcedf0; --on-accent: #fff; }
+:root[data-style="ocean"][data-theme="dark"] { --bg: #0d1a1f; --surface: #13242a; --soft: #1a2f36; --ink: #e6f2f4; --muted: #a6c1c7; --line: #3a5862; --accent: #8fd0dc; --accent-soft: #173a42; --on-accent: #0d2a30; }
+:root[data-style="moderno"][data-theme="dark"] { --bg: #17111a; --surface: #201823; --soft: #2a1f2c; --ink: #f1e7f2; --muted: #c6b2c9; --line: #54435a; --accent: #e2b3e6; --accent-soft: #38233c; --on-accent: #2a1430; }
+@media (max-width: 640px) {
+  /* The swatch row no longer fits beside the brand; give the controls their own line. */
+  .rail-bottom { position: static; margin-top: 12px; }
+  .rail-bottom > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .style-swatches { margin: 0; flex-wrap: nowrap; }
+  .style-swatch { width: 22px; height: 22px; }
+}

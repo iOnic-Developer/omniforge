@@ -24,7 +24,7 @@
 <a class="nav-link" href="#connect" data-nav="connect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 15 6-6m-4-4 2-2a5 5 0 0 1 7 7l-3 3M7 11l-3 3a5 5 0 0 0 7 7l2-2"/></svg>Connect</a>
 <a class="nav-link" href="#help" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3h.01"/></svg>Help</a>
 </nav>
-<div class="rail-bottom"><div><label class="theme-label" for="themeSelect">Appearance</label><select id="themeSelect" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="rail-note"><strong>Your workspace. Your tools.</strong>Trusted code, connected to AI.</div></div>
+<div class="rail-bottom"><div><div class="style-swatches" role="group" aria-label="Style"><button type="button" class="style-swatch" data-style-choice="default" title="Default" aria-label="Default style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="mono" title="Mono" aria-label="Mono style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="paper" title="Paper" aria-label="Paper style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="moderno" title="Moderno" aria-label="Moderno style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="ocean" title="Ocean" aria-label="Ocean style" aria-pressed="false"></button></div><label class="theme-label" for="themeSelect">Appearance</label><select id="themeSelect" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="rail-note"><strong>Your workspace. Your tools.</strong>Trusted code, connected to AI.</div></div>
 </aside>
 <div class="workspace">
 <header class="topbar"><span class="connection" id="connectionState">Checking workspace…</span><div class="top-actions"><button id="updateBtn" type="button" hidden>Update available</button><button id="installBtn" type="button" hidden>Install app</button><a href="#help" class="muted">Getting started</a></div></header>
@@ -563,6 +563,14 @@ let preference = 'system'; try { const stored = localStorage.getItem('omniforge-
 $('#themeSelect').value = preference; applyTheme(preference);
 $('#themeSelect').addEventListener('change',() => { preference = $('#themeSelect').value; applyTheme(preference); try { localStorage.setItem('omniforge-theme',preference); } catch {} });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',() => { if (preference === 'system') applyTheme(preference); });
+const STYLES = ['default','mono','paper','moderno','ocean'];
+let style = 'default'; try { const stored = localStorage.getItem('omniforge-style'); if (STYLES.includes(stored)) style = stored; } catch { /* Storage may be disabled. */ }
+function applyStyle() {
+  document.documentElement.dataset.style = style;
+  document.querySelectorAll('[data-style-choice]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.styleChoice === style)));
+}
+applyStyle();
+document.querySelectorAll('[data-style-choice]').forEach(b => b.addEventListener('click',() => { style = b.dataset.styleChoice; applyStyle(); try { localStorage.setItem('omniforge-style',style); } catch {} }));
 fillEditor(); renderTemplates(); $('#offlineBanner').hidden = navigator.onLine;
 (async () => {
   await activateRoute(normalizedRoute(location.hash),true);
