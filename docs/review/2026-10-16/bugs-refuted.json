@@ -1,0 +1,42 @@
+[
+  {
+    "source_id": "GEM-01",
+    "claim": "Concurrency race: two concurrent runs of one tool overwrite the fixed scratch path while the first subprocess is still reading it (High).",
+    "reason": "Not reachable in the live build. There is one uvicorn worker and run_tool blocks the event loop, so two runs can never overlap in the process; verified: two concurrent 3 s runs finished at 3.02 s and 6.04 s. Both interpreters also read the whole script before executing. The hazard only appears once execution is moved off the loop (BUG-004), so that fix must also use per-run paths (folded into BUG-015)."
+  },
+  {
+    "source_id": "GEM-05",
+    "claim": "Race between the .complete marker check and staging.rename(destination) in ensure_dependencies.",
+    "reason": "The marker check, the destination.exists() check and the rename all execute while the per-digest exclusive fcntl lock is held, so no second installer for the same digest can interleave. Different digests use different destinations."
+  },
+  {
+    "source_id": "GEM-02 (severity)",
+    "claim": "DNS rebinding / CSRF rated Critical.",
+    "reason": "Mechanism confirmed and merged into BUG-001, but for a single-user LAN deployment with container hardening it is rated high (rebind race must be won, browser local-network protections are tightening). Critical only if exposed or tunnelled."
+  },
+  {
+    "source_id": "SEC-12 (part)",
+    "claim": "/api/config exposes the auth posture unauthenticated.",
+    "reason": "By design: the endpoint returns no secrets and the dashboard needs it; it only mirrors what README and the dashboard already state. The 422-echo half of SEC-12 is kept (BUG with BE-23)."
+  },
+  {
+    "source_id": "FE-02",
+    "claim": "Separate frontend finding that Run / Test blocks the server.",
+    "reason": "Not refuted; it is the same defect as BE-01 and is merged into BUG-004 to avoid double counting."
+  },
+  {
+    "source_id": "FE-05 / FE-10 / FE-13 (severity)",
+    "claim": "Medium-severity service-worker update and offline-page defects.",
+    "reason": "Confirmed in code and on the HTTPS scratch copy, but the live deployment is a plain-HTTP LAN origin where the service worker never registers (verified: isSecureContext=false on a non-localhost http origin), so they cannot trigger today. Kept as P3."
+  },
+  {
+    "source_id": "RR (own hypothesis)",
+    "claim": "Legacy rows might store language values ('python', 'js') the new studio select cannot show.",
+    "reason": "Checked the 42a5dd1 dashboard: its select already used python3/node, so no such rows can exist. Dropped."
+  },
+  {
+    "source_id": "librechat-fable.md",
+    "claim": "Docs-only review.",
+    "reason": "No defect claims beyond those already merged (R3 transport -> BUG with BE-04/BE-18/BE-19/BE-20; I1 schema editor -> studio schema bug; I9 dead config -> release hygiene bug). Nothing refuted."
+  }
+]
