@@ -9,7 +9,7 @@ version with JSON, then let an MCP client discover and call it. One container;
 a browser dashboard; your own tool library.
 
 [Get started](#get-started) · [Script examples](examples/README.md) ·
-[Documentation](docs/wiki/Home.md) · [Docker Hub](https://hub.docker.com/r/dbzocchi/omniforge)
+[Documentation](docs/wiki/Home.md) · [Website publication](docs/PAGES.md) · [Docker Hub](https://hub.docker.com/r/dbzocchi/omniforge)
 
 ![OmniForge Tool studio: script editor, JSON test inputs and execution results](docs/assets/screenshots/studio-desktop.png)
 

@@ -90,3 +90,13 @@ historical review evidence are unchanged. The source remains private; Wiki and P
 remain disabled. A public website needs a separate hosting/privacy decision. Docker Hub
 is already public; its overview is updated from this self-contained text without private
 asset links. No new image or application deployment is part of this task.
+
+## Requested repository Pages target
+
+The owner selected `https://ionic-developer.github.io/omniforge/site/` and authorized
+public visibility if needed, offering to make the change manually otherwise. Pages
+creation on the current private repository returned HTTP422 (plan restriction).
+A read-only history preflight found deployment identifiers and unpublished security
+findings, so no repository visibility change was made. The explicit-allowlist builder
+and Pages workflow are ready; private runs create a downloadable preview, not a live
+website. See PAGES.md for the owner's visibility and deployment handoff.
