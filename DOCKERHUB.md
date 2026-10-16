@@ -157,7 +157,6 @@ Do not use `docker compose down -v` unless you intend to remove stored data.
 
 ## Source and rights
 
-Source and detailed docs are **private and require access**; this guide needs
-neither. Image availability is not an open-source licence: **all rights reserved**.
-The Python image includes application source; repository privacy does not make
-distributed image contents confidential.
+Source and detailed documentation are publicly viewable on GitHub. Public visibility
+and image availability do not grant an open-source licence: **all rights reserved**.
+Use the linked product website for screenshots and rendered installation guides.
