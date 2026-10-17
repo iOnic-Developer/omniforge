@@ -49,8 +49,14 @@ jobs:
         run: npm run test:browser
         env:
           OMNIFORGE_SCREENSHOTS: test-artifacts/screenshots
+      - name: Verify runnable documentation examples
+        run: .venv/bin/python scripts/test-docs.py
+      - name: Audit product page and local assets
+        run: node scripts/test-product-page.mjs
+        env:
+          OMNIFORGE_PAGE_TEST_OUTPUT: test-artifacts/product-page
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: product-browser-screenshots
-          path: test-artifacts/screenshots
+          path: test-artifacts

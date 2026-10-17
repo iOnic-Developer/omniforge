@@ -1,0 +1,1429 @@
+[
+  {
+    "id": "FEAT-001",
+    "type": "decision",
+    "title": "Adopt the official mcp SDK's Streamable HTTP transport, or keep extending the handwritten JSON-RPC?",
+    "area": "MCP",
+    "audience": "advanced",
+    "why": "The handwritten `_handle_rpc` covers four methods and keeps diverging from the spec (verified: notifications get error replies, batches return 422, `initialize` echoes any version, no sessions or Origin check), while the official `mcp` package already sits unused in `requirements.txt`.",
+    "what": "Confirm the SDK route, which both Fable reviews recommend. If the answer is 'keep handwritten', replace the transport card with a list of targeted protocol fixes.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D1"
+    ],
+    "priority_note": "Both Fable reviews recommend the SDK, so this only needs a quick confirmation. The transport card stays in Next."
+  },
+  {
+    "id": "FEAT-002",
+    "type": "decision",
+    "title": "How far should script isolation go: in-container hardening only, a runner sidecar, or per-run sandboxing (bubblewrap/nsjail, gVisor, WASM)?",
+    "area": "Security / runner",
+    "audience": "all",
+    "why": "Scripts run as the app user with the app's filesystem, network and database. The reviews propose different first steps: bubblewrap inside the image (Fable), a credential-free runner sidecar followed by namespaces (LibreChat), and gVisor or WebAssembly (Gemini). Per-run namespaces probably need a relaxed seccomp/AppArmor profile on Unraid.",
+    "what": "Choose the target tier and the first step. Every option except per-tool container images keeps the no-Docker-socket stance. Fable rejected Firecracker and container-per-run as too heavy for one container.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D2",
+      "gemini:WASM-First Execution"
+    ],
+    "priority_note": "Gemini's WASM-first idea is a big bet. Fable and LibreChat favour namespaces or a sidecar."
+  },
+  {
+    "id": "FEAT-003",
+    "type": "decision",
+    "title": "Admin identity: single admin password and session, multiple local users from day one, or OIDC sign-in?",
+    "area": "Security",
+    "audience": "all",
+    "why": "All three reviews make dashboard login P1, but they disagree on identity: a first-boot admin password with a signed session (Fable, LibreChat), OIDC via Google/GitHub or Basic Auth (Gemini), and lightweight multi-user roles as a later P3 (Fable).",
+    "what": "Choose the identity model for the first release. Either way, the login card starts with a single admin.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D9"
+    ],
+    "priority_note": "Only decides what comes after the single-admin first step."
+  },
+  {
+    "id": "FEAT-004",
+    "type": "decision",
+    "title": "Secrets at rest: encrypted in SQLite under a master key from the environment, or fetched from an external store (Proton Pass, HashiCorp Vault) at run time?",
+    "area": "Security",
+    "audience": "all",
+    "why": "Real tools need API keys (lottery API, Pushover, Xero). Fable and LibreChat design an encrypted SQLite table. Gemini wants encrypted per-tool values first and Vault or AWS Secrets Manager integration later. The choice affects key management and backups.",
+    "what": "Confirm encrypted SQLite as the first step, and decide whether an external-store backend should follow.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D7"
+    ],
+    "priority_note": "All three reviews agree on the first step, so the secrets card stays in Next."
+  },
+  {
+    "id": "FEAT-005",
+    "type": "decision",
+    "title": "Which clients must OmniForge serve: LAN-only clients with per-client keys, or remote hosted clients such as Claude.ai connectors that need OAuth 2.1?",
+    "area": "Security / MCP",
+    "audience": "all",
+    "why": "Claude.ai custom connectors and other hosted MCP clients cannot send a static Bearer header. They need OAuth discovery (RFC 9728/8414) and an external authorisation server such as Authentik or Cloudflare Access. LAN clients such as LibreChat and Claude Code work with named keys.",
+    "what": "Decide whether remote hosted clients are a goal. If they are, the OAuth card moves up to P2 and HTTPS becomes mandatory. If not, per-client keys are enough.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D3"
+    ],
+    "priority_note": "LibreChat says decisions D1-D3 change the shape of the P1 work."
+  },
+  {
+    "id": "FEAT-006",
+    "type": "requirement",
+    "title": "Per-run sandbox for script execution",
+    "area": "Security / runner",
+    "audience": "all",
+    "why": "Scripts run as the app user with the app's filesystem, network and DB. One careless `shutil.rmtree` or one malicious dependency owns the instance, and a script can read the DB, the lib root and every other tool's cache. The original brief asked for per-run isolation, and the no-Docker-socket stance rules out a container per run.",
+    "what": "Tiered, with no Docker socket at any tier. Tier 1: bubblewrap in the image (`--unshare-all`, optional `--share-net`, read-only runtime and deps, tmpfs `/tmp`, per-run work dir, `--die-with-parent`, seccomp), and scripts run as a second unprivileged UID that cannot read the DB or secrets. Tier 2: nsjail, or a credential-free runner sidecar (no DB, no secrets, no API key, read-only lib mount), for cgroup CPU/memory/pids limits. Tier 3: gVisor `runsc` as the container runtime. A per-tool 'network on/off' flag.",
+    "effort": "L",
+    "value": "high",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [
+      "FEAT-002",
+      "FEAT-031"
+    ],
+    "related_bug_hint": "The pure bug fixes it builds on are tracked separately: API key leaking via the inherited env, timeout killing only the direct child, uncapped output.",
+    "sources": [
+      "fable:R-05",
+      "librechat:R2",
+      "gemini:Sandbox Isolation"
+    ],
+    "priority_note": "P1 in all three reviews. It waits on the isolation decision because each review proposes a different first tier."
+  },
+  {
+    "id": "FEAT-007",
+    "type": "decision",
+    "title": "Run history privacy: store arguments and output (how much, for how long), or metadata only?",
+    "area": "Observability / privacy",
+    "audience": "all",
+    "why": "Run history is the main way to debug a failure a client reports. But arguments and stdout can hold personal or secret data, and they would sit in the same SQLite file as everything else.",
+    "what": "Set the default: metadata only, hashed arguments, or bounded arguments and output kept for a set retention period.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D8"
+    ],
+    "priority_note": "This tunes the run-history card's defaults. The card can start with metadata."
+  },
+  {
+    "id": "FEAT-008",
+    "type": "decision",
+    "title": "Close PR #3 (the older workbench) now, or convert it to a reference branch?",
+    "area": "Repo",
+    "audience": "advanced",
+    "why": "An open PR from the earlier design could be merged over the redesign by accident.",
+    "what": "Close it, or turn it into a clearly named reference branch.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P1",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D11"
+    ],
+    "priority_note": "A five-minute guard. LibreChat says do it now."
+  },
+  {
+    "id": "FEAT-009",
+    "type": "decision",
+    "title": "Which HTTPS route: Tailscale Serve, Caddy with an internal CA, or the existing Cloudflare Tunnel plus Access?",
+    "area": "Deployment",
+    "audience": "all",
+    "why": "Plain HTTP on the LAN is not a secure context, so the PWA cannot install, and hosted MCP clients require HTTPS. The route decides which compose profile and docs ship first.",
+    "what": "Choose one route to document and ship first. The others can follow as notes.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D6"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-010",
+    "type": "decision",
+    "title": "Build cron scheduling into OmniForge, or ship webhook triggers only and let n8n do the scheduling?",
+    "area": "Automation",
+    "audience": "advanced",
+    "why": "A results fetcher has to be fresh at a fixed time, such as just after a Wednesday or Saturday draw, but today only an LLM or a person can trigger a tool. David already runs n8n, which can schedule jobs and call a webhook.",
+    "what": "Choose between an in-process scheduler (per-tool cron, a missed-run policy, results in run history) and webhooks only, plus an n8n template.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D5"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-011",
+    "type": "decision",
+    "title": "Should SQLite stay the source of truth with export/import, or should OmniForge move toward git-backed tool files?",
+    "area": "Storage",
+    "audience": "advanced",
+    "why": "Tools exist only as rows in one SQLite file in a Docker volume. Code review, blame, branching and off-box history all need files. Git sync is L effort and shapes the bundle format, the CLI and CI.",
+    "what": "Choose between keeping SQLite canonical (with Git only as an export target) and tools-as-files (with the DB as a runtime index).",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D4"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-012",
+    "type": "decision",
+    "title": "Should the dashboard generate tools with its own configured LLM, or keep AI authoring in the user's connected assistant?",
+    "area": "Onboarding / AI authoring",
+    "audience": "beginner",
+    "why": "Users know what they want but not Python or Node. Gemini proposes an in-dashboard 'Prompt to Tool' generator and LLM-generated descriptions and schemas (P1), plus an 'Agentic Author' big bet. Fable and LibreChat instead expose the existing `omniforge_instructions`/`omniforge_create_tool` built-ins through the user's own assistant, which needs no LLM credentials inside OmniForge.",
+    "what": "Decide whether OmniForge holds an LLM key and calls a model itself. If yes, add a 'Prompt to Tool' panel and 'generate description and schema from code'. If no, the 'Build tools with your AI assistant' card covers this.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "gemini:Natural Language UI",
+      "gemini:Auto-Doc Gen",
+      "gemini:Agentic Author"
+    ],
+    "priority_note": "Gemini rated the in-dashboard generator P1. The other two reviews route AI authoring through the connected assistant."
+  },
+  {
+    "id": "FEAT-013",
+    "type": "decision",
+    "title": "Environments: draft/published revisions per tool, or separate dev and prod instances promoted via the CLI?",
+    "area": "Ops / studio",
+    "audience": "advanced",
+    "why": "Most of the 'multiple environments' pain is 'don't break the tool my assistant is using while I edit it'. David tests on a scratch instance and runs production at 192.168.0.180, and there is no way to move an exact revision between them.",
+    "what": "Option A: each tool has a published revision served over MCP plus an optional draft. Test the draft, then Publish. Option B: bundles carry revision hashes, and `omniforge promote <name> --to prod` imports a pinned revision. Each instance shows an environment label and colour. Both options build on version history.",
+    "effort": "S",
+    "value": "low",
+    "priority": "P3",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:D10",
+      "librechat:A3",
+      "fable:A-03"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-014",
+    "type": "decision",
+    "title": "Is a shared or community tool registry in scope, or only private bundles and Git packs?",
+    "area": "Ecosystem",
+    "audience": "all",
+    "why": "Gemini's 'OmniForge Cloud Sync' big bet imagines a central registry for discovering, sharing and starring tools (the 'GitHub of MCP'). Fable proposes installing packs from a Git URL or bundle with a clear 'community, unreviewed' label.",
+    "what": "Choose between no sharing beyond export/import, installable packs from Git URLs or bundles, and a hosted registry. Packs depend on export/import and on the isolation decision.",
+    "effort": "S",
+    "value": "low",
+    "priority": "P3",
+    "column": "decide",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "gemini:OmniForge Cloud Sync",
+      "fable:F-11"
+    ],
+    "priority_note": "Fable F-11's pack-install half lives here. Its template half is on the gallery card."
+  },
+  {
+    "id": "FEAT-015",
+    "type": "requirement",
+    "title": "Resource limits: per-tool overrides, concurrency cap, quotas and rate limits",
+    "area": "Runner / API",
+    "audience": "all",
+    "why": "The timeout is global (`OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS` plus an undocumented 15 s) and the memory setting is 'declared only', so a scraper that needs 90 s shares settings with a 50 ms formatter. A looping LLM can call a tool hundreds of times, and nothing caps concurrency, calls per minute or daily runtime. `slowapi` is in `requirements.txt` but never imported.",
+    "what": "Per-tool overrides for timeout, memory, CPU seconds, output cap and network access, bounded by admin maximums. They sit in the studio's advanced section and are enforced with rlimits (`RLIMIT_AS/NPROC/FSIZE/CPU`). Enforce exactly the configured timeout, keep a separate install timeout, and report both durations plus `timed_out` as structured fields. A global run queue or semaphore that returns a clear 'busy' result. Per-key calls per minute and per-tool daily caps. Token-bucket limits on `tools/call`, `/run` and login, answering `429` with `Retry-After`.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-018"
+    ],
+    "related_bug_hint": "Companion to the separate fixes for blocking subprocess calls in async handlers, timeouts that kill only the direct child, and the '+15 s' timeout.",
+    "sources": [
+      "fable:R-17",
+      "fable:I-07",
+      "fable:F-15",
+      "fable:R-16",
+      "fable:R-06",
+      "fable:R-08",
+      "librechat:R7",
+      "librechat:I3"
+    ],
+    "priority_note": "LibreChat makes all of it P1. Fable makes per-tool limits P1 and quotas/rate limits P2. Fable R-06 and R-08 contribute only their non-bug halves (rlimits, concurrency cap)."
+  },
+  {
+    "id": "FEAT-016",
+    "type": "improvement",
+    "title": "Regression and MCP conformance test suite",
+    "area": "Quality",
+    "audience": "advanced",
+    "why": "The tests are strong on dashboard races, revision conflicts and dependency caching. Nothing covers secrets leaking into scripts (they do), process-tree kill, output caps, event-loop blocking under concurrent requests, MCP conformance with a real client, or backup/restore.",
+    "what": "An MCP conformance suite using the official Python client over Streamable HTTP. A secret-leak regression test, a 'spawn a child, then time out' test and an output-cap test. An asyncio concurrency test (list tools while a 3 s tool runs) and a backup/restore test. Make Playwright runs mandatory in CI on `main`.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "Locks in the fixes for the verified runner bugs (env leak, orphaned children, uncapped output, blocking handlers).",
+    "sources": [
+      "fable:I-08"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-017",
+    "type": "requirement",
+    "title": "Adopt the official MCP SDK Streamable HTTP transport",
+    "area": "MCP",
+    "audience": "all",
+    "why": "The transport is hand-rolled and non-conformant, while the official `mcp` SDK is already installed and unused. Verified: `notifications/initialized` gets an error reply instead of 202, batches return a FastAPI 422, `initialize` echoes any `protocolVersion`, and there is no `Mcp-Session-Id` or Origin check. Also verified: `GET /mcp` returns a made-up event, `tools/list` ignores `cursor`, and `listChanged: false` means clients never learn about new tools.",
+    "what": "Mount the SDK's Streamable HTTP ASGI app at `/mcp`, register tools from the DB on each list/call so hot reload still works, and keep the built-ins as SDK tools. Adds sessions, SSE for server-to-client messages, protocol negotiation (2024-11-05/2025-03-26/2025-06-18) and Origin validation. Also adds cursor pagination, `notifications/tools/list_changed` on save/toggle/delete, spec-shaped JSON-RPC errors and `WWW-Authenticate` on 401. Conformance tests with MCP Inspector, Claude Desktop/Code and LibreChat. This unlocks prompts, resources, structured results, progress and n8n compatibility.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-001"
+    ],
+    "related_bug_hint": "Fixes the verified transport bug class: error replies to notifications, batch 422s, protocol-version echo, no Origin/Host check (DNS rebinding), and the fake GET /mcp SSE event.",
+    "sources": [
+      "fable:I-01",
+      "fable:R-09",
+      "fable:I-05",
+      "fable:I-11",
+      "librechat:R3",
+      "gemini:Full MCP Compliance"
+    ],
+    "priority_note": "Effort is M (Fable) vs L (LibreChat, which also bundled structured output and annotations; those are split out here). It stays in Next because every review recommends the SDK."
+  },
+  {
+    "id": "FEAT-018",
+    "type": "requirement",
+    "title": "Dashboard login + scoped API keys",
+    "area": "Security",
+    "audience": "all",
+    "why": "`/`, `/api/tools*`, `/api/config`, `/api/tools/{name}/run` and `GET /mcp` have no auth, so anyone on the LAN can read every script (embedded credentials included), and edit, delete or run code in the container. MCP uses one shared `OMNIFORGE_API_KEY`. It can't be rotated without recreating the container or revoked per client, and it gives LibreChat the same rights as a throwaway test client, including `omniforge_create_tool`.",
+    "what": "Tier 1: an admin password set on first boot or via env, and a signed session cookie (SameSite=Strict) with a CSRF token and a rate-limited login. That session gates the dashboard, `/api/*` and `GET /mcp`. Keep an env escape hatch for trusted-LAN dev. Tier 2: a hashed `api_keys` table with create/rotate/revoke in Connect, each key shown once. Scopes `tools:list`, `tools:call`, `tools:author` and `admin`, with the key id recorded on runs and audit rows. The env key stays as a bootstrap option.",
+    "effort": "L",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-003"
+    ],
+    "related_bug_hint": "Fixes the unauthenticated management API and dashboard bug class.",
+    "sources": [
+      "fable:R-01",
+      "fable:R-02",
+      "librechat:R1",
+      "gemini:Dashboard Auth"
+    ],
+    "priority_note": "P1 in all three reviews. It starts with a single admin; the admin-identity decision only sets what follows (multi-user or OIDC)."
+  },
+  {
+    "id": "FEAT-019",
+    "type": "requirement",
+    "title": "Secure-by-default first boot and safe new-tool defaults",
+    "area": "Security / onboarding",
+    "audience": "beginner",
+    "why": "Leaving `OMNIFORGE_API_KEY` empty disables MCP auth entirely, the dashboard is open, and Overview tells users to rely on a trusted network. Newcomers will deploy with the defaults and won't know about timeouts, packages or destructive actions.",
+    "what": "On first boot with no admin configured, a setup screen sets the admin password and generates the first MCP key (shown once). Auth is on by default, timeout and output caps are on, and per-tool network is off once the sandbox exists. New tools default to `readOnlyHint: true` and a short timeout, each changeable with a one-line toggle.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-018"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:B-03",
+      "librechat:U5"
+    ],
+    "priority_note": "Fable P1. LibreChat made the tool defaults P3."
+  },
+  {
+    "id": "FEAT-020",
+    "type": "usability",
+    "title": "Per-client connection recipes",
+    "area": "Connect",
+    "audience": "beginner",
+    "why": "Connect shows one generic JSON-RPC template, which doesn't help anyone configuring a real client. LibreChat needs a `librechat.yaml` `mcpServers` block with `type: streamable-http` and headers, and Claude Code needs `claude mcp add --transport http ... --header`. Claude Desktop needs `mcp-remote`, and n8n needs MCP Client node settings. Hand-editing config files is where people give up.",
+    "what": "A client picker (LibreChat, Claude Code, Claude Desktop, Claude.ai connector, Cursor/Windsurf, n8n, MCP Inspector, curl). It emits copy-ready snippets with the real origin and a `<YOUR_API_KEY>` placeholder (or the key itself, shown once), plus caveats such as HTTPS/OAuth requirements and header support. Where a client supports it, offer a downloadable `claude_desktop_config.json` fragment or a deep link.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:U-04",
+      "librechat:I4",
+      "librechat:L3"
+    ],
+    "priority_note": "Fable P1. LibreChat P2, with the one-click download at P3."
+  },
+  {
+    "id": "FEAT-021",
+    "type": "requirement",
+    "title": "Schema migration framework",
+    "area": "Storage",
+    "audience": "all",
+    "why": "`_ensure_schema` only runs `CREATE TABLE IF NOT EXISTS` and there is no schema version, so every feature that adds a table or column (versions, runs, keys, secrets, audit) risks breaking older DBs. `tools.name` has only a non-unique index and legacy duplicates are tolerated. The default `sqlite3.connect` settings (no WAL, 5 s busy timeout) can throw 'database is locked'.",
+    "what": "A `schema_version` table with numbered, idempotent migrations that run at startup under a lock, each preceded by a `VACUUM INTO` backup. First migration: rename legacy duplicates to `name__dupN`, add `UNIQUE(name)`, enable WAL and set `busy_timeout`, keeping the transactional guard as a second safety net.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-14",
+      "fable:I-04",
+      "librechat:F14"
+    ],
+    "priority_note": "Fable P2, LibreChat P1 ('do first; everything else depends on it'). P1 because versions, runs, keys and secrets all add tables."
+  },
+  {
+    "id": "FEAT-022",
+    "type": "feature",
+    "title": "Tool version history, rollback and trash",
+    "area": "Storage / studio",
+    "audience": "all",
+    "why": "Every save overwrites the single `tools` row, so a bad edit from a second tab, an LLM via `omniforge_create_tool` or a mis-paste can't be undone. The content-hash `revision` only detects conflicts. Delete is confirmed but final, and a 412 conflict is a dead end because users can't see what changed in the other tab.",
+    "what": "An append-only `tool_versions` table written on every upsert (revision, code, schema, requirements, description, author/client, timestamp). A studio History panel with a diff against the current version and one-click Restore, which creates a new version and never rewrites history. A side-by-side diff when a 412 conflict occurs. Deleted tools go to a 30-day trash and can be restored from history.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-021"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-01",
+      "librechat:F1",
+      "librechat:F13",
+      "gemini:Conflict Diffing"
+    ],
+    "priority_note": "Trash (LibreChat P3) and the conflict diff (Gemini P2) are folded in because they come cheaply from the same table."
+  },
+  {
+    "id": "FEAT-023",
+    "type": "feature",
+    "title": "Run history and logs",
+    "area": "Observability",
+    "audience": "all",
+    "why": "Run results exist only in the browser tab and in MCP responses, and stderr is lost. When LibreChat reports that a tool failed yesterday, the server has nothing to look at. Nobody can answer 'did my client actually call it, and what happened?'",
+    "what": "A `runs` table: tool, revision, origin (dashboard, MCP, key id, client name), argument hash (arguments optional), status, exit code, timed_out, duration, bounded stdout/stderr and timestamps. A Runs page and a per-tool recent-runs list in the studio, re-run with the same inputs, and retention settings. Feeds usage stats, last-seen clients, onboarding ticks and the audit trail.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-007",
+      "FEAT-021"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-06",
+      "librechat:F3",
+      "gemini:Execution History"
+    ],
+    "priority_note": "Fable and LibreChat P1, Gemini P2. P1 because many cards build on it."
+  },
+  {
+    "id": "FEAT-024",
+    "type": "feature",
+    "title": "Export / import tool bundles",
+    "area": "Storage",
+    "audience": "all",
+    "why": "Tools live only inside one SQLite file in a named Docker volume. There is no way to move a tool to another instance, share it, or keep a copy outside the container.",
+    "what": "`GET /api/tools/{name}/export` and `GET /api/export` emit a bundle (metadata, code, schema, requirements and versions, e.g. `tool.yaml` plus the source file). `POST /api/import` takes a rename/skip/overwrite strategy and a dry-run, and reuses `ToolIn` validation. Git sync, the CLI and promotion use the same format.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-03",
+      "librechat:F6"
+    ],
+    "priority_note": "Fable P1, LibreChat P2. P1 because it is cheap and Git sync, the CLI and packs need it."
+  },
+  {
+    "id": "FEAT-025",
+    "type": "requirement",
+    "title": "Backup and restore",
+    "area": "Ops",
+    "audience": "all",
+    "why": "All state is `omniforge.db` plus the `lib/` caches in Docker volumes. There is no documented backup, no consistent snapshot (a file copy of a live SQLite DB can be torn) and no restore path. The caches can be rebuilt; the DB cannot.",
+    "what": "`GET /api/admin/backup` using SQLite's online backup or `VACUUM INTO`. Scheduled backups to a mounted path with retention. 'Download backup' and 'Restore from backup' (admin only, with a dry-run diff), WAL mode, and a README runbook that includes the Unraid appdata-backup path.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-018"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-12",
+      "librechat:R5",
+      "gemini:Backup/Restore"
+    ],
+    "priority_note": "Fable and LibreChat P1, Gemini P2."
+  },
+  {
+    "id": "FEAT-026",
+    "type": "feature",
+    "title": "Per-tool encrypted secrets",
+    "area": "Security / runner",
+    "audience": "all",
+    "why": "Scripts need API keys (lottery API, Pushover, Xero). Today they can only be hard-coded in `code`, stored in plaintext and visible to every dashboard visitor, or set as container env vars, which every script inherits. No real-world tool can be made safe this way.",
+    "what": "A `secrets` table encrypted with a master key from env or a keyfile (`OMNIFORGE_SECRET_KEY`). Secrets are set, rotated and deleted in the studio and are write-only. Each is injected as an env var only into its own tool's subprocess, after the environment is scrubbed. Values are redacted from stdout/stderr, logs and run history, extending what `_safe_stderr` already does for installer output. External stores (HashiCorp Vault, AWS Secrets Manager) can come later as a backend.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-004"
+    ],
+    "related_bug_hint": "Needs the env-leak fix first (scripts currently inherit `OMNIFORGE_API_KEY` via `os.environ.copy()`); without it the vault is theatre.",
+    "sources": [
+      "fable:F-05",
+      "fable:I-10",
+      "librechat:F2",
+      "gemini:Per-Tool Env Vars",
+      "gemini:Secrets Management"
+    ],
+    "priority_note": "P1 in all three reviews (Gemini via per-tool env vars). Gemini put external vault integration at P2."
+  },
+  {
+    "id": "FEAT-027",
+    "type": "feature",
+    "title": "Input-schema editor in the dashboard",
+    "area": "Studio",
+    "audience": "all",
+    "why": "The dashboard cannot create or edit `inputSchema`: `save()` reuses the existing schema or `{}`, and the UI says 'Create or change schemas through MCP'. So every tool authored in the browser takes no parameters; a lottery fetcher can only take a draw date if an LLM created it. This is the biggest functional hole for dashboard users, and JSON Schema is the steepest part of the learning curve.",
+    "what": "A form builder (name, type, description, required, enum, default) that emits Draft 2020-12. 'Generate from example': paste `{\"postcode\":\"PR1 1AA\"}` and get an editable schema. A raw-JSON advanced mode validated with the existing `validate_schema`. Schema edits are revision-guarded like code.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-02",
+      "librechat:I1",
+      "librechat:U3",
+      "gemini:Schema Visual Editor"
+    ],
+    "priority_note": "Fable and LibreChat P1, Gemini P2."
+  },
+  {
+    "id": "FEAT-028",
+    "type": "usability",
+    "title": "Plain-language errors and failed-run explainer",
+    "area": "Studio / help",
+    "audience": "beginner",
+    "why": "Errors are accurate but technical ('Dependency installation failed; script was not run: <pip tail>', 'Arguments do not match inputSchema'). A failed test shows a raw traceback with a scratch path like `/tmp/omniforge/46c2b4.py` and no link back to the user's code.",
+    "what": "Map known failure classes to a short explanation and a next step, with the technical detail behind 'Show details'. Examples: `ModuleNotFoundError` becomes 'add X to Packages'; '`reqests` is not on PyPI, did you mean `requests`?'; 'Your AI sent `date` but the tool expects `draw_date`'; a timeout becomes 'raise the limit or cache'. Parse tracebacks, show the scratch path as 'your script', highlight the failing line and show the exact stdin JSON that was sent. Add 'Copy failure report' (code, inputs and error, secrets redacted) for pasting into any assistant.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:B-02",
+      "fable:U-01",
+      "librechat:I10",
+      "librechat:L4"
+    ],
+    "priority_note": "Fable P1 for both halves. LibreChat P2 for hints, P3 for the failure report."
+  },
+  {
+    "id": "FEAT-029",
+    "type": "beginner",
+    "title": "Guided 'new tool' wizard",
+    "area": "Onboarding",
+    "audience": "beginner",
+    "why": "In David's words, users have 'never seen anything like this'. The studio shows name, runtime, description, a blank script, folded packages and a JSON textarea all at once, and nothing explains the create, test, connect flow.",
+    "what": "Five steps: What should it do? Which inputs (name and type, in plain words)? Python or Node ('not sure: Python')? A generated skeleton that reads inputs and prints JSON. Then Test and Connect. Each step writes into the normal studio, so nothing is hidden afterwards. Optionally, a tooltip walk-through of the studio for the first tool.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-027"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:B-01",
+      "gemini:Interactive Tutorial"
+    ],
+    "priority_note": "Fable P1. Gemini P2 for the tooltip tutorial."
+  },
+  {
+    "id": "FEAT-030",
+    "type": "beginner",
+    "title": "Realistic templates and a tool gallery",
+    "area": "Onboarding",
+    "audience": "beginner",
+    "why": "The four examples are two greetings, a `requests` example that deliberately sends nothing, and a lodash sort of four numbers. None shows how to accept an input, call a real URL, use a secret or return a table. An empty library is intimidating, and the templates are hidden in a dialog.",
+    "what": "A visible gallery page with 'Install' buttons and 10-15 curated templates, each with a schema, sample inputs and expected output. Examples: fetch a page and extract a number (bonus-ball style), call a JSON API with a secret, summarise a CSV from a URL, send a Pushover/Telegram message, scrape HTML, query SQLite, date/time, an n8n webhook, static reference text.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [
+      "FEAT-027",
+      "FEAT-026"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:B-04",
+      "fable:F-11",
+      "librechat:F9",
+      "gemini:Tool Gallery"
+    ],
+    "priority_note": "Fable B-04 and Gemini P1, LibreChat P2, Fable F-11 P3. Installing packs moved to the registry decision."
+  },
+  {
+    "id": "FEAT-031",
+    "type": "improvement",
+    "title": "Per-run working directory",
+    "area": "Runner",
+    "audience": "all",
+    "why": "`run_tool` writes `SCRATCH_ROOT/{tool.id}.py` and every run shares one `cwd`. Two concurrent runs of the same tool rewrite the same file, so a save mid-run can execute mixed code, and any tool can read every other tool's source.",
+    "what": "Create a directory per run with `tempfile.mkdtemp`, write the code there and set `cwd` to it. Delete it afterwards unless 'keep for debugging' is on. This is also where the sandbox will mount.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "Shared scratch directory: concurrent runs overwrite each other's code and tools can read each other's source.",
+    "sources": [
+      "fable:I-03",
+      "librechat:R2"
+    ],
+    "priority_note": "P1 in both reviews that raise it. Part of LibreChat's isolation tier 1."
+  },
+  {
+    "id": "FEAT-032",
+    "type": "requirement",
+    "title": "Health and readiness endpoints",
+    "area": "Ops",
+    "audience": "advanced",
+    "why": "There is no `/healthz` and no Dockerfile `HEALTHCHECK`, so Unraid and compose cannot tell a wedged event loop from a healthy one.",
+    "what": "`GET /healthz` (process up) and `GET /readyz` (DB readable and writable, lib root writable, python and node present), both reporting uptime and version. Add a `HEALTHCHECK` to the Dockerfile.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-18",
+      "librechat:F8"
+    ],
+    "priority_note": "Fable P1, LibreChat P2. Kept P1 because it takes one session."
+  },
+  {
+    "id": "FEAT-033",
+    "type": "requirement",
+    "title": "Supported Node runtime (Node 22 LTS)",
+    "area": "Runtime",
+    "audience": "all",
+    "why": "The Dockerfile installs `nodejs npm` from Debian bookworm apt. That is Node 18, end-of-life since April 2025, with an old npm, and many current packages need Node 20+.",
+    "what": "Install Node 22 LTS from the official tarball or NodeSource, with a pinned version and checksum. Show runtime versions on `/api/config` and in the studio's runtime selector.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-20"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-034",
+    "type": "requirement",
+    "title": "CI gating, release pipeline and config clean-up",
+    "area": "Deployment / maintainability",
+    "audience": "advanced",
+    "why": "`dockerhub.yml` pushes `:latest` on every push to `main` with no test step, and tests run only on PRs and non-main branches. Compose references `ionic-developer/omniforge:latest` while CI pushes `dbzocchi/omniforge:latest`, and only amd64 is built. `OMNIFORGE_RUNTIME_IMAGE`, `OMNIFORGE_SCRIPT_HOST` and the `omniforge_scripts` volume are left over from the Docker-per-run era. The README architecture no longer matches the code, and the version is hard-coded as `0.1.0`.",
+    "what": "Make the publish job `needs: test` and run tests on `main`. Tag images with semver and git SHA as well as `latest`, build `linux/amd64,linux/arm64` and attach SBOM/provenance. Ship a pull-only `docker-compose.yml` and a `compose.dev.yml`. Delete the dead env vars, the volume, unused dependencies and the misleading `lifespan` comment, warning at startup if a dead variable is still set. Use one canonical image name, make `.env.example` match reality and rewrite the README architecture. Add `/api/version` with the build SHA, a CHANGELOG and an 'update available' check against Docker Hub tags.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P1",
+    "column": "next",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-19",
+      "fable:I-02",
+      "fable:R-14",
+      "librechat:I9"
+    ],
+    "priority_note": "R-19 is P1. The dead-config clean-up was P2 in Fable and LibreChat but shares the image-name fix. The update check comes from Fable R-14 (P2)."
+  },
+  {
+    "id": "FEAT-035",
+    "type": "requirement",
+    "title": "HTTPS and secure-context setup",
+    "area": "Deployment",
+    "audience": "all",
+    "why": "PWA install and service workers need a secure context, so LAN users see no Install button and don't know why, and hosted MCP clients require HTTPS. The Connect page derives the endpoint from `location.origin`, which is wrong behind a reverse proxy that doesn't forward headers.",
+    "what": "Ship a compose profile and docs for the chosen route (Tailscale Serve, Caddy with an internal CA, or Cloudflare Tunnel plus Access). Run uvicorn with `--proxy-headers --forwarded-allow-ips` and honour `X-Forwarded-Proto/Host` in `/api/config`. Optional built-in TLS via `OMNIFORGE_TLS_CERT/KEY`. When the dashboard detects an insecure context, explain why Install is missing and link to the guide.",
+    "effort": "S",
+    "value": "high",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-009"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-13",
+      "librechat:R8",
+      "librechat:U6"
+    ],
+    "priority_note": "Fable P1. LibreChat P2, and 'only after auth: HTTPS without auth is a worse position than HTTP on the LAN'. Taken as P2 so it follows login."
+  },
+  {
+    "id": "FEAT-036",
+    "type": "beginner",
+    "title": "Connection readiness checklist, self-test and last-seen clients",
+    "area": "Connect / overview",
+    "audience": "beginner",
+    "why": "Connect says 'Connected clients: Not tracked' and lists limitations instead of checking them. Create, test, connect ends in silence: a beginner can't tell whether the blocker is HTTPS, a missing key or a disabled tool, or whether LibreChat ever reached the server.",
+    "what": "A 'Test from this browser' button that runs initialize and tools/list through the real endpoint with the user's key. A live checklist: reachable at this origin, HTTPS yes/no, key configured, at least one tool enabled, client has called `initialize`. A last-seen list (key name, client `name/version`, last call, tool count) and a QR code for phone clients. On Overview, a tick list driven by real state (first tool saved, first successful test, key created, first external `tools/list` and `tools/call`), ending with a live line such as 'your assistant called `greet_python` 12 s ago'.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-023",
+      "FEAT-018",
+      "FEAT-020"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:B-05",
+      "fable:U-05",
+      "fable:B-07",
+      "librechat:I5",
+      "librechat:U1"
+    ],
+    "priority_note": "Fable B-05 P1, the rest P2. P2 because it needs run history, keys and HTTPS status first."
+  },
+  {
+    "id": "FEAT-037",
+    "type": "usability",
+    "title": "Test-input form generated from the schema",
+    "area": "Studio",
+    "audience": "beginner",
+    "why": "Test inputs are a raw JSON textarea that defaults to `{}`. A user whose tool needs `{\"draw_date\":\"2026-10-15\"}` has to know JSON syntax and the schema, which is shown read-only further up the page.",
+    "what": "Render fields from `properties` (type-aware controls, required markers, descriptions) with an 'Edit as JSON' toggle. Reuse the same renderer for webhook and cron arguments.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-027"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:U-02",
+      "librechat:L2"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-038",
+    "type": "feature",
+    "title": "Git sync and CI for tools",
+    "area": "Storage / DevEx",
+    "audience": "advanced",
+    "why": "Code review, blame, branching and off-box history all need files, not BLOBs. The README's 'self-updating' vision covers updating the image but not the tools. Advanced users want pull requests and automatic deployment of tools, the same way the image is built.",
+    "what": "Phase 1: export to and import from a directory in the bundle format. Phase 2: an optional `OMNIFORGE_TOOLS_DIR` holding `tools/<name>/main.py|main.js` plus `tool.json`, with the DB as the runtime index, a watcher that imports changes, and push/pull to a configured remote (pull on webhook). `omniforge validate` (schema, requirements, syntax) as a GitHub Action that runs saved tests in a throwaway container and deploys on merge.",
+    "effort": "L",
+    "value": "high",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-024",
+      "FEAT-022",
+      "FEAT-011"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-04",
+      "fable:A-02",
+      "librechat:F7",
+      "librechat:A2",
+      "gemini:Git Synchronization"
+    ],
+    "priority_note": "Fable and Gemini P2, LibreChat P3. Its shape depends on the source-of-truth decision."
+  },
+  {
+    "id": "FEAT-039",
+    "type": "advanced",
+    "title": "Derive input and output schemas from code",
+    "area": "Studio / DevEx",
+    "audience": "advanced",
+    "why": "Authors have to hand-write JSON Schema, which they can't do at all in the browser, even though the code already defines the inputs it reads.",
+    "what": "Convention: in Python, `def main(draw_date: str, count: int = 1) -> dict` with a docstring, or a `SCHEMA = {...}` constant; in Node, JSDoc or `module.exports.schema`. On save, parse these and generate `inputSchema`/`outputSchema`. The studio shows the derived schema and lets the author override it.",
+    "effort": "M",
+    "value": "high",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-027"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:A-04"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-040",
+    "type": "usability",
+    "title": "'What is MCP?' plain-language primer",
+    "area": "Help / onboarding",
+    "audience": "beginner",
+    "why": "Help says 'Think of a tool as a named script your AI can ask the server to run', then jumps straight to JSON-RPC methods. Connect talks about `initialize`, `tools/list`, Streamable HTTP and SSE. It assumes users already know 'MCP', 'schema' and 'tool'.",
+    "what": "A short illustrated page: your AI app, then OmniForge, then your script, then the answer. It covers the three roles (client, server, tool), what inputs are (the form the assistant fills in), a glossary (endpoint, key, schema, enable), and 'you never need to send JSON-RPC yourself'. Protocol detail moves under 'Advanced'.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:U-03",
+      "librechat:U2"
+    ],
+    "priority_note": "Fable P1, LibreChat P2. Medium value and not a prerequisite, so P2."
+  },
+  {
+    "id": "FEAT-041",
+    "type": "beginner",
+    "title": "Build tools with your AI assistant",
+    "area": "Onboarding / MCP authoring",
+    "audience": "beginner",
+    "why": "`omniforge_instructions` and `omniforge_create_tool` already let an LLM author tools, but the dashboard never tells beginners this exists or how to phrase the request. LLM clients can create a tool but not fix it, which forces a trip back to the dashboard.",
+    "what": "A 'Build it with your AI' panel with a copyable prompt ('Connect to OmniForge, read `omniforge_instructions`, then create a tool that ...') and a note that the AI saves the tool but does not run it. The library shows a 'Created by <client>' badge, and MCP-created tools start disabled ('Review before enabling'). A built-in `omniforge_update_tool` that requires the current revision (the If-Match equivalent) and the `tools:author` scope, and writes a new version.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-023",
+      "FEAT-022",
+      "FEAT-018"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:B-06",
+      "librechat:U4",
+      "librechat:I7"
+    ],
+    "priority_note": "Fable P2, LibreChat P3."
+  },
+  {
+    "id": "FEAT-042",
+    "type": "usability",
+    "title": "Real code editor (CodeMirror 6)",
+    "area": "Studio",
+    "audience": "all",
+    "why": "The editor is a `<textarea>` with a line-number gutter and Tab handling. It has no syntax highlighting, bracket matching, search or error squiggles, which is painful beyond about ten lines.",
+    "what": "Vendor CodeMirror 6 (no CDN, matching the self-hosted stance) with Python and JS modes. Keep the textarea as a fallback, and keep the existing keyboard and Escape behaviour and dirty tracking.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:U-06"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-043",
+    "type": "usability",
+    "title": "Save & Test and Duplicate actions",
+    "area": "Studio",
+    "audience": "all",
+    "why": "Testing needs a save first because Run is disabled while there are unsaved changes, so every edit-save-run loop costs two clicks and a status message. Making a variant means copying code into a new tool and re-entering requirements and schema. Copying first is even the recommended way to recover from a 412, yet there is no copy action.",
+    "what": "A 'Save & Test' primary action (Ctrl/Cmd+Enter) that saves, then runs the saved revision, keeping the dirty-state model and 412 handling. 'Make a copy' opens a new draft named `name_copy` with the same code, requirements, schema and annotations.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:U-09",
+      "fable:U-10",
+      "librechat:I8"
+    ],
+    "priority_note": "Save & Test is P2. Duplicate is P3 in Fable and LibreChat."
+  },
+  {
+    "id": "FEAT-044",
+    "type": "usability",
+    "title": "Library tags, filters and richer rows",
+    "area": "Tools",
+    "audience": "all",
+    "why": "The list is flat and sorted by `updated_at`, and search matches substrings of name and description. Rows don't show whether a tool has ever run, failed or takes inputs. With 30+ tools, 'all my lottery tools' or 'everything that needs a secret' can't be found.",
+    "what": "Free-form tags (e.g. DevOps, Content, Finance) with filter chips next to the state/runtime filter. Rows show last-run status and time, call count, and 'needs inputs' and 'needs secrets' badges. Sort by name, last run or most called.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-023"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-17",
+      "fable:U-07",
+      "librechat:F12",
+      "gemini:Tool Tagging/Groups"
+    ],
+    "priority_note": "Richer rows are P2 (Fable). Tags are P3 in all three reviews."
+  },
+  {
+    "id": "FEAT-045",
+    "type": "usability",
+    "title": "Live progress, streaming output and cancel",
+    "area": "Studio / MCP",
+    "audience": "all",
+    "why": "The first run of a tool with packages shows a static 'Preparing dependencies... up to 120 seconds' message, so the user can't tell whether pip is downloading or stuck. Run/Test shows only the final result, the only busy cue is 'Working... Keep this tab open', and there is no cancel. Long scrapers look hung to MCP clients too.",
+    "what": "Server-sent progress events for installs (packages resolved, downloading, complete) and runs (started, stdout/stderr chunks, finished), shown live with elapsed time. A Cancel button that kills the run's process group, and a clear 'server busy' state when the concurrency cap is reached. Over MCP, forward script progress lines as progress notifications and honour `notifications/cancelled`.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-017",
+      "FEAT-015"
+    ],
+    "related_bug_hint": "Depends on the separate fixes for blocking subprocess calls and timeouts that kill only the direct child.",
+    "sources": [
+      "fable:U-08",
+      "fable:U-12",
+      "fable:A-10",
+      "gemini:Live Logs (SSE)",
+      "librechat:A7"
+    ],
+    "priority_note": "The dashboard parts are P2 (Fable, Gemini). MCP progress and cancellation are P3 (Fable, LibreChat)."
+  },
+  {
+    "id": "FEAT-046",
+    "type": "feature",
+    "title": "Package environments: background preparation and cache management",
+    "area": "Installer",
+    "audience": "advanced",
+    "why": "Installs are synchronous and can take up to 120 s. Each requirements change creates a new hashed environment, and old caches 'remain until an administrator removes them', so the lib volume grows forever. Incomplete directories raise 'administrator review required', but there is no UI to review them. Ten tools that need `requests==2.32.5` install it ten times.",
+    "what": "A background preparation job with a 'Prepare packages' button. An MCP call made during preparation gets a clear 'preparing, retry' result instead of blocking. A Packages page lists each tool's environments (size, requirements, last used, complete or incomplete) with prune, rebuild, 'clear incomplete' and remove-unused actions; remove-unused garbage-collects environments that no revision references. Optionally, key environments by `(language, requirements-hash)` so tools with identical requirements share one copy.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-022"
+    ],
+    "related_bug_hint": "Complements the separate fix for blocking installs inside async handlers.",
+    "sources": [
+      "librechat:F10",
+      "librechat:F11",
+      "fable:F-19",
+      "fable:I-12"
+    ],
+    "priority_note": "Cache sharing (Fable I-12) was P3, low value."
+  },
+  {
+    "id": "FEAT-047",
+    "type": "feature",
+    "title": "Tool titles, annotations and 'how your AI sees this tool'",
+    "area": "MCP / studio",
+    "audience": "all",
+    "why": "MCP clients use `title` and annotations (readOnlyHint, destructiveHint, idempotentHint, openWorldHint) to decide when to ask the user for confirmation, but OmniForge sends only name, description and inputSchema. How an LLM picks a tool depends almost entirely on the description. Yet the exact `tools/list` entry is never shown, and nothing nudges authors toward good descriptions.",
+    "what": "An optional `title` and four annotation checkboxes in the studio, included in `tools/list`. A preview card shows the entry as clients receive it (name, title, description, schema as a parameter table, annotations). It adds inline guidance and simple checks: length, starts with a verb, mentions inputs and outputs.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-16",
+      "fable:U-11",
+      "librechat:I11"
+    ],
+    "priority_note": "Fable P2. LibreChat P3 for description checks."
+  },
+  {
+    "id": "FEAT-048",
+    "type": "feature",
+    "title": "Structured results, output schemas and saved test cases",
+    "area": "MCP / studio",
+    "audience": "advanced",
+    "why": "Every result is a single text block. A crashed script's traceback and exit code and a successful script's JSON are both second-class, and clients have to re-parse strings. Tools are tested by eyeballing stdout once: test inputs reset when another tool is selected, and nothing records what a good run looks like.",
+    "what": "Return the exit code and bounded stderr in dashboard results and in MCP error text. When stdout parses as a JSON object, also return it as `structuredContent` next to the text block. An optional `outputSchema` (MCP 2025-06-18) validated against the parsed stdout. Named example inputs saved per tool, with optional expected-output checks, a 'Run all tests' button and a CLI/CI hook.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-017",
+      "FEAT-027"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-10",
+      "fable:F-09",
+      "librechat:I2",
+      "librechat:I6"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-049",
+    "type": "feature",
+    "title": "MCP prompts and resources",
+    "area": "MCP",
+    "audience": "advanced",
+    "why": "Only `tools/*` exists; `resources/list` and `prompts/list` return -32601. Clients such as Claude and LibreChat can show prompts and resources, which is how a model gets usage guidance and reference data without calling a tool. As it stands, every tool's docs, examples and last result are only visible by calling it.",
+    "what": "Resources such as `omniforge://tools/{name}` (description, schema, examples), the latest run output and uploaded reference files, plus user-authored prompt templates with arguments. Expose `prompts/list|get` and `resources/list|read|templates/list` with change notifications. Prompt and Resource kinds in the library, each with its own studio form and a `prompts/get` preview. Gemini also suggests sampling.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-017"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-10",
+      "fable:A-05",
+      "librechat:F5",
+      "gemini:Full MCP Compliance"
+    ],
+    "priority_note": "Fable and Gemini P2. LibreChat and Fable's authoring UI (A-05) P3."
+  },
+  {
+    "id": "FEAT-050",
+    "type": "requirement",
+    "title": "Audit trail",
+    "area": "Security",
+    "audience": "advanced",
+    "why": "Nothing records that an LLM created `foo` via `omniforge_create_tool` at 02:14, which key called what, when a secret was rotated, or that a tool was deleted. `updated_at` is the only trace, and it gets overwritten.",
+    "what": "An append-only `audit_events` table: actor (admin session, client key, built-in), action (create, update, delete, toggle, run, install, key-rotate, secret-change, import), target, revision before and after, remote address and timestamp. Viewable and exportable from the dashboard, with optional signed entries.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-022",
+      "FEAT-023"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-11",
+      "librechat:R4",
+      "gemini:Audit & Supply Chain"
+    ],
+    "priority_note": "Gemini P3."
+  },
+  {
+    "id": "FEAT-051",
+    "type": "requirement",
+    "title": "Supply-chain and install-path hardening",
+    "area": "Security / installer",
+    "audience": "advanced",
+    "why": "Packages are installed from PyPI and npm by name, and unpinned names silently freeze at whatever resolved first. There is no hash verification and no allow/deny list, npm runs with `--no-audit`, and install logs are deleted after success. The installer has full network access, writes into a volume the app also reads, and has no size quota or limit on concurrent installs.",
+    "what": "Generate a per-tool lockfile on first install (pip `--require-hashes` via `pip-compile --generate-hashes`; npm `package-lock.json` integrity and `npm ci`). Add an admin allow/deny list, an optional private index or mirror, retained install logs, and `pip-audit`/`npm audit` on prepare, shown on the Packages page. Upgrades happen through a deliberate 're-resolve' action. A global install semaphore and a volume size quota with a clear error. Once the sandbox exists, optionally restrict install egress to registry hosts. Record installs in run history and the audit trail.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-046"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-15",
+      "fable:R-22",
+      "librechat:R6",
+      "gemini:Audit & Supply Chain"
+    ],
+    "priority_note": "Fable and LibreChat P2, Gemini P3. Install-path hardening (Fable R-22) was P3."
+  },
+  {
+    "id": "FEAT-052",
+    "type": "feature",
+    "title": "Scheduled runs and cached results",
+    "area": "Automation",
+    "audience": "advanced",
+    "why": "A bonus-ball fetcher should naturally run every Wednesday and Saturday evening and be fresh at 20:01. Today only an LLM or a person can trigger it, and the LLM side is the wrong place to poll from.",
+    "what": "A per-tool cron expression with fixed arguments, and an in-process scheduler (APScheduler or an asyncio loop) with jitter and a missed-run policy. Results go to run history and, optionally, to a notification tool. Optional 'cache last result for N minutes', so MCP calls get the cached output.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-023",
+      "FEAT-010"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-07",
+      "librechat:F4"
+    ],
+    "priority_note": "Build only if the scheduling decision says to build it in. Otherwise n8n schedules through webhooks."
+  },
+  {
+    "id": "FEAT-053",
+    "type": "feature",
+    "title": "Webhook triggers and n8n integration",
+    "area": "Automation / integration",
+    "audience": "advanced",
+    "why": "n8n, GitHub, Home Assistant and cron on another machine can only call a tool by speaking JSON-RPC and holding the global Bearer key. David runs n8n, and its MCP Client and HTTP Request nodes are the natural way to chain OmniForge tools into workflows.",
+    "what": "`POST /hooks/{tool}/{hook-token}`: the body becomes the arguments, each tool has its own token, and the request goes through schema validation and the normal run pipeline. It replies synchronously or with `202` and a run id. Verify n8n's MCP Client node against the new transport, accept n8n payloads, and publish an n8n workflow template that calls `tools/call`. Document a round trip: n8n cron, then an OmniForge tool, then an n8n notification.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-023",
+      "FEAT-017"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-08",
+      "fable:A-08",
+      "librechat:F4",
+      "librechat:A4"
+    ],
+    "priority_note": "Webhooks P2 in Fable and LibreChat. n8n integration P2 (Fable) vs P3 (LibreChat)."
+  },
+  {
+    "id": "FEAT-054",
+    "type": "feature",
+    "title": "Structured logs, usage stats and /metrics",
+    "area": "Observability",
+    "audience": "advanced",
+    "why": "Only uvicorn access logs exist, so tool failures, install failures and conflicts are returned to the caller and then vanish. Overview shows only saved and enabled counts. Nobody can answer 'which tools does LibreChat actually call, how often do they fail, and how slow is the install path?', and Prometheus/Grafana users on Unraid have nothing to graph.",
+    "what": "JSON logs with request id, actor, tool, revision, duration and exit status, an `OMNIFORGE_LOG_LEVEL` setting, and correlation with run ids. Per-tool and per-client counters (calls, errors, p50/p95 duration, install time) on Overview and on each tool. A `/metrics` endpoint in Prometheus text format (run counts, durations, errors, install times, queue depth) and optional OpenTelemetry export.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-023"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:I-09",
+      "fable:F-14",
+      "fable:A-06",
+      "librechat:F8"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-055",
+    "type": "advanced",
+    "title": "omniforge CLI and documented API",
+    "area": "DevEx",
+    "audience": "advanced",
+    "why": "The management API is REST built for the browser, so scripting it means hand-rolling `curl` calls with `If-Match` headers. FastAPI already generates OpenAPI docs, but nothing points users to them.",
+    "what": "Publish `/docs` behind auth. Add a small pip-installable `omniforge` CLI that uses API keys: `login`, `list`, `pull/push <name>`, `run <name> --args`, `logs` and `export/import`, with JSON output for scripting.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-024"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:A-01",
+      "librechat:A1"
+    ],
+    "priority_note": "Fable P2, LibreChat P3."
+  },
+  {
+    "id": "FEAT-056",
+    "type": "feature",
+    "title": "Per-client tool visibility",
+    "area": "MCP / security",
+    "audience": "advanced",
+    "why": "Every client holding the one Bearer key sees every enabled tool, so a client that only needs the shop tools sees the Sonarr ones too. David wants some tools for LibreChat only, or a read-only subset for a phone client.",
+    "what": "A per-key allowlist of tool names or tags. `tools/list` and `tools/call` are filtered by the authenticated key. Optionally, group endpoints such as `/mcp/{group}`.",
+    "effort": "S",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-044"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-20",
+      "librechat:F12"
+    ],
+    "priority_note": "Fable P2, LibreChat P3."
+  },
+  {
+    "id": "FEAT-057",
+    "type": "improvement",
+    "title": "Split the single-file dashboard into modules",
+    "area": "Frontend maintainability",
+    "audience": "advanced",
+    "why": "`dashboard.html` is 574 lines (about 50 KB) with all the JS inline. CI extracts the `<script>` by string-splitting so it can lint it, and `tests/dashboard_ui.cjs` hand-rolls a 300-line fake DOM. Every dashboard feature on this board would land in that one file.",
+    "what": "Move the JS to `/assets/app.js` as ES modules (api, router, editor, library, connect) with no build step, served through the existing allowlist and precached. Replace the fake DOM with jsdom or rely on Playwright.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P2",
+    "column": "backlog",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:I-06"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-058",
+    "type": "beginner",
+    "title": "No-code tool types (HTTP request, reference text, table lookup)",
+    "area": "Studio",
+    "audience": "beginner",
+    "why": "Many useful tools are just 'GET this URL and return the JSON' or 'answer from this text', yet connecting to an API still takes boilerplate `requests` code. Users know what they want but not Python or Node.",
+    "what": "Declarative tool kinds run by built-in runners. HTTP request: a URL with `{{input}}` placeholders, a method, headers or auth from secrets, and a JSON-path pick. Reference text: paste docs or an FAQ, returned verbatim. Table lookup: upload a CSV and query it by column. Same metadata and MCP surface as script tools.",
+    "effort": "L",
+    "value": "high",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-026",
+      "FEAT-027"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "librechat:L1",
+      "gemini:No-Code Webhooks"
+    ],
+    "priority_note": "LibreChat P3, though it calls this the only bet that widens the audience. Gemini P2. Revisit after the wizard and templates."
+  },
+  {
+    "id": "FEAT-059",
+    "type": "requirement",
+    "title": "Per-tool network egress policy",
+    "area": "Security / runner",
+    "audience": "advanced",
+    "why": "Scripts have unrestricted network access, including to the NAS's other containers and the Unraid host. Even once isolation exists, 'network off' is all or nothing, but a lottery tool should reach `national-lottery.co.uk` and nothing else.",
+    "what": "A per-tool egress allowlist (hosts/CIDRs), enforced through the sandbox's network namespace and a small forwarding proxy (or the sidecar on its own Docker network). Default deny for new tools when enabled. At minimum, document the current exposure.",
+    "effort": "M",
+    "value": "medium",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-006"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:A-11",
+      "librechat:R9"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-060",
+    "type": "requirement",
+    "title": "OAuth 2.1 resource server for hosted MCP clients",
+    "area": "Security / MCP",
+    "audience": "advanced",
+    "why": "Claude.ai custom connectors and other hosted MCP clients require OAuth (authorization-server discovery via RFC 9728/8414, dynamic client registration) and cannot send a static Bearer header. Today OmniForge works only with clients that allow custom headers.",
+    "what": "Implement the MCP resource-server role: `/.well-known/oauth-protected-resource`, bearer JWT validation against an external authorisation server (Authentik, Keycloak, Cloudflare Access or Auth0), PKCE, and mapping of OAuth scopes to the API-key scopes. Do not build an authorisation server.",
+    "effort": "L",
+    "value": "medium",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-035",
+      "FEAT-017",
+      "FEAT-005"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-03",
+      "librechat:R1"
+    ],
+    "priority_note": "Fable P2. LibreChat P3: 'only worth it if remote hosted clients are a goal'. Becomes P2 if the clients decision says yes."
+  },
+  {
+    "id": "FEAT-061",
+    "type": "feature",
+    "title": "Additional runtimes: TypeScript, shell and more",
+    "area": "Runner",
+    "audience": "advanced",
+    "why": "`_runtime` hard-codes python and node. Many tools are one-line shell pipelines, most Node authors write TypeScript, and some jobs need other Python versions or binaries.",
+    "what": "A data-driven runtime registry shared by `validate_requirements` and the runner. Add TypeScript via Node 22's `--experimental-strip-types` (or esbuild, tsx or Deno), `bash` (no package manager, flagged as dangerous), and optional `uv`-managed Python versions. Per-tool container images (Gemini) conflict with the no-Docker-socket stance and depend on the isolation decision.",
+    "effort": "M",
+    "value": "low",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-033"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-12",
+      "librechat:A6",
+      "gemini:TypeScript Support",
+      "gemini:Custom Runtimes"
+    ],
+    "priority_note": "Fable and LibreChat P3. Gemini P2 for TypeScript."
+  },
+  {
+    "id": "FEAT-062",
+    "type": "advanced",
+    "title": "Script helpers: run context, shared modules and multi-file tools",
+    "area": "Runner",
+    "audience": "advanced",
+    "why": "A script can't tell which tool it is, which client called it, or what run id to use when correlating its own logs. Each run is a single file in a scratch directory, so tools that call the same API duplicate their auth and parsing code. A single `code` string makes complex logic impossible.",
+    "what": "Inject `OMNIFORGE_TOOL`, `OMNIFORGE_RUN_ID` and `OMNIFORGE_CALLER`, plus a tiny optional in-child helper (`omniforge.log()`, `omniforge.progress()`, `omniforge.secret(name)`, `omniforge.call(name, args)`). A versioned 'library' tool kind that is copied into the run directory (`omniforge_lib/`) and put on `PYTHONPATH`/`NODE_PATH`. Optionally, multiple files per tool.",
+    "effort": "M",
+    "value": "low",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-031",
+      "FEAT-023",
+      "FEAT-026"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:A-09",
+      "fable:F-18",
+      "librechat:A5",
+      "gemini:Multi-File Scripts"
+    ],
+    "priority_note": "Gemini rated multi-file scripts P2. The other two reviews rated this P3."
+  },
+  {
+    "id": "FEAT-063",
+    "type": "requirement",
+    "title": "Multi-worker and multi-instance story",
+    "area": "Server / ops",
+    "audience": "advanced",
+    "why": "`Database._cache` is per process with a 5 s TTL, so `uvicorn --workers 2` would silently serve stale code for up to 5 s and double install-lock contention. The single worker is also a throughput ceiling. Two replicas behind a proxy would split the SQLite and lib-volume state.",
+    "what": "Either document single worker and single instance as a hard constraint and refuse to start with `--workers>1`, or invalidate caches via SQLite `PRAGMA data_version` and allow N workers once runs are non-blocking. Optionally, a thin DB adapter for PostgreSQL and shared cache storage for replicas.",
+    "effort": "M",
+    "value": "low",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:R-21",
+      "fable:A-07",
+      "librechat:I12"
+    ],
+    "priority_note": ""
+  },
+  {
+    "id": "FEAT-064",
+    "type": "feature",
+    "title": "Lightweight multi-user and attribution",
+    "area": "Collaboration",
+    "audience": "all",
+    "why": "Even a household or small team shares one dashboard, and nothing records who changed what. Full RBAC is overkill for a self-hosted, single-container product.",
+    "what": "A users table with roles (admin, author, viewer) layered on dashboard login. The author is stored on versions and runs, and tools can be marked read-only to non-owners.",
+    "effort": "L",
+    "value": "low",
+    "priority": "P3",
+    "column": "backlog",
+    "depends_on": [
+      "FEAT-018",
+      "FEAT-022",
+      "FEAT-003"
+    ],
+    "related_bug_hint": "",
+    "sources": [
+      "fable:F-13"
+    ],
+    "priority_note": ""
+  }
+]
