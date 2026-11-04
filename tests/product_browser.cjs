@@ -17,6 +17,7 @@ let browser, server, base, temp;
 const errors = [];
 before(async () => {
   temp = fs.mkdtempSync(path.join(os.tmpdir(), "omniforge-product-test-"));
+  fs.mkdirSync(path.join(temp,'files'),{recursive:true});
   fs.mkdirSync(screenshots, { recursive: true });
   const probe = net.createServer();
   await new Promise((r) => probe.listen(0, "127.0.0.1", r));
@@ -41,6 +42,7 @@ before(async () => {
         OMNIFORGE_DB_PATH: path.join(temp, "test.db"),
         OMNIFORGE_LIB_ROOT: path.join(temp, "lib"),
         OMNIFORGE_SCRATCH_ROOT: path.join(temp, "runs"),
+        OMNIFORGE_ALLOWED_FOLDERS: path.join(temp,'files'),
         OMNIFORGE_API_KEY: "",
       },
       stdio: "ignore",
@@ -114,7 +116,7 @@ for (const width of [375, 768, 1440])
         colorScheme: theme,
         reducedMotion: "reduce",
       });
-      for (const screen of ["overview", "tools", "connect", "help"]) {
+      for (const screen of ["overview", "tools", "connect", "connections", "help"]) {
         await route(page, screen);
         if (screen === "connect")
           await page.locator("#configContent").waitFor({ state: "visible" });
@@ -512,5 +514,98 @@ test('landscape rail scrolls and simultaneous mobile install/update controls wra
   await page.evaluate(() => {document.querySelector('#installBtn').hidden=false;document.querySelector('#updateBtn').hidden=false;});
   await noOverflow(page);
   assert.equal(await page.locator('.top-actions').evaluate(el => getComputedStyle(el).flexWrap),'wrap');
+  await safeClose(context);
+});
+
+
+async function initializeClient(token,name='Browser integration client') {
+  const response=await fetch(base+'/mcp',{method:'POST',headers:{'Content-Type':'application/json',...(token ? {Authorization:'Bearer '+token} : {})},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name,version:'1.0'}}})});
+  assert.equal(response.status,200); const session=response.headers.get('mcp-session-id'); assert.ok(session);
+  return async (method,params={}) => {
+    const reply=await fetch(base+'/mcp',{method:'POST',headers:{'Content-Type':'application/json','Mcp-Session-Id':session,...(token ? {Authorization:'Bearer '+token} : {})},body:JSON.stringify({jsonrpc:'2.0',id:2,method,params})});
+    return {status:reply.status,body:await reply.json()};
+  };
+}
+async function toolMetadata(name) { return (await (await fetch(base+'/api/tools')).json()).tools.find(tool => tool.name===name); }
+
+test('MCP-authored nightly tool exposes editable schedule and output folder, writes a file and pauses',async () => {
+  const call=await initializeClient(null,'Scheduled tool author');
+  const destination=path.join(temp,'files','documents');
+  const created=await call('tools/call',{name:'omniforge_create_tool',arguments:{name:'nightly_document',description:'Save the latest document in a folder',language:'python3',code:'import os, pathlib\np=pathlib.Path(os.environ["OMNIFORGE_OUTPUT_DIR"])/"document.txt"\np.write_text("downloaded document",encoding="utf-8")\nprint(str(p))\n',schedule:{enabled:false,cron:'0 2 * * *',timezone:'UTC',arguments:{}},folder_access:{enabled:true,path:destination}}});
+  assert.equal(created.body.result.isError,false);
+  const {page,context}=await newPage();
+  await route(page,'tools');
+  const row=page.locator('.tool-row').filter({hasText:'nightly_document'});
+  await row.getByRole('button',{name:'Schedule settings for nightly_document',exact:true}).click();
+  await page.locator('#scheduleCron').waitFor({state:'visible'});
+  assert.equal(await page.locator('#scheduleTimezone').inputValue(),'UTC');
+  assert.equal(await page.locator('#toolDescription').inputValue(),'Save the latest document in a folder');
+  await page.locator('#toolDescription').fill('Download the latest document every night');
+  assert.equal(await page.locator('#outputFolder').inputValue(),destination);
+  await page.locator('#scheduleCron').fill('15 3 * * *');
+  await page.locator('#scheduleTimezone').fill('Europe/London');
+  await page.locator('#scheduleEnabled').check(); await page.locator('#saveBtn').click();
+  await page.waitForFunction(() => document.querySelector('#saveState').textContent.includes('saved') && !document.querySelector('#runBtn').disabled);
+  let tool=await toolMetadata('nightly_document');
+  assert.equal(tool.schedule.enabled,true); assert.equal(tool.schedule.cron,'15 3 * * *'); assert.equal(tool.folder_access.path,destination);
+  assert.equal(tool.description,'Download the latest document every night');
+  await page.locator('#runBtn').click(); await page.locator('#runSummary').filter({hasText:'Succeeded'}).waitFor();
+  assert.equal(fs.readFileSync(path.join(destination,'document.txt'),'utf8'),'downloaded document');
+  await page.locator('#scheduleEnabled').uncheck(); await page.locator('#saveBtn').click();
+  await page.waitForFunction(() => document.querySelector('#saveState').textContent.includes('saved') && !document.querySelector('#runBtn').disabled);
+  tool=await toolMetadata('nightly_document'); assert.equal(tool.schedule.enabled,false); assert.equal(tool.is_active,true);
+  await page.locator('#folderSettingsBtn').click(); await page.locator('#browseFoldersBtn').click();
+  await page.locator('#folderBrowseStatus').filter({hasText:'no subfolders'}).waitFor();
+  await page.setViewportSize({width:375,height:900}); await noOverflow(page); await audit(page);
+  await page.screenshot({path:path.join(screenshots,'scheduled-tool-375.png'),fullPage:true});
+  await page.setViewportSize({width:1440,height:1000}); await noOverflow(page);
+  await page.screenshot({path:path.join(screenshots,'scheduled-tool-1440.png'),fullPage:true});
+  await safeClose(context);
+});
+
+test('named connection key, per-tool visibility, reconnect persistence and revocation',async () => {
+  await fetch(base+'/api/tools',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'connection_access_test',code:'print("allowed")',description:'Connection access test'})});
+  const {page,context}=await newPage(); await route(page,'connections');
+  await page.locator('#connectionName').fill('Browser named client'); await page.locator('#createConnectionBtn').click();
+  await page.locator('#newConnectionKey').waitFor({state:'visible'});
+  const token=await page.locator('#connectionToken').inputValue(); assert.match(token,/^ofc_/);
+  let call=await initializeClient(token,'Browser named client');
+  await page.locator('#refreshConnectionsBtn').click();
+  const row=page.locator('.connection-row').filter({has:page.getByRole('heading',{name:'Browser named client',exact:true})});
+  if (!await row.locator('details').evaluate(element => element.open)) await row.locator('summary').click();
+  const access=row.getByRole('checkbox',{name:'Allow connection_access_test for Browser named client',exact:true});
+  assert.equal(await access.isChecked(),true);
+  await access.uncheck(); await row.getByRole('button',{name:'Save tool access',exact:true}).click();
+  await page.locator('#statusText').filter({hasText:'Tool access saved'}).waitFor();
+  let discovered=await call('tools/list'); assert.equal(discovered.body.result.tools.some(tool => tool.name==='connection_access_test'),false);
+  const blocked=await call('tools/call',{name:'connection_access_test',arguments:{}}); assert.equal(blocked.body.result.isError,true);
+  call=await initializeClient(token,'Browser named client reconnect');
+  discovered=await call('tools/list'); assert.equal(discovered.body.result.tools.some(tool => tool.name==='connection_access_test'),false);
+  await fetch(base+'/api/tools',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'connection_new_default',code:'print(1)'})});
+  discovered=await call('tools/list'); assert.equal(discovered.body.result.tools.some(tool => tool.name==='connection_new_default'),true);
+  if (!await row.locator('details').evaluate(element => element.open)) await row.locator('summary').click();
+  await page.screenshot({path:path.join(screenshots,'connections-1440.png'),fullPage:true});
+  await page.setViewportSize({width:375,height:900}); await noOverflow(page); await audit(page);
+  await page.screenshot({path:path.join(screenshots,'connections-375.png'),fullPage:true});
+  await row.getByRole('button',{name:'Disconnect',exact:true}).click(); await page.locator('#acceptConfirm').click();
+  await page.locator('#statusText').filter({hasText:'Connection disconnected'}).waitFor();
+  assert.equal((await call('tools/list')).status,401);
+  const reconnect=await fetch(base+'/mcp',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({jsonrpc:'2.0',id:3,method:'initialize',params:{clientInfo:{name:'Revoked client'}}})});
+  assert.equal(reconnect.status,401);
+  assert.equal(await page.locator('#connectionToken').inputValue(),'');
+  await safeClose(context);
+});
+
+
+test('sidebar footer shows the served version and build date',async () => {
+  const metadata=await (await fetch(base+'/api/version')).json();
+  const {page,context}=await newPage({viewport:{width:1440,height:900}});
+  const label=`V${metadata.version} ${metadata.display_date || 'Development'}`;
+  await page.locator('#buildVersion').filter({hasText:label}).waitFor();
+  assert.equal(await page.locator('#buildVersion').textContent(),label);
+  const box=await page.locator('#buildVersion').boundingBox();
+  assert.ok(box.x<240 && box.y>700,'version is at the bottom left of the desktop menu');
+  await noOverflow(page); await audit(page);
+  await page.screenshot({path:path.join(screenshots,'version-footer-1440.png')});
   await safeClose(context);
 });

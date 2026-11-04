@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.database import Tool, db
 from app.dependencies import validate_requirements
+from app.scheduling import next_run_time, validate_folder_path
 
 BUILTIN_NAMES = frozenset({'omniforge_instructions', 'omniforge_create_tool'})
 EMPTY_SCHEMA = {'type': 'object', 'properties': {}, 'additionalProperties': False}
@@ -69,6 +70,38 @@ def validate_arguments(arguments: dict, schema: dict) -> None:
         raise ValueError('Invalid arguments or unresolved local inputSchema reference') from exc
 
 
+class ScheduleIn(BaseModel):
+    model_config = ConfigDict(strict=True, extra='forbid')
+
+    enabled: bool = False
+    cron: str = '0 2 * * *'
+    timezone: str = 'UTC'
+    arguments: dict = Field(default_factory=dict)
+
+    @model_validator(mode='after')
+    def check_schedule(self):
+        self.cron = ' '.join(self.cron.split())
+        next_run_time(self.cron, self.timezone)
+        try:
+            json.dumps(self.arguments, allow_nan=False)
+        except (ValueError, TypeError, RecursionError) as exc:
+            raise ValueError('Scheduled arguments must be a finite JSON object') from exc
+        return self
+
+
+class FolderAccessIn(BaseModel):
+    model_config = ConfigDict(strict=True, extra='forbid')
+
+    enabled: bool = False
+    path: str = ''
+
+    @model_validator(mode='after')
+    def check_folder(self):
+        if self.path or self.enabled:
+            self.path = str(validate_folder_path(self.path))
+        return self
+
+
 class ToolIn(BaseModel):
     model_config = ConfigDict(strict=True, extra='forbid')
 
@@ -79,6 +112,8 @@ class ToolIn(BaseModel):
     requirements: list[str] = Field(default_factory=list, max_length=50)
     json_schema: dict = Field(default_factory=dict)
     is_active: bool = True
+    schedule: ScheduleIn | None = None
+    folder_access: FolderAccessIn | None = None
 
     @field_validator('name')
     @classmethod
@@ -107,11 +142,24 @@ class ToolIn(BaseModel):
     @model_validator(mode='after')
     def check_requirements(self):
         self.requirements = validate_requirements(self.requirements, self.language)
+        if self.schedule and self.schedule.enabled:
+            validate_arguments(self.schedule.arguments, self.json_schema)
         return self
 
 
 def save_tool(body: ToolIn, existing: Tool | None = None, expected_revision: str | None = None) -> Tool:
     """Save metadata only. Never install dependencies or execute code."""
+    schedule = body.schedule.model_dump() if body.schedule else None
+    folder_access = body.folder_access.model_dump() if body.folder_access else None
+    if existing:
+        if 'schedule' not in body.model_fields_set:
+            schedule = existing.schedule
+        if 'folder_access' not in body.model_fields_set:
+            folder_access = existing.folder_access
+    if schedule and schedule.get('enabled'):
+        validate_arguments(schedule.get('arguments', {}), body.json_schema)
+    if folder_access and folder_access.get('enabled'):
+        validate_folder_path(folder_access.get('path', ''))
     tool = Tool(
         id=existing.id if existing else db.next_id(),
         name=body.name,
@@ -123,5 +171,7 @@ def save_tool(body: ToolIn, existing: Tool | None = None, expected_revision: str
         is_active=body.is_active,
         created_at=existing.created_at if existing else None,
         updated_at=None,
+        schedule=schedule,
+        folder_access=folder_access,
     )
     return db.upsert(tool, create_only=existing is None, expected_revision=expected_revision)

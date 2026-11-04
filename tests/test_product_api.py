@@ -126,3 +126,19 @@ class ProductApiTests(unittest.TestCase):
         other = Database(self.db.path)
         self.assertFalse(self.db.toggle('editable').is_active)
         self.assertTrue(other.toggle('editable').is_active)
+
+    def test_fresh_revision_does_not_restore_cached_schedule_on_old_client_edit(self):
+        tool = self.db.get_tool('editable', fresh=True)
+        from dataclasses import replace
+        tool = replace(tool, schedule={'enabled': False, 'cron': '0 2 * * *',
+                                       'timezone': 'UTC', 'arguments': {}})
+        self.db.upsert(tool)
+        self.db.get_tool_list()  # This worker caches the old schedule.
+        other = Database(self.db.path)
+        updated = replace(other.get_tool('editable', fresh=True),
+                          schedule={'enabled': False, 'cron': '0 4 * * *',
+                                    'timezone': 'UTC', 'arguments': {}})
+        other.upsert(updated)
+        current = other.get_tool('editable', fresh=True)
+        asyncio.run(main.api_update_tool('editable', self.body, current.revision))
+        self.assertEqual(self.db.get_tool('editable', fresh=True).schedule['cron'], '0 4 * * *')

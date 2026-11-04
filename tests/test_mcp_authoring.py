@@ -212,7 +212,7 @@ class AuthoringTests(unittest.TestCase):
     def test_legacy_duplicate_rows_preserved_without_migration(self):
         self.create()
         with self.db._connect() as conn:
-            conn.execute('INSERT INTO tools SELECT ?, name, description, language, code, requirements_json, json_schema_json, is_active, created_at, updated_at FROM tools WHERE name = ?', ('legacy', 'sample'))
+            conn.execute('INSERT INTO tools (id, name, description, language, code, requirements_json, json_schema_json, is_active, created_at, updated_at) SELECT ?, name, description, language, code, requirements_json, json_schema_json, is_active, created_at, updated_at FROM tools WHERE name = ?', ('legacy', 'sample'))
         reopened = Database(self.db.path)
         self.assertEqual(len(reopened.get_tool_list()), 2)
         with self.assertRaises(DuplicateToolError):
@@ -329,8 +329,10 @@ class AuthoringTests(unittest.TestCase):
         request = Request({'type': 'http', 'headers': []})
         payload = {'method': 'tools/call', 'id': 1, 'params': {'name': 'omniforge_create_tool', 'arguments': {'name': 'blocked', 'code': 'print(1)'}}}
         with patch.object(main, 'API_KEY', 'synthetic-auth-test'):
-            response = asyncio.run(main.mcp_endpoint(payload, request))
-        self.assertEqual(response.status_code, 401)
+            with self.assertRaises(HTTPException) as error:
+                asyncio.run(main.mcp_endpoint(payload, request))
+        self.assertEqual(error.exception.status_code, 401)
+        self.assertEqual(error.exception.headers['WWW-Authenticate'], 'Bearer')
         self.assertEqual(self.db.get_tool_list(), [])
 
 

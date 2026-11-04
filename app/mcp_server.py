@@ -9,6 +9,8 @@ from pydantic import ValidationError
 
 from app.database import db, Tool
 from app.runner import run_tool
+from app.connections import tool_key, builtin_key
+from app.release import VERSION
 from app.tool_authoring import (
     BUILTIN_NAMES, EMPTY_SCHEMA, ToolIn, save_tool, validate_arguments,
 )
@@ -24,6 +26,8 @@ CREATE_SCHEMA = {
         "requirements": {"type": "array", "items": {"type": "string"}, "maxItems": 50,
                          "description": "Package names: Python name or name==version; Node name or @scope/name with optional @1.2.3. Installed lazily on first execution; URLs, paths, flags and binaries unsupported."},
         "is_active": {"type": "boolean", "default": True},
+        "schedule": {"type": ["object", "null"], "description": "Optional scheduled execution: enabled, five-field cron, IANA timezone, and saved arguments. Use enabled=false to request configurable scheduling without starting it.", "properties": {"enabled": {"type": "boolean"}, "cron": {"type": "string"}, "timezone": {"type": "string"}, "arguments": {"type": "object"}}, "additionalProperties": False},
+        "folder_access": {"type": ["object", "null"], "description": "Optional output folder settings: enabled and absolute server-visible path within configured allowed roots. Scripts receive OMNIFORGE_OUTPUT_DIR and run in that folder. Use enabled=false,path='' until a folder is selected.", "properties": {"enabled": {"type": "boolean"}, "path": {"type": "string"}}, "additionalProperties": False},
     },
     "required": ["name", "code"],
     "additionalProperties": False,
@@ -45,8 +49,8 @@ BUILTIN_TOOLS = [
 INSTRUCTIONS = {
     "workflow": [
         "Only register code the user trusts and has authorised. Obtain approval for the script's intended side effects.",
-        "Call omniforge_create_tool with name, code and optional description, language, inputSchema, requirements (optional package-name array), is_active=true.",
-        "Creation saves metadata only: it does not run, syntax-check or install anything. Duplicate and built-in names are rejected; edit existing tools in the dashboard.",
+        "Call omniforge_create_tool with name, code and optional description, language, inputSchema, requirements (optional package-name array), is_active=true, schedule and folder_access.",
+        "Creation saves metadata only: it does not run, syntax-check or install anything immediately. An explicitly enabled schedule runs at its next due time. Duplicate and built-in names are rejected; edit existing tools in the dashboard.",
         "Call tools/list again after saving: active scripts appear immediately without restarting. There are no list-change notifications; clients may need a refresh.",
         "Execute separately with tools/call using the saved name and arguments. Dashboard Run / Test accepts a JSON object (default {}) and validates it against the saved inputSchema before execution.",
     ],
@@ -56,6 +60,8 @@ INSTRUCTIONS = {
         "code": "Nonempty trusted script. Print JSON to stdout using print(json.dumps(...)) or console.log(JSON.stringify(...)). A returned object alone is not captured. stderr is captured; nonzero exits and timeouts become tool errors.",
         "inputSchema": "JSON Schema Draft 2020-12 with type object. Omitted/{} means no inputs (additionalProperties=false). Only local references are allowed. MCP and dashboard tests validate arguments before execution; format is annotation-only. Schema defaults are not inserted into arguments.",
         "inputs": "One JSON object is supplied on stdin, not interpolated into code, shell commands or environment variables. Do not log credentials in stdout/stderr.",
+        "schedule": "Optional {enabled:false,cron:'0 2 * * *',timezone:'UTC',arguments:{}}. Standard five-field cron with an IANA timezone; saved arguments must satisfy inputSchema. Set enabled=true only when the user has requested recurring execution. The tool window displays configuration and pause/resume controls whenever schedule is present. Missed runs are coalesced, not replayed.",
+        "folder_access": "Optional {enabled:false,path:''}. Select an absolute folder beneath the server's OMNIFORGE_ALLOWED_FOLDERS roots (default /opt/omniforge/files). When enabled, scripts run in that folder and receive OMNIFORGE_OUTPUT_DIR in the environment. Python uses os.environ['OMNIFORGE_OUTPUT_DIR']; Node uses process.env.OMNIFORGE_OUTPUT_DIR. Host folders must be mounted into the container first. Only saved configuration selects the folder; runtime arguments do not change it. This is configuration, not a filesystem sandbox.",
         "requirements": "Packages install on first execution into persistent per-tool, per-language requirements-hash caches under OMNIFORGE_LIB_ROOT. Python: name or name==version, wheels only from PyPI; Node: name or @scope/name with optional exact @1.2.3 pin, official npm registry, lifecycle scripts disabled. CommonJS require is supported; NODE_PATH does not resolve ESM imports. No URLs, VCS, paths, flags, aliases or system binaries. Install timeout 120 seconds, bounded lock wait 125 seconds, then the existing script timeout. Failed installs never execute the script or publish a cache. Requirements are validated on save; creation does not install.",
     },
     "examples": [
@@ -77,7 +83,7 @@ INSTRUCTIONS = {
     "limitations": [
         "Scripts are subprocesses in the shared application container, NOT isolated sandboxes. They inherit the application environment and can access credentials, network and writable data. JSON stdin does not fix this isolation issue.",
         "Dashboard and management API are unauthenticated. Keep the service on a trusted network. Existing optional Bearer auth protects MCP POST only, not management or GET /mcp.",
-        "Transport is limited HTTP JSON-RPC POST /mcp, not full MCP Streamable HTTP. OAuth, sessions and list-change notifications are not implemented. GET /mcp is only an initial SSE stub; real-client compatibility must be verified.",
+        "Streamable HTTP uses JSON responses and server-issued sessions. GET /mcp returns 405 (no SSE stream). OAuth, streaming notifications and list-change notifications are not implemented. Clients should refresh tools/list after changing visibility. Named connection credentials preserve tool selections across reconnect; shared master-key sessions have individual transient policies.",
         "Dependency installation is synchronous and can block requests. Runtime timeout is configured duration plus 15 seconds after dependency preparation. Per-script memory limits, process-tree termination and output caps are not implemented.",
     ],
 }
@@ -90,28 +96,33 @@ def tool_result(text: str, is_error: bool = False) -> dict:
 class MCPHandler:
     """Read the current registry on each request; built-ins never depend on DB rows."""
 
-    def tools(self) -> list[Tool]:
-        return [t for t in db.get_tool_list() if t.is_active and t.name not in BUILTIN_NAMES]
+    def tools(self, disabled_keys: set[str] | None = None) -> list[Tool]:
+        denied = disabled_keys or set()
+        return [t for t in db.get_tool_list() if t.is_active and t.name not in BUILTIN_NAMES
+                and tool_key(t) not in denied]
 
-    def list_tools(self) -> dict:
+    def list_tools(self, disabled_keys: set[str] | None = None) -> dict:
+        denied = disabled_keys or set()
         return {
-            "tools": BUILTIN_TOOLS + [
+            "tools": [t for t in BUILTIN_TOOLS if builtin_key(t['name']) not in denied] + [
                 {
                     "name": t.name,
                     "description": t.description,
                     "inputSchema": json.loads(t.json_schema_json or "{}") or EMPTY_SCHEMA,
                 }
-                for t in self.tools()
+                for t in self.tools(disabled_keys)
             ]
         }
 
-    def call_tool(self, name: str, arguments: dict) -> dict:
+    def call_tool(self, name: str, arguments: dict, disabled_keys: set[str] | None = None) -> dict:
         """Creation and execution are deliberately separate operations."""
         try:
             if not isinstance(name, str) or not name:
                 raise ValueError('Tool name must be a nonempty string')
             if not isinstance(arguments, dict):
                 raise ValueError('arguments must be a JSON object')
+            if name in BUILTIN_NAMES and builtin_key(name) in (disabled_keys or set()):
+                return tool_result('Tool is not available to this connection', True)
             if name == 'omniforge_instructions':
                 validate_arguments(arguments, EMPTY_SCHEMA)
                 return tool_result(json.dumps(INSTRUCTIONS, indent=2))
@@ -125,7 +136,7 @@ class MCPHandler:
                     'is_active': tool.is_active, 'executed': False,
                     'message': 'Saved only. Refresh tools/list; execute separately with tools/call.',
                 }))
-            tool = next((t for t in self.tools() if t.name == name), None)
+            tool = next((t for t in self.tools(disabled_keys) if t.name == name), None)
             if tool is None:
                 return tool_result('Unknown or inactive tool', True)
             validate_arguments(arguments, json.loads(tool.json_schema_json or '{}'))
@@ -152,7 +163,8 @@ class MCPHandler:
 
     def initialize(self, protocol_version: str, capabilities: dict) -> dict:
         return {
-            "protocolVersion": protocol_version,
+            "protocolVersion": protocol_version if protocol_version in ("2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25") else "2025-06-18",
             "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": "omniforge-mcp", "version": "0.2.1"},
+            "serverInfo": {"name": "omniforge-mcp", "version": VERSION},
+            "instructions": "OmniForge runs trusted Python/Node tools. Call omniforge_instructions before creating tools. Tools may declare schedule and folder_access settings, editable in the dashboard. Connections control which tools are visible and callable. Read the saved tool schema; arguments are JSON on stdin.",
         }

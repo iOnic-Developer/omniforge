@@ -33,13 +33,16 @@ class Tool:
     is_active: bool
     created_at: str
     updated_at: str
+    schedule: dict | None = None
+    folder_access: dict | None = None
     revision: str = field(init=False)
 
     def __post_init__(self) -> None:
         # Content identity, not a second-resolution timestamp. No migration required.
         values = [self.id, self.name, self.description, self.language, self.code,
-                  self.requirements_json, self.json_schema_json, self.is_active]
-        self.revision = hashlib.sha256(json.dumps(values, ensure_ascii=True).encode()).hexdigest()
+                  self.requirements_json, self.json_schema_json, self.is_active,
+                  self.schedule, self.folder_access]
+        self.revision = hashlib.sha256(json.dumps(values, ensure_ascii=True, sort_keys=True).encode()).hexdigest()
 
 
 class DuplicateToolError(ValueError):
@@ -58,13 +61,15 @@ class Database:
         self._ensure_schema()
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.path)
+        conn = sqlite3.connect(self.path, timeout=10)
+        conn.execute("PRAGMA foreign_keys = ON")
         conn.row_factory = sqlite3.Row
         return conn
 
     def _ensure_schema(self) -> None:
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
         with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS tools (
@@ -81,6 +86,10 @@ class Database:
                 )
                 """
             )
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(tools)")}
+            for column in ("schedule_json", "folder_access_json"):
+                if column not in columns:
+                    conn.execute(f"ALTER TABLE tools ADD COLUMN {column} TEXT DEFAULT 'null'")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tools_name ON tools(name)")
 
     def _invalidate(self) -> None:
@@ -99,6 +108,8 @@ class Database:
             is_active=bool(row["is_active"]),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+            schedule=json.loads(row["schedule_json"] or "null"),
+            folder_access=json.loads(row["folder_access_json"] or "null"),
         )
 
     def _fetch_all(self) -> list[Tool]:
@@ -151,8 +162,8 @@ class Database:
                     """
                     INSERT INTO tools
                     (id, name, description, language, code, requirements_json,
-                     json_schema_json, is_active, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     json_schema_json, is_active, created_at, updated_at, schedule_json, folder_access_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         name=excluded.name,
                         description=excluded.description,
@@ -162,7 +173,9 @@ class Database:
                         json_schema_json=excluded.json_schema_json,
                         is_active=excluded.is_active,
                         created_at=excluded.created_at,
-                        updated_at=excluded.updated_at
+                        updated_at=excluded.updated_at,
+                        schedule_json=excluded.schedule_json,
+                        folder_access_json=excluded.folder_access_json
                     """,
                     (
                         tool.id,
@@ -175,6 +188,8 @@ class Database:
                         int(tool.is_active),
                         tool.created_at or now,
                         now,
+                        json.dumps(tool.schedule, sort_keys=True),
+                        json.dumps(tool.folder_access, sort_keys=True),
                     ),
                 )
                 conn.commit()

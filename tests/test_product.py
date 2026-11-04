@@ -74,9 +74,10 @@ class ProductTests(unittest.TestCase):
 
     def test_storage_and_security_copy(self):
         page = Path('app/templates/dashboard.html').read_text()
-        self.assertEqual(page.count('localStorage.setItem('),1)
+        self.assertEqual(page.count('localStorage.setItem('),2)
         self.assertIn("localStorage.setItem('omniforge-theme',preference)",page)
-        self.assertIn('not ready for public exposure',page)
-        self.assertIn('not GET /mcp',page)
-        self.assertIn('not full Streamable HTTP',page)
+        self.assertIn('Tool editing is unauthenticated',page)
+        self.assertIn('Connection management requires the server key',page)
+        self.assertIn('initializes a session before using tools',page)
+        self.assertIn('Streamable HTTP',page)
         self.assertIn('isSecureContext',page)

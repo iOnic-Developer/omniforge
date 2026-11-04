@@ -7,20 +7,25 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-scratch = tempfile.TemporaryDirectory()
-os.environ['OMNIFORGE_DB_PATH'] = scratch.name + '/test.db'
-os.environ['OMNIFORGE_SCRATCH_ROOT'] = scratch.name + '/runs'
 from app import main, mcp_server, tool_authoring
 from app.database import Database
 
 
 class DashboardTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.db = Database(self.temp.name + '/test.db')
+        for module in (main, mcp_server, tool_authoring):
+            self.enterContext(patch.object(module, 'db', self.db))
+
     def test_config_never_exposes_key(self):
         with patch.object(main, 'API_KEY', 'test-secret-not-for-display'):
             config = asyncio.run(main.api_config())
         self.assertTrue(config['auth_enabled'])
         self.assertNotIn('test-secret-not-for-display', json.dumps(config))
-        self.assertFalse(config['connection_tracking'])
+        self.assertTrue(config['connection_tracking'])
+        self.assertTrue(config['connection_management_auth_enabled'])
         with patch.object(main, 'API_KEY', ''):
             self.assertFalse(asyncio.run(main.api_config())['auth_enabled'])
 

@@ -19,6 +19,7 @@ from typing import Optional
 
 from app.database import Tool
 from app.dependencies import ensure_dependencies
+from app.scheduling import validate_folder_path
 
 MAX_TIMEOUT_MS = int(os.environ.get("OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS", "30000"))
 MAX_MEMORY_MB = int(os.environ.get("OMNIFORGE_MAX_SCRIPT_MEMORY_MB", "512"))
@@ -60,6 +61,12 @@ def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
         runtime_bin, ext = _runtime(tool.language)
         packages = ensure_dependencies(tool, runtime_bin)
         environment = os.environ.copy()
+        # A tool without this feature must not inherit another tool's setting.
+        environment.pop('OMNIFORGE_OUTPUT_DIR', None)
+        output_folder = None
+        if tool.folder_access and tool.folder_access.get('enabled'):
+            output_folder = validate_folder_path(tool.folder_access.get('path', ''), create=True)
+            environment['OMNIFORGE_OUTPUT_DIR'] = str(output_folder)
         if packages is not None:
             key = 'PYTHONPATH' if ext == '.py' else 'NODE_PATH'
             environment[key] = str(packages) + (os.pathsep + environment[key] if environment.get(key) else '')
@@ -71,11 +78,13 @@ def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
             error=str(exc),
         )
 
-    # Scratch path is in the shared container, not an isolated filesystem.
-    scratch = os.path.join(SCRATCH_ROOT, f"{tool.id}{ext}")
+    # Every call gets its own script path; concurrent manual/scheduled calls
+    # cannot overwrite each other's source. This is still a shared container.
     os.makedirs(SCRATCH_ROOT, exist_ok=True)
+    scratch_dir = tempfile.TemporaryDirectory(prefix=f"{tool.id}-", dir=SCRATCH_ROOT)
+    scratch = os.path.join(scratch_dir.name, f"tool{ext}")
     try:
-        with open(scratch, "w") as fh:
+        with open(scratch, "w", encoding="utf-8") as fh:
             fh.write(tool.code)
         proc = subprocess.run(
             [runtime_bin, scratch],
@@ -83,7 +92,7 @@ def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
             capture_output=True,
             text=True,
             timeout=MAX_TIMEOUT_MS / 1000 + 15,
-            cwd=SCRATCH_ROOT,
+            cwd=str(output_folder) if output_folder else scratch_dir.name,
             env=environment,
         )
         exit_code = proc.returncode
@@ -97,6 +106,8 @@ def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
         exit_code = 1
         stdout = ""
         stderr = str(exc)
+    finally:
+        scratch_dir.cleanup()
 
     return RunResult(
         tool=tool.name, language=tool.language, stdout=stdout.strip(),

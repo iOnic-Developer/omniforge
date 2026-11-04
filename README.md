@@ -13,6 +13,13 @@ from a single container.
 - **Hot-reload**: tool registry is read per request — no restart needed.
 - **MCP endpoint** (`/mcp`) exposing tools to external LLM clients.
 - **SQLite metadata** with atomic writes.
+- **Scheduled tools** with cron, timezones, saved inputs, pause/resume and execution history.
+- **Output folders** chosen in the tool editor, including mounted host directories.
+- **Connections** with revocable client keys and individual tool visibility, all on by default.
+
+See [scheduled tools and folders](docs/scheduling.md) for a nightly document
+downloader created through MCP, and [connections](docs/connections.md) for client
+setup, tool access and disconnecting clients.
 
 ## Quick start
 
@@ -31,7 +38,9 @@ docker compose up --build
 
 | Variable | Default | Description |
 |---|---|---|
-| `OMNIFORGE_API_KEY` | *(empty)* | Bearer key required on POST `/mcp`. Empty disables auth. |
+| `OMNIFORGE_API_KEY` | *(empty)* | Shared MCP bearer credential and connection-management key. Empty permits anonymous MCP and connection management on a trusted network. |
+| `OMNIFORGE_ALLOWED_FOLDERS` | `/opt/omniforge/files` | Allowed output-folder roots, separated with `:` in Linux. Mount host directories first. |
+| `OMNIFORGE_ALLOWED_ORIGINS` | Same server origin | Optional comma-separated additional browser origins accepted by MCP. |
 | `OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS` | `30000` | Configured timeout (ms); runner currently adds 15 seconds. |
 | `OMNIFORGE_MAX_SCRIPT_MEMORY_MB` | `512` | Declared value only; not enforced per script. |
 | `OMNIFORGE_DB_PATH` | `/opt/omniforge/data/omniforge.db` | SQLite database path. |

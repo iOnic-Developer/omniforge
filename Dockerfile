@@ -9,8 +9,18 @@ RUN python -m venv /opt/venv && \
 FROM python:3.12-slim
 # Node is needed so Node/JS tool scripts can execute alongside Python tools.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends nodejs npm && \
+    apt-get install -y --no-install-recommends nodejs npm tzdata && \
     rm -rf /var/lib/apt/lists/*
+ARG APP_VERSION=0.3.0
+ARG BUILD_DATE
+ARG VCS_REF
+ENV OMNIFORGE_VERSION=$APP_VERSION \
+    OMNIFORGE_BUILD_DATE=$BUILD_DATE \
+    OMNIFORGE_REVISION=$VCS_REF
+LABEL org.opencontainers.image.version=$APP_VERSION \
+      org.opencontainers.image.created=$BUILD_DATE \
+      org.opencontainers.image.revision=$VCS_REF \
+      org.opencontainers.image.source="https://github.com/iOnic-Developer/omniforge"
 ENV VIRTUAL_ENV=/opt/venv \
     PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
@@ -18,7 +28,7 @@ ENV VIRTUAL_ENV=/opt/venv \
     PYTHONPATH=/app
 COPY --from=build /opt/venv /opt/venv
 # Create the runtime data dir as root, then hand ownership to uid 1000.
-RUN mkdir -p /opt/omniforge/data /opt/omniforge/lib /opt/omniforge/scripts && chown -R 1000:1000 /opt/omniforge
+RUN mkdir -p /opt/omniforge/data /opt/omniforge/lib /opt/omniforge/scripts /opt/omniforge/files && chown -R 1000:1000 /opt/omniforge
 USER 1000:1000
 WORKDIR /app
 COPY --chown=1000:1000 app ./app

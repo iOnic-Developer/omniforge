@@ -1,7 +1,7 @@
 services:
   omniforge:
     build: .
-    image: ionic-developer/omniforge:latest
+    image: dbzocchi/omniforge:latest
     container_name: omniforge
     ports:
       - "8000:8000"
@@ -12,13 +12,16 @@ services:
       OMNIFORGE_RUNTIME_IMAGE: omniforge:latest
       OMNIFORGE_DB_PATH: /opt/omniforge/data/omniforge.db
       OMNIFORGE_LIB_ROOT: /opt/omniforge/lib
+      OMNIFORGE_ALLOWED_FOLDERS: /opt/omniforge/files
       OMNIFORGE_SCRIPT_HOST: /opt/omniforge/scripts
     volumes:
       - omniforge_data:/opt/omniforge/data
       - omniforge_lib:/opt/omniforge/lib
       - omniforge_scripts:/opt/omniforge/scripts
+      - omniforge_files:/opt/omniforge/files
     # Scripts run in this container; dependency caches persist in omniforge_lib.
 volumes:
   omniforge_data:
   omniforge_lib:
   omniforge_scripts:
+  omniforge_files:

@@ -104,7 +104,7 @@ function harness(options = {}) {
     if (attrs.includes("data-templates")) e.dataset.templates = "";
   }
   const el = (s) =>
-    selectors.get(s) ||
+    selectors.get(s.replace('#toolForm ','')) ||
     elements.get(s) ||
     (elements.set(s, new Element()), elements.get(s));
   el("#toolFilter").value = "all";
@@ -118,8 +118,8 @@ function harness(options = {}) {
     return output;
   };
   const queryAll = (s) =>
-    s === ".toggle"
-      ? descendants().filter((e) => e.className === "toggle")
+    s === ".toggle" || s === ".connection-mutation"
+      ? descendants().filter((e) => e.className.split(' ').includes(s.slice(1)))
       : all.filter((e) =>
           s === "[data-page]"
             ? e.dataset.page
@@ -132,7 +132,7 @@ function harness(options = {}) {
                   : false,
         );
   const calls = [];
-  let tools = [],
+  let tools = [], connections = [],
     fail = null,
     hold = options.hold || null;
   const location = {
@@ -190,6 +190,24 @@ function harness(options = {}) {
         };
       }
       const name = decodeURIComponent(url.split("/")[3] || "");
+      if (url === '/api/version') return {ok:true,json:async () => ({version:'0.3.0',display_date:'04/11',build_date:'2026-11-04T12:00:00Z'})};
+      if (url === '/api/folders') return {ok:true,json:async () => ({roots:['/test/files'],path:null,folders:[]})};
+      if (url.startsWith('/api/folders?')) return {ok:true,json:async () => ({roots:['/test/files'],path:'/test/files',folders:[]})};
+      if (url.endsWith('/schedule')) return {ok:true,json:async () => ({status:{next_run_at:'2026-11-05T02:00:00Z',last_run_at:null,running:false}})};
+      if (url === '/api/connections' && !options.method) return {ok:true,json:async () => ({connections,tools:[...tools,{name:'omniforge_create_tool',description:'Create tools',is_active:true}]})};
+      if (url === '/api/connections' && options.method === 'POST') {
+        const connection = {id:'named-' + connections.length,client_name:JSON.parse(options.body).client_name,kind:'named',enabled:true,connected:false,disabled_tools:[],last_seen_at:null};
+        connections.push(connection);
+        return {ok:true,json:async () => ({ok:true,connection,token:'test-only-connection-token'})};
+      }
+      if (url.startsWith('/api/connections/') && options.method === 'PUT') {
+        const connection = connections.find(value => value.id === name); Object.assign(connection,JSON.parse(options.body));
+        return {ok:true,json:async () => ({ok:true,connection})};
+      }
+      if (url.startsWith('/api/connections/') && options.method === 'DELETE') {
+        const connection = connections.find(value => value.id === name); connection.connected = false; connection.enabled = false;
+        return {ok:true,json:async () => ({ok:true})};
+      }
       if (url === "/api/tools" && options.method === "POST") {
         const body = JSON.parse(options.body);
         if (tools.some((t) => t.name === body.name))
@@ -249,6 +267,8 @@ function harness(options = {}) {
     set tools(value) {
       tools = value;
     },
+    get connections() { return connections; },
+    set connections(value) { connections = value; },
     fail(value) {
       fail = value;
     },
@@ -761,4 +781,95 @@ test('toggle cannot advance the selected revision and never steals newly moved f
   await settle(); h.el('#toolSearch').focus(); h.hold(null); release(); await pending;
   assert.equal(h.run('current.revision'),'known');
   assert.equal(h.context.document.activeElement,h.el('#toolSearch'));
+});
+
+
+test('AI tool capabilities appear and survive code and description edits',async () => {
+  const h=await fresh();
+  const tool={...saved(),schedule:{enabled:true,cron:'0 2 * * *',timezone:'Europe/London',arguments:{x:'nightly'}},folder_access:{enabled:true,path:'/test/files/documents'}};
+  select(h,tool); await settle();
+  assert.equal(h.run('dirty()'),false);
+  assert.equal(h.el('#scheduleSettings').hidden,false);
+  assert.equal(h.el('#scheduleSettingsBtn').textContent,'Schedule on');
+  assert.equal(h.el('#folderSettingsBtn').textContent,'Output folder');
+  assert.equal(h.el('#outputFolder').value,'/test/files/documents');
+  assert.match(h.el('#scheduleStatus').textContent,/Next:/);
+  change(h,'description','Download the latest document');
+  await h.run('save()');
+  const body=JSON.parse(writes(h)[0].options.body);
+  assert.deepEqual(body.schedule,tool.schedule);
+  assert.deepEqual(body.folder_access,tool.folder_access);
+});
+test('pause and remove scheduling are separate from global tool enablement',async () => {
+  const h=await fresh();
+  select(h,{...saved(),schedule:{enabled:true,cron:'0 2 * * *',timezone:'UTC',arguments:{}}});
+  h.el('#scheduleEnabled').checked=false; h.run('updateState()');
+  assert.equal(h.run('dirty()'),true);
+  await h.run('save()');
+  let body=JSON.parse(writes(h)[0].options.body);
+  assert.equal(body.schedule.enabled,false); assert.equal(body.is_active,true);
+  await h.el('#removeScheduleBtn').emit('click'); await h.run('save()');
+  body=JSON.parse(writes(h).at(-1).options.body); assert.equal(body.schedule,null);
+});
+test('new capabilities start paused and invalid scheduled inputs cannot save',async () => {
+  const h=await fresh(); select(h);
+  await h.el('#scheduleSettingsBtn').emit('click');
+  assert.equal(h.el('#scheduleSettings').open,true);
+  assert.equal(h.el('#scheduleEnabled').checked,false);
+  h.el('#scheduleArguments').value='[]'; await h.run('save()');
+  assert.equal(writes(h).length,0); assert.equal(h.el('#scheduleArgumentsError').hidden,false);
+  h.el('#scheduleArguments').value='{}';
+  await h.el('#folderSettingsBtn').emit('click'); h.el('#folderEnabled').checked=true;
+  await h.run('save()'); assert.equal(writes(h).length,0); assert.match(status(h),/Choose an output folder/);
+  await h.run('browseFolders()');
+  assert.equal(h.el('#folderChoices').children[0].textContent,'/test/files');
+  await h.el('#folderChoices').children[0].emit('click'); await settle();
+  assert.equal(h.el('#outputFolder').value,'/test/files');
+  await h.run('save()'); assert.equal(JSON.parse(writes(h)[0].options.body).folder_access.path,'/test/files');
+});
+test('connections default all tools allowed and save only an explicit deny list',async () => {
+  const h=await fresh(); h.tools=[saved()];
+  h.connections=[{id:'client-one',client_name:'Codex',kind:'named',enabled:true,connected:true,disabled_tools:[]}];
+  await h.run("navigate('connections')"); await settle();
+  let options=h.context.document.querySelectorAll('.connection-mutation').filter(e => e.tagName==='input');
+  assert.equal(options.length,2); assert.equal(options.every(e => e.checked),true);
+  options[0].checked=false; await options[0].emit('change');
+  assert.equal(h.run('connectionDirty()'),true);
+  await h.run('saveConnectionAccess(connections[0])');
+  const request=writes(h)[0]; assert.equal(request.url,'/api/connections/client-one');
+  assert.deepEqual(JSON.parse(request.options.body),{disabled_tools:['bonusBall']});
+  assert.equal(h.run('connectionDirty()'),false);
+  h.el('#connectionsList').children[0].children[1].open=true;
+  const allowAll=h.context.document.querySelectorAll('.connection-mutation').find(element => element.textContent==='Allow all tools');
+  await allowAll.emit('click');
+  assert.equal(h.el('#connectionsList').children[0].children[1].open,true);
+  await h.run('saveConnectionAccess(connections[0])');
+  assert.deepEqual(JSON.parse(writes(h).at(-1).options.body),{disabled_tools:[]});
+  await confirm(h,h.run('disconnectConnection(connections[0])'),true);
+  assert.equal(writes(h).at(-1).options.method,'DELETE'); assert.equal(h.connections[0].enabled,false);
+});
+test('management auth stays scoped to connections and a new key clears on leaving',async () => {
+  const h=await fresh();
+  h.fail({url:'/api/connections',status:401,detail:'Unauthorized'});
+  await h.run("navigate('connections')"); await settle();
+  assert.equal(h.el('#connectionManagementForm').hidden,false);
+  assert.equal(h.el('#createConnectionBtn').disabled,true);
+  h.el('#connectionManagementKey').value='test-only-admin-key'; await h.run('loadConnections()');
+  h.el('#connectionName').value='ChatGPT'; await h.run('createConnection()');
+  assert.equal(h.el('#connectionToken').value,'test-only-connection-token');
+  assert.equal(h.el('#newConnectionKey').hidden,false);
+  assert.equal(writes(h)[0].options.headers.Authorization,'Bearer test-only-admin-key');
+  await h.run("navigate('tools')");
+  assert.equal(h.el('#connectionToken').value,''); assert.equal(h.el('#connectionManagementKey').value,'');
+  await h.run('loadTools()');
+  assert.equal(h.calls.at(-1).options.headers?.Authorization,undefined);
+});
+
+
+test('menu footer displays actual API version and display date without caching it',async () => {
+  const h=await fresh();
+  assert.equal(h.el('#buildVersion').textContent,'V0.3.0 04/11');
+  assert.ok(h.calls.some(call => call.url==='/api/version' && call.options.cache==='no-store'));
+  h.fail({url:'/api/version',status:500,detail:'Unavailable'}); await h.run('loadVersion()');
+  assert.equal(h.el('#buildVersion').textContent,'Version unavailable');
 });

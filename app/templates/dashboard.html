@@ -22,9 +22,10 @@
 <a class="nav-link" href="#overview" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"/></svg>Overview</a>
 <a class="nav-link" href="#tools" data-nav="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg>Tools</a>
 <a class="nav-link" href="#connect" data-nav="connect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 15 6-6m-4-4 2-2a5 5 0 0 1 7 7l-3 3M7 11l-3 3a5 5 0 0 0 7 7l2-2"/></svg>Connect</a>
+<a class="nav-link" href="#connections" data-nav="connections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 7h8M8 17h8M12 7v10"/><circle cx="5" cy="7" r="3"/><circle cx="19" cy="7" r="3"/><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/></svg>Connections</a>
 <a class="nav-link" href="#help" data-nav="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3h.01"/></svg>Help</a>
 </nav>
-<div class="rail-bottom"><div><div class="style-swatches" role="group" aria-label="Style"><button type="button" class="style-swatch" data-style-choice="default" title="Default" aria-label="Default style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="mono" title="Mono" aria-label="Mono style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="paper" title="Paper" aria-label="Paper style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="moderno" title="Moderno" aria-label="Moderno style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="ocean" title="Ocean" aria-label="Ocean style" aria-pressed="false"></button></div><label class="theme-label" for="themeSelect">Appearance</label><select id="themeSelect" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="rail-note"><strong>Your workspace. Your tools.</strong>Trusted code, connected to AI.</div></div>
+<div class="rail-bottom"><div><div class="style-swatches" role="group" aria-label="Style"><button type="button" class="style-swatch" data-style-choice="default" title="Default" aria-label="Default style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="mono" title="Mono" aria-label="Mono style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="paper" title="Paper" aria-label="Paper style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="moderno" title="Moderno" aria-label="Moderno style" aria-pressed="false"></button><button type="button" class="style-swatch" data-style-choice="ocean" title="Ocean" aria-label="Ocean style" aria-pressed="false"></button></div><label class="theme-label" for="themeSelect">Appearance</label><select id="themeSelect" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="rail-note"><strong>Your workspace. Your tools.</strong>Trusted code, connected to AI.</div><div id="buildVersion" class="build-version" role="status">Version loading...</div></div>
 </aside>
 <div class="workspace">
 <header class="topbar"><span class="connection" id="connectionState">Checking workspace…</span><div class="top-actions"><button id="updateBtn" type="button" hidden>Update available</button><button id="installBtn" type="button" hidden>Install app</button><a href="#help" class="muted">Getting started</a></div></header>
@@ -39,11 +40,11 @@
 </section>
 <section class="page" id="toolsPage" data-page="tools" hidden>
 <div class="page-header"><div><p class="eyebrow">Your library</p><h1>Tools</h1><p>Small scripts with a clear purpose. Enabled tools can be discovered and called by your AI client.</p></div><button class="primary" type="button" id="newBtn" data-new>Create a tool</button></div>
-<div class="toolbar"><div><label for="toolSearch">Search tools</label><input id="toolSearch" type="search" placeholder="Search by name or description" autocomplete="off"></div><div><label for="toolFilter">Show</label><select id="toolFilter"><option value="all">All tools</option><option value="active">Enabled</option><option value="inactive">Disabled</option><option value="python3">Python</option><option value="node">Node</option></select></div><button type="button" data-templates>Browse templates</button></div>
+<div class="toolbar"><div><label for="toolSearch">Search tools</label><input id="toolSearch" type="search" placeholder="Search by name or description" autocomplete="off"></div><div><label for="toolFilter">Show</label><select id="toolFilter"><option value="all">All tools</option><option value="active">Enabled</option><option value="inactive">Disabled</option><option value="python3">Python</option><option value="node">Node</option></select></div><div class="actions"><button type="button" id="refreshToolsBtn">Refresh tools</button><button type="button" data-templates>Browse templates</button></div></div>
 <p class="count" id="libraryCount" aria-live="polite">Loading tools…</p><div id="toolList" class="library" role="list" aria-label="Saved tools"></div>
 <div id="libraryEmpty" class="library-state" hidden><h2 id="emptyTitle">Your first tool starts here</h2><p id="emptyCopy">Try a greeting template to learn the save, test and connect workflow. No packages needed.</p><button type="button" class="primary" data-templates>Choose a template</button></div>
 <div id="libraryError" class="notice" hidden><strong>Couldn’t load your tools</strong><p id="libraryErrorText"></p><button type="button" id="retryToolsBtn">Try again</button></div>
-<div class="builtin"><h3>Two helpers, always available</h3><p class="hint"><code>omniforge_instructions</code> explains authoring to your client. <code>omniforge_create_tool</code> saves new tools without running them. They’re built in, not editable library scripts.</p></div>
+<div class="builtin"><h3>Two built-in helpers</h3><p class="hint"><code>omniforge_instructions</code> explains authoring to your client. <code>omniforge_create_tool</code> saves new tools without running them. They are included by default; their visibility can be changed per connection.</p></div>
 </section>
 <section class="page" id="editorPage" data-page="editor" hidden>
 <div class="breadcrumb"><a href="#tools">Tools</a><span aria-hidden="true">/</span><span id="editorCrumb">New tool</span></div>
@@ -53,6 +54,23 @@
 <div class="code-bar"><label for="toolCode">Script <span class="muted">(required)</span></label><small id="codeMeta">Python · UTF-8</small></div>
 <div class="editor-shell"><pre id="lineNumbers" class="line-numbers" aria-hidden="true">1</pre><textarea id="toolCode" name="code" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="codeHint"></textarea></div>
 <p id="codeHint" class="sr-only">Print output to stdout. Tab indents; Shift Tab unindents. Press Escape, then Tab to leave the editor.</p>
+<section class="tool-capabilities" aria-labelledby="capabilitiesTitle">
+<div class="section-heading"><h2 id="capabilitiesTitle">Schedule &amp; folders</h2><span class="hint">Optional per tool</span></div>
+<p class="hint">Let a tool run on a timetable or save files to a folder on the server. Settings supplied by your AI appear here.</p>
+<div class="capability-actions"><button type="button" id="scheduleSettingsBtn" aria-controls="scheduleSettings" aria-expanded="false">Add schedule</button><button type="button" id="folderSettingsBtn" aria-controls="folderSettings" aria-expanded="false">Add folder access</button></div>
+<details id="scheduleSettings" class="capability-settings" hidden><summary>Schedule settings</summary><div class="capability-content">
+<label class="check-label" for="scheduleEnabled"><input type="checkbox" id="scheduleEnabled">Run automatically</label>
+<p class="hint">Turn this off to pause the schedule. You can still run the tool manually.</p>
+<div class="settings-grid"><div><label for="scheduleCron">Cron schedule</label><input id="scheduleCron" value="0 2 * * *" spellcheck="false" autocomplete="off" aria-describedby="scheduleCronHint"><p class="hint" id="scheduleCronHint">Five fields: minute, hour, day, month, weekday. <code>0 2 * * *</code> runs every night at 02:00.</p></div><div><label for="scheduleTimezone">Time zone</label><input id="scheduleTimezone" value="UTC" list="timezones" spellcheck="false" autocomplete="off" aria-describedby="timezoneHint"><datalist id="timezones"><option value="UTC"><option value="Europe/London"><option value="America/New_York"><option value="America/Los_Angeles"><option value="Australia/Sydney"></datalist><p class="hint" id="timezoneHint">Use an IANA time zone, for example Europe/London.</p></div></div>
+<label for="scheduleArguments">Scheduled inputs — JSON object</label><textarea id="scheduleArguments" rows="3" spellcheck="false" aria-describedby="scheduleArgumentsHint scheduleArgumentsError">{}</textarea><p class="hint" id="scheduleArgumentsHint">These saved inputs are used for every scheduled run and must match the tool's input schema.</p><p id="scheduleArgumentsError" class="field-error" hidden></p>
+<p id="scheduleStatus" class="schedule-status" role="status">Save this tool to see its next run.</p><button type="button" id="refreshScheduleBtn">Refresh run status</button><button type="button" id="removeScheduleBtn" class="quiet">Remove schedule</button>
+</div></details>
+<details id="folderSettings" class="capability-settings" hidden><summary>Folder settings</summary><div class="capability-content">
+<label class="check-label" for="folderEnabled"><input type="checkbox" id="folderEnabled">Use output folder</label><label for="outputFolder">Output folder on the server</label><input id="outputFolder" placeholder="/opt/omniforge/files/documents" spellcheck="false" autocomplete="off" aria-describedby="outputFolderHint"><p class="hint" id="outputFolderHint">The script receives this path as <code>OMNIFORGE_OUTPUT_DIR</code> and runs in this folder. In Docker, the folder must be inside an allowed mounted folder. This is a server location, not a folder on this browser's computer.</p>
+<div class="actions"><button type="button" id="browseFoldersBtn">Browse server folders</button><button type="button" id="folderRootsBtn" hidden>Show allowed roots</button></div><p id="folderBrowseStatus" class="hint" role="status"></p><div id="folderChoices" class="folder-choices" role="group" aria-label="Available server folders"></div><button type="button" id="removeFolderBtn" class="quiet">Remove folder access</button>
+</div></details>
+<p class="hint">Save tool to apply changes. Saving an enabled schedule starts future runs; it does not run the tool immediately.</p>
+</section>
 <details class="advanced" id="advancedSettings"><summary>Packages &amp; advanced settings</summary><div class="advanced-content"><label for="toolRequirements">Packages — one per line</label><textarea id="toolRequirements" name="requirements" rows="3" placeholder="Python: requests==2.32.5&#10;Node: lodash@4.17.21" spellcheck="false" aria-describedby="requirementsHint"></textarea><p id="requirementsHint" class="hint">Optional. Installed on first execution (up to 120 seconds, plus a bounded lock wait); reused afterwards. Package names or exact versions only. No URLs, install commands or system binaries. Python wheels only; npm lifecycle scripts are disabled. Only use dependencies you trust.</p><p class="hint">Input schemas created via MCP are preserved when editing. Use the saved schema below to understand required fields; the server validates test arguments. Remote schema references are not fetched.</p><p id="savedInputSchemaLabel">Saved input schema — read-only</p><pre id="savedInputSchema" class="request-code" tabindex="0" aria-label="Saved input schema">{}</pre><p class="hint">Create or change schemas through MCP.</p></div></details>
 <div class="test-inputs"><label for="testInputs">Test inputs — JSON object</label><textarea id="testInputs" rows="4" spellcheck="false" aria-describedby="testInputsHint testInputsError">{}</textarea><p id="testInputsHint" class="hint">Sent as arguments on stdin when you Run / Test. Start with {} for tools without required inputs. Inputs stay only in this tab and reset when you select a tool.</p><p id="testInputsError" class="field-error" hidden></p></div>
 <div class="editor-footer"><span id="saveState" class="save-state" aria-live="polite">New draft · not saved</span><div class="actions"><button type="button" id="delBtn" class="danger" hidden>Delete</button><button type="button" id="runBtn" disabled>Run / Test</button><button type="submit" id="saveBtn" class="primary">Save tool</button></div></div>
@@ -60,10 +78,20 @@
 <div class="output"><div class="section-heading"><h2>Test output</h2><span id="runSummary" class="hint">Not run yet</span></div><div id="out"><p class="out-empty">Save your tool, then run it to see stdout, errors and execution time here. Only run code you trust.</p></div></div>
 </section>
 <section class="page" id="connectPage" data-page="connect" hidden>
-<div class="page-header"><div><p class="eyebrow">Give your AI access</p><h1>Connect your client</h1><p>MCP lets a compatible AI client discover and call your tools. This server currently supports limited HTTP JSON-RPC POST, not full Streamable HTTP.</p></div></div>
-<div class="notice" style="margin-bottom:24px"><strong>Trusted network only — not ready for public exposure</strong><p>Dashboard and management API are unauthenticated. Bearer auth protects MCP POST only, not GET /mcp. Scripts run in this same container with access to its environment and writable data.</p></div>
+<div class="page-header"><div><p class="eyebrow">Give your AI access</p><h1>Connect your client</h1><p>MCP lets your AI client discover and call tools through Streamable HTTP with JSON responses. Each client initializes a session before using tools.</p></div></div>
+<div class="notice" style="margin-bottom:24px"><strong>Use a trusted workspace</strong><p>Tool editing is unauthenticated and scripts share this container. Use a trusted network or your own access controls. Connection management requires the server key when one is configured.</p></div>
 <div id="configLoading" class="surface">Loading connection settings…</div><div id="configError" class="notice" hidden><strong>Settings unavailable</strong><p id="configErrorText"></p><button id="retryConfigBtn" type="button">Try again</button></div>
-<div id="configContent" hidden><div class="connect-grid"><article class="surface"><h2>1. Set your endpoint</h2><label for="endpointValue">MCP endpoint</label><div class="endpoint"><input id="endpointValue" readonly><button type="button" id="copyEndpointBtn">Copy</button></div><p class="hint">Use this origin from a trusted client that supports HTTP JSON-RPC POST. Client compatibility must be verified; an SSE connection alone is not supported.</p><dl class="definition"><div><dt>Transport</dt><dd id="transportValue"></dd></div><div><dt>MCP POST authentication</dt><dd id="authValue"></dd></div><div><dt>Connected clients</dt><dd>Not tracked. There is no client or session list.</dd></div></dl></article><article class="surface"><h2>2. Discover &amp; call</h2><p class="muted">Initialize the client, request <code>tools/list</code>, then call a tool with <code>tools/call</code>.</p><p class="hint">Refresh discovery after adding or enabling a tool. No list-change notifications are sent.</p><dl class="definition"><div><dt>Supported methods</dt><dd id="methodsValue"></dd></div><div><dt>Credentials</dt><dd>Never enter API keys into scripts or examples. Configure your client locally.</dd></div></dl></article></div><article class="surface"><div class="section-heading"><h2>HTTP request template</h2><button type="button" id="copyRequestBtn">Copy template</button></div><p class="hint" id="authHelp"></p><pre id="requestTemplate" class="request-code"></pre></article></div>
+<div id="configContent" hidden><div class="connect-grid"><article class="surface"><h2>1. Set your endpoint</h2><label for="endpointValue">MCP endpoint</label><div class="endpoint"><input id="endpointValue" readonly><button type="button" id="copyEndpointBtn">Copy</button></div><p class="hint">Use this origin from a trusted client that supports HTTP JSON-RPC POST. Client compatibility must be verified; an SSE connection alone is not supported.</p><dl class="definition"><div><dt>Transport</dt><dd id="transportValue"></dd></div><div><dt>MCP POST authentication</dt><dd id="authValue"></dd></div><div><dt>Connected clients</dt><dd><a href="#connections">Manage connections and tool access</a></dd></div></dl></article><article class="surface"><h2>2. Discover &amp; call</h2><p class="muted">Initialize the client, request <code>tools/list</code>, then call a tool with <code>tools/call</code>.</p><p class="hint">Refresh discovery after adding or enabling a tool. No list-change notifications are sent.</p><dl class="definition"><div><dt>Supported methods</dt><dd id="methodsValue"></dd></div><div><dt>Credentials</dt><dd>Never enter API keys into scripts or examples. Configure your client locally.</dd></div></dl></article></div><article class="surface"><div class="section-heading"><h2>HTTP request template</h2><button type="button" id="copyRequestBtn">Copy template</button></div><p class="hint" id="authHelp"></p><pre id="requestTemplate" class="request-code" tabindex="0" aria-label="MCP request template"></pre></article></div>
+</section>
+<section class="page" id="connectionsPage" data-page="connections" hidden>
+<div class="page-header"><div><h1>Connections</h1><p>Choose which tools each MCP client can discover and call, or disconnect its current session.</p></div><button type="button" id="refreshConnectionsBtn">Refresh connections</button></div>
+<p class="hint">All tools are visible by default, including tools added later. Turning a tool off here hides it and blocks calls from this connection. Clients may need to refresh their tool list.</p>
+<form id="connectionManagementForm" class="connection-create" hidden><label for="connectionManagementKey">Server management key</label><div class="endpoint"><input id="connectionManagementKey" type="password" autocomplete="off" aria-describedby="connectionManagementHint"><button type="submit" id="unlockConnectionsBtn">Unlock connections</button></div><p id="connectionManagementHint" class="hint">Enter the existing server OMNIFORGE_API_KEY to manage connections. It stays in this screen's memory and is cleared when you leave. A client connection key cannot manage other connections.</p></form>
+<form id="connectionForm" class="connection-create"><label for="connectionName">New connection name</label><div class="endpoint"><input id="connectionName" required maxlength="100" placeholder="e.g. ChatGPT or Codex" autocomplete="off"><button type="submit" id="createConnectionBtn" class="primary">Add connection</button></div><p class="hint">A named connection has its own key. Tool choices stay in place when that client reconnects. A client using the shared server key starts a new session when it reconnects.</p></form>
+<div id="newConnectionKey" class="notice" hidden><strong>Save this connection key now</strong><p>This key is shown once. Configure it in your MCP client as a Bearer token. It will be cleared when you leave this screen.</p><label for="connectionToken">Connection key</label><div class="endpoint"><input id="connectionToken" type="password" readonly autocomplete="off"><button type="button" id="copyConnectionTokenBtn">Copy key</button></div><button type="button" id="dismissConnectionKeyBtn">I've saved the key</button></div>
+<p id="connectionsLoading" role="status">Loading connections…</p><div id="connectionsError" class="notice" hidden><strong>Couldn't load connections</strong><p id="connectionsErrorText"></p><button type="button" id="retryConnectionsBtn">Try again</button></div>
+<div id="connectionsEmpty" class="library-state" hidden><h2>No connections yet</h2><p>Connect an MCP client and initialize a session. It will appear here with all tools allowed.</p><a href="#connect">Set up a client</a></div>
+<div id="connectionsList" class="connections-list" role="group" aria-label="MCP connections"></div>
 </section>
 <section class="page" id="helpPage" data-page="help" hidden>
 <div class="page-header"><div><p class="eyebrow">Start simple. Build confidently.</p><h1>A little guidance goes a long way.</h1><p>New to MCP? Think of a tool as a named script your AI can ask the server to run.</p></div></div>
@@ -112,17 +140,26 @@ const EXAMPLES = {
 };
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
-const field = name => $(`[name="${name}"]`);
+const field = name => $(`#toolForm [name="${name}"]`);
 const reserved = new Set(['omniforge_instructions', 'omniforge_create_tool']);
 let tools = [], current = null, baseline = '', route = '', busy = false, listReady = false;
 let outputSnapshot = null, outputSummary = '';
+let scheduleFeature = false, folderFeature = false, connections = [], connectionTools = [];
+let folderBrowseVersion = 0, creatingConnection = false, connectionAccessReady = false;
+const connectionDrafts = new Map(), connectionBusy = new Set();
 let confirmResolve = null, navigationVersion = 0, statusTimer, pendingInstall = null, waitingWorker = null;
-const blank = {name:'', description:'', language:'python3', code:'', requirements:[]};
+const blank = {name:'', description:'', language:'python3', code:'', requirements:[],schedule:null,folder_access:null};
 function formValues() {
   return {name:field('name').value, description:field('description').value,
     language:field('language').value, code:field('code').value,
-    requirements:field('requirements').value.split('\n').map(s => s.trim()).filter(Boolean)};
+    requirements:field('requirements').value.split('\n').map(s => s.trim()).filter(Boolean),
+    schedule:scheduleFeature ? {enabled:$('#scheduleEnabled').checked,cron:$('#scheduleCron').value,timezone:$('#scheduleTimezone').value,arguments:scheduleInputValue()} : null,
+    folder_access:folderFeature ? {enabled:$('#folderEnabled').checked,path:$('#outputFolder').value} : null};
 }
+function scheduleInputValue() {
+  try { return JSON.parse($('#scheduleArguments').value); } catch { return $('#scheduleArguments').value; }
+}
+function connectionDirty() { return connectionDrafts.size > 0; }
 function fingerprint(values) {
   return JSON.stringify({...values, requirements:[...new Set(values.requirements)].sort()});
 }
@@ -182,8 +219,11 @@ function finishConfirm(approved) {
 }
 async function canLeave() {
   if (modalOpen()) return false;
-  if (busy) { notify('Wait for the current save or test to finish.', true); return false; }
-  return !dirty() || await ask('Leave this draft?', 'Your unsaved changes will be discarded. Saved tools won’t be changed.');
+  if (busy || creatingConnection || connectionBusy.size) { notify('Wait for the current action to finish.', true); return false; }
+  if (!dirty() && !connectionDirty()) return true;
+  const approved = await ask('Leave unsaved changes?', 'Your unsaved changes will be discarded. Saved tools and access settings will stay as they are.');
+  if (approved) connectionDrafts.clear();
+  return approved;
 }
 function updateState() {
   const blocked = busy || modalOpen();
@@ -196,26 +236,42 @@ function updateState() {
   $('#delBtn').hidden = !current || builtin; $('#delBtn').disabled = blocked || offline;
   $('#installExamplesBtn').disabled = blocked || offline;
   $$('.toggle').forEach(button => { button.disabled = blocked || offline || button.dataset.reserved === 'true'; });
+  updateCapabilityState(blocked || offline || builtin);
+  $$('.connection-mutation').forEach(control => { control.disabled = offline || connectionBusy.has(control.dataset.connectionId) || (control.dataset.needsDraft === 'true' && !connectionDrafts.has(control.dataset.connectionId)); });
+  $('#createConnectionBtn').disabled = offline || creatingConnection || !connectionAccessReady;
   updateOutputState();
   $('#codeMeta').textContent = (field('language').value === 'node' ? 'Node.js' : 'Python') + ' · UTF-8';
 }
 function fillEditor(values = blank, tool = null) {
+  folderBrowseVersion++;
   current = tool ? {...tool} : null;
   $('#testInputs').value = '{}'; $('#testInputsError').hidden = true; $('#testInputs').removeAttribute('aria-invalid');
   try { $('#savedInputSchema').textContent = JSON.stringify(JSON.parse(tool?.json_schema_json || '{}'),null,2); }
   catch { $('#savedInputSchema').textContent = 'Invalid saved schema. Ask the administrator to review it.'; }
   for (const key of ['name','description','language','code']) field(key).value = values[key] || (key === 'language' ? 'python3' : '');
   field('requirements').value = (values.requirements || []).join('\n');
+  scheduleFeature = !!values.schedule; folderFeature = !!values.folder_access;
+  $('#scheduleEnabled').checked = values.schedule?.enabled ?? false;
+  $('#scheduleCron').value = values.schedule?.cron || '0 2 * * *';
+  $('#scheduleTimezone').value = values.schedule?.timezone || 'UTC';
+  $('#scheduleArguments').value = JSON.stringify(values.schedule?.arguments || {},null,2);
+  $('#scheduleArgumentsError').hidden = true; $('#scheduleArguments').removeAttribute('aria-invalid');
+  $('#folderEnabled').checked = values.folder_access?.enabled ?? false; $('#outputFolder').value = values.folder_access?.path || '';
+  $('#scheduleSettings').hidden = !scheduleFeature; $('#scheduleSettings').open = false;
+  $('#folderSettings').hidden = !folderFeature; $('#folderSettings').open = false;
+  $('#folderChoices').replaceChildren(); $('#folderBrowseStatus').textContent = ''; $('#folderRootsBtn').hidden = true;
+  $('#scheduleStatus').textContent = tool && scheduleFeature ? 'Loading run status...' : 'Save this tool to see its next run.';
   baseline = fingerprint(tool ? formValues() : blank);
   $('#formTitle').textContent = tool ? 'Edit tool' : 'Create a tool';
   $('#editorCrumb').textContent = tool ? tool.name : 'New tool';
   $('#nameError').hidden = true; field('name').removeAttribute('aria-invalid');
   $('#advancedSettings').open = !!values.requirements?.length;
   updateGutter(); clearOutput(); updateState();
+  if (tool && scheduleFeature) loadScheduleStatus(tool);
 }
 function toolValues(tool) {
   return {name:tool.name,description:tool.description,language:tool.language,code:tool.code,
-    requirements:JSON.parse(tool.requirements_json || '[]')};
+    requirements:JSON.parse(tool.requirements_json || '[]'),schedule:tool.schedule || null,folder_access:tool.folder_access || null};
 }
 function restoreLibraryFocus(target, buttons) {
   if (!target) return;
@@ -271,7 +327,19 @@ function renderTools() {
         }
       }
     });
-    row.append(open,lang,toggle); list.append(row); buttons.push(open,toggle);
+    row.append(open,lang,toggle);
+    if (t.schedule || t.folder_access) {
+      const settings = document.createElement('div'); settings.className = 'tool-feature-actions';
+      for (const [feature,label] of [['schedule',t.schedule?.enabled ? 'Schedule on' : 'Schedule paused'],['folder_access',t.folder_access?.enabled ? 'Output folder' : 'Folder paused']]) {
+        if (!t[feature]) continue;
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'feature-link';
+        button.textContent = label; button.setAttribute('aria-label',`${feature === 'schedule' ? 'Schedule' : 'Folder'} settings for ${t.name}`);
+        button.addEventListener('click',async () => { await navigate(`tools/edit/${encodeURIComponent(t.name)}`); if (current?.id === t.id && route.startsWith('tools/')) openCapability(feature === 'schedule' ? 'schedule' : 'folder'); });
+        settings.append(button);
+      }
+      row.append(settings);
+    }
+    list.append(row); buttons.push(open,toggle);
   }
   restoreLibraryFocus(focusTarget,buttons);
   $('#libraryEmpty').hidden = visible.length > 0;
@@ -293,22 +361,24 @@ async function loadTools() {
 }
 function normalizedRoute(hash) {
   const value = hash.replace(/^#/, '');
-  return /^(overview|tools(?:\/new|\/edit\/[^/]+)?|connect|help)$/.test(value) ? value : 'overview';
+  return /^(overview|tools(?:\/new|\/edit\/[^/]+)?|connect|connections|help)$/.test(value) ? value : 'overview';
 }
 async function navigate(target, replace = false) {
   if (target === route && !replace) return;
   if (!await canLeave()) return;
+  connectionDrafts.clear();
   await activateRoute(target, replace);
 }
 async function activateRoute(target, replace = false) {
   const version = ++navigationVersion;
+  if (target !== 'connections') { clearConnectionKey(); $('#connectionManagementKey').value = ''; connectionAccessReady = false; }
   const [base, mode, rawName] = target.split('/'); let page = base;
   if (base === 'tools' && mode) {
     page = 'editor';
     if (mode === 'new') fillEditor();
     else {
       let name; try { name = decodeURIComponent(rawName); } catch { name = ''; }
-      if (!listReady) { try { await loadTools(); } catch { target = 'tools'; page = 'tools'; } }
+      try { await loadTools(); } catch { target = 'tools'; page = 'tools'; }
       if (version !== navigationVersion) return;
       if (page === 'editor') {
         const tool = tools.find(t => t.name === name && !reserved.has(t.name));
@@ -329,6 +399,8 @@ async function activateRoute(target, replace = false) {
   window.scrollTo(0,0); $('#main').focus({preventScroll:true});
   if (page === 'editor') field('name').focus({preventScroll:true});
   if (page === 'connect') loadConfig();
+  if (page === 'connections') loadConnections();
+  if (page === 'tools') loadTools().catch(() => {});
 }
 async function loadExample(key) {
   $('#templateDialog').close();
@@ -359,6 +431,12 @@ async function save() {
     $('#nameError').hidden = false; field('name').setAttribute('aria-invalid','true'); field('name').focus(); return;
   }
   if (!$('#toolForm').reportValidity()) return;
+  if (values.schedule && (!values.schedule.arguments || Array.isArray(values.schedule.arguments) || typeof values.schedule.arguments !== 'object')) {
+    $('#scheduleArgumentsError').textContent = 'Enter a valid JSON object for scheduled inputs, for example {}.';
+    $('#scheduleArgumentsError').hidden = false; $('#scheduleArguments').setAttribute('aria-invalid','true');
+    openCapability('schedule'); $('#scheduleArguments').focus(); return;
+  }
+  if (values.folder_access?.enabled && !values.folder_access.path.trim()) { openCapability('folder'); $('#outputFolder').focus(); notify('Choose an output folder, or turn off folder access before saving.',true); return; }
   const previous = current, snapshot = fingerprint(values);
   let schema;
   try { schema = previous ? JSON.parse(previous.json_schema_json || '{}') : {}; }
@@ -371,6 +449,7 @@ async function save() {
     // A successful write is a save even if the following list refresh fails.
     current = {...body,revision:result.revision,id:previous?.id || result.id,requirements_json:JSON.stringify(values.requirements),json_schema_json:JSON.stringify(schema)};
     baseline = snapshot;
+    if (current.schedule) loadScheduleStatus(current);
     tools = tools.filter(t => t.id !== current.id); tools.unshift(current); renderTools();
     route = 'tools/edit/' + encodeURIComponent(current.name); history.replaceState(null,'','#' + route);
     $('#formTitle').textContent = 'Edit tool'; $('#editorCrumb').textContent = current.name; document.title = current.name + ' · OmniForge';
@@ -441,6 +520,168 @@ async function installExamples() {
   } catch (error) { notify(`${created} saved, ${skipped} skipped. ${error.message}`,true); }
   finally { busy = false; updateState(); }
 }
+function updateCapabilityState(blocked = false) {
+  $('#scheduleSettingsBtn').textContent = scheduleFeature ? ($('#scheduleEnabled').checked ? 'Schedule on' : 'Schedule paused') : 'Add schedule';
+  $('#folderSettingsBtn').textContent = folderFeature ? ($('#folderEnabled').checked ? 'Output folder' : 'Folder access paused') : 'Add folder access';
+  $('#scheduleSettingsBtn').setAttribute('aria-expanded',String(scheduleFeature && $('#scheduleSettings').open));
+  $('#folderSettingsBtn').setAttribute('aria-expanded',String(folderFeature && $('#folderSettings').open));
+  for (const id of ['scheduleSettingsBtn','folderSettingsBtn','scheduleEnabled','scheduleCron','scheduleTimezone','scheduleArguments','folderEnabled','outputFolder','removeScheduleBtn','removeFolderBtn','browseFoldersBtn','folderRootsBtn']) $( '#' + id).disabled = blocked;
+  $('#refreshScheduleBtn').disabled = blocked || !current || !current.schedule;
+}
+function openCapability(feature) {
+  if (busy || modalOpen()) return;
+  const schedule = feature === 'schedule';
+  if (schedule) scheduleFeature = true; else folderFeature = true;
+  const panel = $(schedule ? '#scheduleSettings' : '#folderSettings');
+  panel.hidden = false; panel.open = true; updateState();
+}
+function toggleCapabilityPanel(feature) {
+  const schedule = feature === 'schedule', present = schedule ? scheduleFeature : folderFeature;
+  const panel = $(schedule ? '#scheduleSettings' : '#folderSettings');
+  if (present && panel.open) { panel.open = false; updateState(); }
+  else openCapability(feature);
+}
+function formatRunTime(value) {
+  if (!value) return 'Not yet';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+async function loadScheduleStatus(tool = current) {
+  if (!tool?.schedule) return;
+  try {
+    const data = await api(`/api/tools/${encodeURIComponent(tool.name)}/schedule`);
+    if (current?.id !== tool.id || !scheduleFeature) return;
+    const status = data.status || {};
+    const state = status.running ? 'Running now' : !tool.is_active ? 'Tool disabled' : tool.schedule.enabled ? 'Schedule on' : 'Schedule paused';
+    const next = tool.schedule.enabled && tool.is_active && status.next_run_at ? `Next: ${formatRunTime(status.next_run_at)}.` : 'No upcoming run.';
+    const last = status.last_run_at ? ` Last: ${formatRunTime(status.last_run_at)}${status.last_exit_code !== null && status.last_exit_code !== undefined ? ` (exit ${status.last_exit_code})` : ''}.` : '';
+    $('#scheduleStatus').textContent = `${state}. ${next}${last}${status.last_error ? ' ' + status.last_error : ''}`;
+  } catch (error) { if (current?.id === tool.id) $('#scheduleStatus').textContent = 'Run status unavailable. ' + error.message; }
+}
+async function browseFolders(path = null) {
+  const requestVersion = ++folderBrowseVersion;
+  $('#folderBrowseStatus').textContent = 'Loading server folders...'; $('#browseFoldersBtn').disabled = true;
+  try {
+    const data = await api('/api/folders' + (path ? '?path=' + encodeURIComponent(path) : ''));
+    if (requestVersion !== folderBrowseVersion || !folderFeature) return;
+    $('#folderChoices').replaceChildren(); $('#folderRootsBtn').hidden = false;
+    $('#folderBrowseStatus').textContent = data.path ? `Folders in ${data.path}. Select a folder to use it and browse inside.` : 'Allowed folders mounted on the server. Select one to use it.';
+    const choices = data.path ? data.folders || [] : (data.roots || []).map(root => typeof root === 'string' ? {name:root,path:root} : root);
+    for (const choice of choices) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'folder-choice'; button.textContent = choice.name || choice.path;
+      button.addEventListener('click',() => { $('#outputFolder').value = choice.path; updateState(); browseFolders(choice.path); });
+      $('#folderChoices').append(button);
+    }
+    if (data.path && choices.length === 0) $('#folderBrowseStatus').textContent = `${data.path} has no subfolders. This folder is selected.`;
+  } catch (error) { if (requestVersion === folderBrowseVersion) $('#folderBrowseStatus').textContent = error.message; }
+  finally { updateState(); }
+}
+function connectionButton(label, id, handler, danger = false) {
+  const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+  button.className = 'connection-mutation' + (danger ? ' danger' : ''); button.dataset.connectionId = id;
+  button.addEventListener('click',handler); return button;
+}
+function renderConnections() {
+  const list = $('#connectionsList');
+  const expanded = new Set(Array.from(list.children).filter(row => Array.from(row.children).some(child => child.tagName.toLowerCase() === 'details' && child.open)).map(row => row.dataset.connectionId));
+  list.replaceChildren();
+  $('#connectionsEmpty').hidden = connections.length > 0;
+  for (const connection of connections) {
+    const row = document.createElement('article'); row.className = 'connection-row'; row.dataset.connectionId = connection.id;
+    const heading = document.createElement('div'); heading.className = 'connection-heading';
+    const identity = document.createElement('div'), title = document.createElement('h2'); title.textContent = connection.client_name || 'Unnamed MCP client';
+    const description = document.createElement('p'); description.className = 'hint';
+    const revoked = connection.revoked === true || connection.enabled === false;
+    const named = connection.kind !== 'session';
+    description.textContent = `${revoked ? 'Revoked' : connection.connected ? 'Connected' : 'No active session'}${connection.client_version ? ' · ' + connection.client_version : ''} · ${named ? 'Named connection' : 'Shared-key session'} · Last seen ${formatRunTime(connection.last_seen_at)}`;
+    identity.append(title,description); heading.append(identity);
+    if (!revoked && (named || connection.connected)) heading.append(connectionButton('Disconnect',connection.id,() => disconnectConnection(connection),true));
+    row.append(heading);
+    if (revoked) { list.append(row); continue; }
+    const details = document.createElement('details'); details.className = 'connection-access'; details.open = expanded.has(connection.id);
+    const summary = document.createElement('summary'); summary.textContent = 'Tool access'; details.append(summary);
+    const fields = document.createElement('fieldset'); fields.className = 'tool-access-fields';
+    const legend = document.createElement('legend'); legend.textContent = 'Visible tools'; fields.append(legend);
+    const disabled = new Set(connectionDrafts.get(connection.id) || connection.disabled_tools || []);
+    const saveButton = connectionButton('Save tool access',connection.id,() => saveConnectionAccess(connection));
+    saveButton.className += ' primary'; saveButton.dataset.needsDraft = 'true'; saveButton.disabled = !connectionDrafts.has(connection.id);
+    for (const tool of connectionTools) {
+      const label = document.createElement('label'); label.className = 'tool-access-option';
+      const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = !disabled.has(tool.name);
+      checkbox.className = 'connection-mutation'; checkbox.dataset.connectionId = connection.id;
+      checkbox.setAttribute('aria-label',`Allow ${tool.name} for ${connection.client_name || 'MCP client'}`);
+      const copy = document.createElement('span'), name = document.createElement('strong'); name.textContent = tool.name;
+      const hint = document.createElement('span'); hint.className = 'hint'; hint.textContent = (tool.is_active === false ? 'Disabled globally. ' : '') + (tool.description || '');
+      copy.append(name,hint); label.append(checkbox,copy); fields.append(label);
+      checkbox.addEventListener('change',() => {
+        if (checkbox.checked) disabled.delete(tool.name); else disabled.add(tool.name);
+        connectionDrafts.set(connection.id,[...disabled]); saveButton.disabled = false;
+      });
+    }
+    const hint = document.createElement('p'); hint.className = 'hint'; hint.textContent = 'New tools are allowed automatically. Disabling a tool applies to this connection only.';
+    const actions = document.createElement('div'); actions.className = 'actions';
+    actions.append(connectionButton('Allow all tools',connection.id,() => { connectionDrafts.set(connection.id,[]); renderConnections(); }),saveButton);
+    details.append(fields,hint,actions); row.append(details); list.append(row);
+  }
+  updateState();
+}
+async function loadConnections() {
+  $('#connectionsLoading').hidden = false; $('#connectionsError').hidden = true;
+  try {
+    const data = await api('/api/connections',{headers:connectionHeaders()}); connections = data.connections || []; connectionTools = data.tools || []; connectionAccessReady = true;
+    for (const id of connectionDrafts.keys()) if (!connections.some(connection => connection.id === id)) connectionDrafts.delete(id);
+    renderConnections();
+  } catch (error) {
+    if (error.message.startsWith('HTTP 401:')) { connectionAccessReady = false; $('#connectionManagementForm').hidden = false; $('#connectionsList').replaceChildren(); $('#connectionsEmpty').hidden = true; }
+    $('#connectionsError').hidden = false; $('#connectionsErrorText').textContent = error.message.startsWith('HTTP 401:') ? 'Enter your server management key above to view or change connections.' : error.message;
+  }
+  finally { $('#connectionsLoading').hidden = true; updateState(); }
+}
+function connectionHeaders() { const key = $('#connectionManagementKey').value; return key ? {Authorization:'Bearer ' + key} : {}; }
+async function saveConnectionAccess(connection) {
+  if (connectionBusy.has(connection.id) || !navigator.onLine || modalOpen()) return;
+  const disabled_tools = connectionDrafts.get(connection.id);
+  if (!disabled_tools) return;
+  connectionBusy.add(connection.id); updateState();
+  try {
+    const result = await api(`/api/connections/${encodeURIComponent(connection.id)}`,{method:'PUT',headers:{'Content-Type':'application/json',...connectionHeaders()},body:JSON.stringify({disabled_tools})});
+    connectionDrafts.delete(connection.id); Object.assign(connection,result.connection || {disabled_tools});
+    renderConnections(); notify('Tool access saved. Refresh the tool list in your client to see the change.');
+  } catch (error) { notify(error.message,true); }
+  finally { connectionBusy.delete(connection.id); updateState(); }
+}
+async function disconnectConnection(connection) {
+  if (connectionBusy.has(connection.id) || !navigator.onLine || modalOpen()) return;
+  const consequence = connection.kind === 'session' ? 'This session will be closed. A client using the shared key can initialize a new session.' : 'Its connection key and all sessions will be revoked. To connect again, create a new named connection and configure its new key.';
+  if (!await ask('Disconnect this client?', `${connection.client_name || 'This MCP client'} will no longer be able to use this connection. ${consequence}`, 'Disconnect')) return;
+  connectionBusy.add(connection.id); updateState();
+  try {
+    await api(`/api/connections/${encodeURIComponent(connection.id)}`,{method:'DELETE',headers:connectionHeaders()});
+    connectionDrafts.delete(connection.id); connection.connected = false; connection.revoked = true; clearConnectionKey(); renderConnections(); notify('Connection disconnected.');
+  } catch (error) { notify(error.message,true); }
+  finally { connectionBusy.delete(connection.id); updateState(); }
+}
+function clearConnectionKey() { $('#connectionToken').value = ''; $('#newConnectionKey').hidden = true; }
+async function createConnection() {
+  if (creatingConnection || !navigator.onLine || modalOpen() || !$('#connectionForm').reportValidity()) return;
+  const client_name = $('#connectionName').value.trim();
+  if (!client_name) { $('#connectionName').focus(); return; }
+  creatingConnection = true; clearConnectionKey(); updateState();
+  try {
+    const result = await api('/api/connections',{method:'POST',headers:{'Content-Type':'application/json',...connectionHeaders()},body:JSON.stringify({client_name})});
+    $('#connectionName').value = ''; $('#connectionToken').value = result.token || ''; $('#newConnectionKey').hidden = false;
+    await loadConnections(); $('#copyConnectionTokenBtn').focus(); notify('Connection created. Save its key before leaving this screen.');
+  } catch (error) { notify(error.message,true); }
+  finally { creatingConnection = false; updateState(); }
+}
+async function loadVersion() {
+  try {
+    const metadata = await api('/api/version');
+    if (typeof metadata.version !== 'string' || !metadata.version) throw new Error('Version unavailable');
+    const date = typeof metadata.display_date === 'string' && metadata.display_date ? metadata.display_date : 'Development';
+    $('#buildVersion').textContent = `V${metadata.version} ${date}`;
+  } catch { $('#buildVersion').textContent = 'Version unavailable'; }
+}
 async function loadConfig() {
   $('#configLoading').hidden = false; $('#configError').hidden = true; $('#configContent').hidden = true;
   try {
@@ -450,8 +691,10 @@ async function loadConfig() {
     $('#authValue').textContent = config.auth_enabled ? 'Bearer key enabled · value hidden' : 'Disabled — no Bearer key required';
     $('#methodsValue').textContent = config.methods.join(', ');
     $('#authHelp').textContent = config.auth_enabled ? 'Replace <YOUR_API_KEY> locally in your client. Never paste it into tool code.' : 'MCP POST authentication is disabled. ' + config.auth_configuration;
-    $('#requestTemplate').textContent = JSON.stringify({endpoint,method:'POST',headers:config.auth_enabled ? {Authorization:'Bearer <YOUR_API_KEY>'} : {},
-      body:{jsonrpc:'2.0',id:1,method:'tools/list',params:{}}},null,2);
+    const authHeaders = config.auth_enabled ? {Authorization:'Bearer <YOUR_API_KEY>'} : {};
+    $('#requestTemplate').textContent = JSON.stringify({endpoint,
+      initialize:{method:'POST',headers:{...authHeaders,Accept:'application/json, text/event-stream'},body:{jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'your-client',version:'1.0'}}}},
+      list_tools:{method:'POST',headers:{...authHeaders,'Mcp-Session-Id':'<SESSION_ID_FROM_INITIALIZE>'},body:{jsonrpc:'2.0',id:2,method:'tools/list',params:{}}}},null,2);
     $('#configContent').hidden = false;
   } catch (error) { $('#configError').hidden = false; $('#configErrorText').textContent = error.message; }
   finally { $('#configLoading').hidden = true; }
@@ -497,7 +740,7 @@ function applyTheme(preference) {
 function updateNetwork() {
   $('#offlineBanner').hidden = navigator.onLine;
   $('#connectionState').textContent = navigator.onLine ? 'Reconnecting…' : 'Offline'; updateState();
-  if (navigator.onLine) { loadTools().catch(() => {}); if (route === 'connect') loadConfig(); }
+  if (navigator.onLine) { loadTools().catch(() => {}); if (route === 'connect') loadConfig(); if (route === 'connections') loadConnections(); }
 }
 async function setupPWA() {
   if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
@@ -542,7 +785,7 @@ window.addEventListener('hashchange',async () => {
   if (!await canLeave()) { history.replaceState(null,'','#' + route); return; }
   await activateRoute(target,true);
 });
-window.addEventListener('beforeunload',e => { if (dirty() || busy) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload',e => { if (dirty() || connectionDirty() || busy || creatingConnection || connectionBusy.size) { e.preventDefault(); e.returnValue = ''; } });
 window.addEventListener('online',updateNetwork); window.addEventListener('offline',updateNetwork);
 document.addEventListener('keydown',e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && route.startsWith('tools/')) { e.preventDefault(); save(); }
@@ -554,10 +797,26 @@ $('#toolName').addEventListener('input',() => { $('#nameError').hidden = true; f
 $('#runBtn').addEventListener('click',runSaved); $('#delBtn').addEventListener('click',deleteCurrent);
 $('#installExamplesBtn').addEventListener('click',installExamples);
 $('#retryToolsBtn').addEventListener('click',() => loadTools().catch(() => {}));
+$('#refreshToolsBtn').addEventListener('click',() => loadTools().catch(() => {}));
 $('#toolSearch').addEventListener('input',renderTools); $('#toolFilter').addEventListener('change',renderTools);
 $('#retryConfigBtn').addEventListener('click',loadConfig);
 $('#copyEndpointBtn').addEventListener('click',() => copyText($('#endpointValue').value));
 $('#copyRequestBtn').addEventListener('click',() => copyText($('#requestTemplate').textContent));
+$('#scheduleSettingsBtn').addEventListener('click',() => toggleCapabilityPanel('schedule'));
+$('#folderSettingsBtn').addEventListener('click',() => toggleCapabilityPanel('folder'));
+$('#scheduleSettings').addEventListener('toggle',() => updateCapabilityState(busy || modalOpen() || !navigator.onLine));
+$('#folderSettings').addEventListener('toggle',() => updateCapabilityState(busy || modalOpen() || !navigator.onLine));
+$('#removeScheduleBtn').addEventListener('click',() => { scheduleFeature = false; $('#scheduleSettings').hidden = true; $('#scheduleSettings').open = false; updateState(); });
+$('#removeFolderBtn').addEventListener('click',() => { folderFeature = false; folderBrowseVersion++; $('#folderSettings').hidden = true; $('#folderSettings').open = false; updateState(); });
+$('#scheduleArguments').addEventListener('input',() => { $('#scheduleArgumentsError').hidden = true; $('#scheduleArguments').removeAttribute('aria-invalid'); });
+$('#refreshScheduleBtn').addEventListener('click',() => loadScheduleStatus());
+$('#browseFoldersBtn').addEventListener('click',() => browseFolders($('#outputFolder').value || null));
+$('#folderRootsBtn').addEventListener('click',() => browseFolders());
+$('#refreshConnectionsBtn').addEventListener('click',loadConnections); $('#retryConnectionsBtn').addEventListener('click',loadConnections);
+$('#connectionForm').addEventListener('submit',event => { event.preventDefault(); createConnection(); });
+$('#connectionManagementForm').addEventListener('submit',event => { event.preventDefault(); loadConnections(); });
+$('#copyConnectionTokenBtn').addEventListener('click',() => copyText($('#connectionToken').value));
+$('#dismissConnectionKeyBtn').addEventListener('click',clearConnectionKey);
 $('#dismissStatus').addEventListener('click',() => { $('#status').hidden = true; });
 let preference = 'system'; try { const stored = localStorage.getItem('omniforge-theme'); if (['system','light','dark'].includes(stored)) preference = stored; } catch { /* Storage may be disabled. */ }
 $('#themeSelect').value = preference; applyTheme(preference);
@@ -572,6 +831,7 @@ function applyStyle() {
 applyStyle();
 document.querySelectorAll('[data-style-choice]').forEach(b => b.addEventListener('click',() => { style = b.dataset.styleChoice; applyStyle(); try { localStorage.setItem('omniforge-style',style); } catch {} }));
 fillEditor(); renderTemplates(); $('#offlineBanner').hidden = navigator.onLine;
+loadVersion();
 (async () => {
   await activateRoute(normalizedRoute(location.hash),true);
   if (!listReady) { try { await loadTools(); } catch {} }

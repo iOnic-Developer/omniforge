@@ -1,6 +1,6 @@
 'use strict';
 // Increment whenever any allowlisted asset changes. Never cache the dashboard.
-const CACHE = 'omniforge-public-v3';
+const CACHE = 'omniforge-public-v4';
 const ASSETS = [
   '/assets/offline.html', '/assets/product.css', '/assets/mark.svg',
   '/assets/favicon.svg', '/assets/favicon-32.png', '/assets/apple-touch-icon.png',

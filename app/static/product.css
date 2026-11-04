@@ -310,6 +310,7 @@ small,
   display: block;
   color: var(--ink);
 }
+.build-version { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .theme-label {
   margin-bottom: 6px;
 }
@@ -1212,4 +1213,52 @@ code {
   .rail-bottom > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .style-swatches { margin: 0; flex-wrap: nowrap; }
   .style-swatch { width: 22px; height: 22px; }
+}
+
+/* Tool capabilities extend the existing editor rather than a separate workflow. */
+.tool-capabilities { padding: 28px; border-top: 1px solid var(--line); }
+.tool-capabilities .section-heading { margin: 0 0 8px; }
+.tool-capabilities h2 { font-size: 18px; }
+.capability-actions, .tool-feature-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.capability-actions { margin: 18px 0; }
+.capability-settings { border-top: 1px solid var(--line); margin-top: 16px; }
+.capability-settings summary { cursor: pointer; padding: 16px 0; font-weight: 700; }
+.capability-content { padding: 0 0 20px; }
+.settings-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; }
+.check-label { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 0; }
+.check-label input, .tool-access-option input { width: 20px; height: 20px; min-height: 20px; margin: 0; flex: 0 0 20px; accent-color: var(--accent); }
+.schedule-status { padding: 12px 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.folder-choices { display: flex; flex-direction: column; align-items: stretch; gap: 4px; max-height: 240px; overflow: auto; margin-bottom: 16px; }
+.folder-choice { text-align: left; overflow-wrap: anywhere; }
+.tool-feature-actions { grid-column: 1 / -1; margin-top: -12px; }
+.feature-link { min-height: 36px; padding: 4px 10px; color: var(--accent); font-size: 12px; }
+.connection-create { max-width: 760px; padding: 24px 0; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.connection-create .endpoint { margin-bottom: 8px; }
+.connection-create .endpoint input { font-family: inherit; font-size: 14px; min-width: 0; }
+.connection-create .endpoint button { flex-shrink: 0; }
+#newConnectionKey { margin: 24px 0; max-width: 760px; }
+#newConnectionKey > button { margin-top: 8px; }
+#newConnectionKey .endpoint button { flex-shrink: 0; white-space: nowrap; }
+.connection-row { padding: 24px 0; border-top: 1px solid var(--line); }
+.connection-heading { display: flex; justify-content: space-between; align-items: start; gap: 24px; }
+.connection-heading > div { min-width: 0; }
+.connection-heading h2 { font-size: 20px; margin: 0 0 4px; overflow-wrap: anywhere; }
+.connection-heading p { margin: 0; }
+.connection-access { margin-top: 20px; }
+.connection-access > summary { cursor: pointer; font-weight: 700; min-height: 44px; }
+.tool-access-fields { border: 0; padding: 0; margin: 8px 0 16px; min-width: 0; }
+.tool-access-fields legend { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.tool-access-option { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 12px; align-items: start; cursor: pointer; padding: 12px 0; margin: 0; border-bottom: 1px solid var(--line); }
+.tool-access-option input { margin-top: 3px; }
+.tool-access-option strong, .tool-access-option .hint { display: block; overflow-wrap: anywhere; }
+.tool-access-option strong { font-size: 14px; }
+.tool-access-option .hint { font-weight: 400; margin-top: 2px; }
+@media (max-width: 640px) {
+  .rail nav { grid-template-columns: repeat(5,minmax(0,1fr)); }
+  .tool-capabilities { padding: 20px; }
+  .settings-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .connection-heading { flex-wrap: wrap; gap: 12px; }
+  .connection-create .endpoint, #newConnectionKey .endpoint { flex-direction: column; }
+  .connection-create .endpoint button, #newConnectionKey .endpoint button { align-self: start; }
+  .tool-feature-actions { margin-top: 0; }
 }

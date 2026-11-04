@@ -5,3 +5,5 @@ pydantic-settings
 mcp
 sse-starlette
 slowapi
+croniter==6.0.0
+tzdata
