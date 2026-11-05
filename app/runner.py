@@ -134,6 +134,10 @@ def run_tool(tool: Tool, arguments: dict | None = None) -> RunResult:
             try:
                 stdout, stderr = process.communicate(input=input_json, timeout=timeout_seconds)
                 exit_code = process.returncode
+                # A tool owns its ordinary descendants even when they redirect
+                # every pipe. Do not leave fire-and-forget work running after
+                # the parent has returned a result and its scratch is removed.
+                _kill_process_group(process)
             except subprocess.TimeoutExpired:
                 timed_out = True
                 _kill_process_group(process)

@@ -8,6 +8,9 @@ The deadline starts when the saved Python or Node script launches, after package
 preparation. No extra 15 seconds are added. At the deadline, the runner kills the
 script's process group, including ordinary child processes, and reports a timeout
 error. This applies to dashboard tests, MCP calls and scheduled executions.
+Remaining ordinary child processes are also stopped when the script finishes.
+Scripts must wait for their work to complete; background work cannot outlive a
+tool invocation.
 Dependency installation and its lock wait retain their own separate bounded
 limits. The setting is not a limit on total package-preparation time.
 

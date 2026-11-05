@@ -112,7 +112,7 @@ class DependencyTests(unittest.TestCase):
                         self.assertIn(flag, command)
                 process = Mock(pid=12345, returncode=0, stdin=None, stdout=None, stderr=None)
                 process.communicate.return_value = ('42', '')
-                with patch.object(runner.subprocess, 'Popen', return_value=process) as script:
+                with patch.object(runner.subprocess, 'Popen', return_value=process) as script, patch.object(runner, '_kill_process_group'):
                     result = runner.run_tool(tool)
                     runtime_env = script.call_args.kwargs['env']
                 self.assertEqual(result.exit_code, 0)
