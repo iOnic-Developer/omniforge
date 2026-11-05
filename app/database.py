@@ -35,13 +35,14 @@ class Tool:
     updated_at: str
     schedule: dict | None = None
     folder_access: dict | None = None
+    timeout_seconds: int = 120
     revision: str = field(init=False)
 
     def __post_init__(self) -> None:
-        # Content identity, not a second-resolution timestamp. No migration required.
+        # Content identity includes execution settings, not a timestamp.
         values = [self.id, self.name, self.description, self.language, self.code,
                   self.requirements_json, self.json_schema_json, self.is_active,
-                  self.schedule, self.folder_access]
+                  self.schedule, self.folder_access, self.timeout_seconds]
         self.revision = hashlib.sha256(json.dumps(values, ensure_ascii=True, sort_keys=True).encode()).hexdigest()
 
 
@@ -90,6 +91,8 @@ class Database:
             for column in ("schedule_json", "folder_access_json"):
                 if column not in columns:
                     conn.execute(f"ALTER TABLE tools ADD COLUMN {column} TEXT DEFAULT 'null'")
+            if "timeout_seconds" not in columns:
+                conn.execute("ALTER TABLE tools ADD COLUMN timeout_seconds INTEGER NOT NULL DEFAULT 120")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tools_name ON tools(name)")
 
     def _invalidate(self) -> None:
@@ -110,6 +113,7 @@ class Database:
             updated_at=row["updated_at"],
             schedule=json.loads(row["schedule_json"] or "null"),
             folder_access=json.loads(row["folder_access_json"] or "null"),
+            timeout_seconds=row["timeout_seconds"],
         )
 
     def _fetch_all(self) -> list[Tool]:
@@ -162,8 +166,8 @@ class Database:
                     """
                     INSERT INTO tools
                     (id, name, description, language, code, requirements_json,
-                     json_schema_json, is_active, created_at, updated_at, schedule_json, folder_access_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     json_schema_json, is_active, created_at, updated_at, schedule_json, folder_access_json, timeout_seconds)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         name=excluded.name,
                         description=excluded.description,
@@ -175,7 +179,8 @@ class Database:
                         created_at=excluded.created_at,
                         updated_at=excluded.updated_at,
                         schedule_json=excluded.schedule_json,
-                        folder_access_json=excluded.folder_access_json
+                        folder_access_json=excluded.folder_access_json,
+                        timeout_seconds=excluded.timeout_seconds
                     """,
                     (
                         tool.id,
@@ -190,6 +195,7 @@ class Database:
                         now,
                         json.dumps(tool.schedule, sort_keys=True),
                         json.dumps(tool.folder_access, sort_keys=True),
+                        tool.timeout_seconds,
                     ),
                 )
                 conn.commit()

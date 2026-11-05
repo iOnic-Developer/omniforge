@@ -54,6 +54,7 @@
 <div class="code-bar"><label for="toolCode">Script <span class="muted">(required)</span></label><small id="codeMeta">Python · UTF-8</small></div>
 <div class="editor-shell"><pre id="lineNumbers" class="line-numbers" aria-hidden="true">1</pre><textarea id="toolCode" name="code" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="codeHint"></textarea></div>
 <p id="codeHint" class="sr-only">Print output to stdout. Tab indents; Shift Tab unindents. Press Escape, then Tab to leave the editor.</p>
+<div class="test-inputs"><label for="toolTimeout">Execution timeout (seconds)</label><input id="toolTimeout" name="timeout_seconds" type="number" min="1" max="3600" step="1" value="120" required inputmode="numeric" aria-describedby="timeoutHint timeoutError"><p id="timeoutHint" class="hint">Default: 120 seconds (2 minutes). Set 45 to stop this script after 45 seconds. Enter a whole number from 1 to 3600. Dependency preparation is bounded separately; the timer starts when the script runs.</p><p id="timeoutError" class="field-error" hidden></p></div>
 <section class="tool-capabilities" aria-labelledby="capabilitiesTitle">
 <div class="section-heading"><h2 id="capabilitiesTitle">Schedule &amp; folders</h2><span class="hint">Optional per tool</span></div>
 <p class="hint">Let a tool run on a timetable or save files to a folder on the server. Settings supplied by your AI appear here.</p>
@@ -95,7 +96,7 @@
 </section>
 <section class="page" id="helpPage" data-page="help" hidden>
 <div class="page-header"><div><p class="eyebrow">Start simple. Build confidently.</p><h1>A little guidance goes a long way.</h1><p>New to MCP? Think of a tool as a named script your AI can ask the server to run.</p></div></div>
-<div class="help-layout"><div><article class="help-section"><h2>Your first working tool</h2><ol><li>Choose a no-package Python or Node template below.</li><li>Give it a unique name and save. Saving never runs code.</li><li>Select Run / Test. A successful example prints JSON with <code>ok: true</code>.</li><li>Open Connect to set up your client. Enabled tools appear on its next discovery request.</li></ol></article><article class="help-section"><h2>Working templates</h2><p>Loading prepares a new draft, never overwrites an existing tool. Package examples install requirements only on the first run.</p><div id="helpTemplates" class="template-grid"></div><button id="installExamplesBtn" type="button">Add all missing examples</button><p class="hint">Saves the four examples. Existing names are skipped; no scripts execute.</p></article><article class="help-section"><h2>Write for a predictable result</h2><p>Print JSON using <code>print(json.dumps(...))</code> in Python or <code>console.log(JSON.stringify(...))</code> in Node. Returning an object alone doesn’t produce output.</p><p>MCP arguments arrive as one JSON object on stdin. Enter a JSON object in Test inputs to try required arguments in the browser. The server validates it against the saved input schema before execution; use <code>{}</code> only when no inputs are required.</p><p>Disabled tools remain saved in your library but are hidden from MCP discovery. Built-in helper names are reserved.</p></article><article class="help-section"><h2>When something goes wrong</h2><p>Save changes before running. If the name is taken, choose a new one. For package failures, check names and exact versions; source builds, lifecycle scripts and system binaries aren’t supported.</p><p>First-time installs can take up to 120 seconds plus a bounded lock wait. Script timeout starts after installation and currently adds 15 seconds to the configured duration.</p><p>Only trusted scripts and dependencies belong here. Memory limits, process-tree termination and output caps are not implemented.</p></article></div><aside class="surface help-side"><h2>Take your workspace with you</h2><p>On eligible HTTPS browsers, use Install app when it appears. On iPhone or iPad, open in Safari, use Share, then Add to Home Screen. Other browsers may offer installation in their menu.</p><p>An HTTP LAN address usually isn’t eligible for service workers or installation. Use HTTPS; localhost is allowed for development.</p><p>This is an online workspace. Saving, installing packages and executing tools always require the server. Offline, you’ll see a safe reconnect page — never cached scripts or results.</p><h3>Keyboard essentials</h3><p><code>Ctrl / Cmd + S</code> saves.<br><code>Tab</code> indents code.<br><code>Shift + Tab</code> unindents.<br><code>Escape</code>, then <code>Tab</code> leaves the editor.</p><p>Theme is the only setting stored locally. Drafts, tool code, results and credentials aren’t persisted in browser storage.</p><a href="#connect">Connection &amp; security details →</a></aside></div>
+<div class="help-layout"><div><article class="help-section"><h2>Your first working tool</h2><ol><li>Choose a no-package Python or Node template below.</li><li>Give it a unique name and save. Saving never runs code.</li><li>Select Run / Test. A successful example prints JSON with <code>ok: true</code>.</li><li>Open Connect to set up your client. Enabled tools appear on its next discovery request.</li></ol></article><article class="help-section"><h2>Working templates</h2><p>Loading prepares a new draft, never overwrites an existing tool. Package examples install requirements only on the first run.</p><div id="helpTemplates" class="template-grid"></div><button id="installExamplesBtn" type="button">Add all missing examples</button><p class="hint">Saves the four examples. Existing names are skipped; no scripts execute.</p></article><article class="help-section"><h2>Write for a predictable result</h2><p>Print JSON using <code>print(json.dumps(...))</code> in Python or <code>console.log(JSON.stringify(...))</code> in Node. Returning an object alone doesn’t produce output.</p><p>MCP arguments arrive as one JSON object on stdin. Enter a JSON object in Test inputs to try required arguments in the browser. The server validates it against the saved input schema before execution; use <code>{}</code> only when no inputs are required.</p><p>Disabled tools remain saved in your library but are hidden from MCP discovery. Built-in helper names are reserved.</p></article><article class="help-section"><h2>When something goes wrong</h2><p>Save changes before running. If the name is taken, choose a new one. For package failures, check names and exact versions; source builds, lifecycle scripts and system binaries aren’t supported.</p><p>First-time installs can take up to 120 seconds plus a bounded lock wait. The per-tool execution timeout starts after dependency preparation, with no extra time added. A timed-out script and its child processes are stopped.</p><p>Only trusted scripts and dependencies belong here. Per-script memory limits and output caps are not implemented.</p></article></div><aside class="surface help-side"><h2>Take your workspace with you</h2><p>On eligible HTTPS browsers, use Install app when it appears. On iPhone or iPad, open in Safari, use Share, then Add to Home Screen. Other browsers may offer installation in their menu.</p><p>An HTTP LAN address usually isn’t eligible for service workers or installation. Use HTTPS; localhost is allowed for development.</p><p>This is an online workspace. Saving, installing packages and executing tools always require the server. Offline, you’ll see a safe reconnect page — never cached scripts or results.</p><h3>Keyboard essentials</h3><p><code>Ctrl / Cmd + S</code> saves.<br><code>Tab</code> indents code.<br><code>Shift + Tab</code> unindents.<br><code>Escape</code>, then <code>Tab</code> leaves the editor.</p><p>Theme is the only setting stored locally. Drafts, tool code, results and credentials aren’t persisted in browser storage.</p><a href="#connect">Connection &amp; security details →</a></aside></div>
 </section>
 </main>
 </div>
@@ -148,10 +149,10 @@ let scheduleFeature = false, folderFeature = false, connections = [], connection
 let folderBrowseVersion = 0, creatingConnection = false, connectionAccessReady = false;
 const connectionDrafts = new Map(), connectionBusy = new Set();
 let confirmResolve = null, navigationVersion = 0, statusTimer, pendingInstall = null, waitingWorker = null;
-const blank = {name:'', description:'', language:'python3', code:'', requirements:[],schedule:null,folder_access:null};
+const blank = {name:'', description:'', language:'python3', code:'',timeout_seconds:120,requirements:[],schedule:null,folder_access:null};
 function formValues() {
   return {name:field('name').value, description:field('description').value,
-    language:field('language').value, code:field('code').value,
+    language:field('language').value, code:field('code').value,timeout_seconds:Number(field('timeout_seconds').value),
     requirements:field('requirements').value.split('\n').map(s => s.trim()).filter(Boolean),
     schedule:scheduleFeature ? {enabled:$('#scheduleEnabled').checked,cron:$('#scheduleCron').value,timezone:$('#scheduleTimezone').value,arguments:scheduleInputValue()} : null,
     folder_access:folderFeature ? {enabled:$('#folderEnabled').checked,path:$('#outputFolder').value} : null};
@@ -250,6 +251,8 @@ function fillEditor(values = blank, tool = null) {
   catch { $('#savedInputSchema').textContent = 'Invalid saved schema. Ask the administrator to review it.'; }
   for (const key of ['name','description','language','code']) field(key).value = values[key] || (key === 'language' ? 'python3' : '');
   field('requirements').value = (values.requirements || []).join('\n');
+  field('timeout_seconds').value = String(values.timeout_seconds ?? 120);
+  $('#timeoutError').hidden = true; field('timeout_seconds').removeAttribute('aria-invalid');
   scheduleFeature = !!values.schedule; folderFeature = !!values.folder_access;
   $('#scheduleEnabled').checked = values.schedule?.enabled ?? false;
   $('#scheduleCron').value = values.schedule?.cron || '0 2 * * *';
@@ -271,7 +274,7 @@ function fillEditor(values = blank, tool = null) {
 }
 function toolValues(tool) {
   return {name:tool.name,description:tool.description,language:tool.language,code:tool.code,
-    requirements:JSON.parse(tool.requirements_json || '[]'),schedule:tool.schedule || null,folder_access:tool.folder_access || null};
+    requirements:JSON.parse(tool.requirements_json || '[]'),schedule:tool.schedule || null,folder_access:tool.folder_access || null,timeout_seconds:tool.timeout_seconds ?? 120};
 }
 function restoreLibraryFocus(target, buttons) {
   if (!target) return;
@@ -430,6 +433,11 @@ async function save() {
     $('#nameError').textContent = 'This name is reserved for a built-in helper. Choose another name.';
     $('#nameError').hidden = false; field('name').setAttribute('aria-invalid','true'); field('name').focus(); return;
   }
+  if (!Number.isInteger(values.timeout_seconds) || values.timeout_seconds < 1 || values.timeout_seconds > 3600) {
+    $('#timeoutError').textContent = 'Enter a whole number of seconds from 1 to 3600.';
+    $('#timeoutError').hidden = false; field('timeout_seconds').setAttribute('aria-invalid','true'); field('timeout_seconds').focus(); return;
+  }
+  $('#timeoutError').hidden = true; field('timeout_seconds').removeAttribute('aria-invalid');
   if (!$('#toolForm').reportValidity()) return;
   if (values.schedule && (!values.schedule.arguments || Array.isArray(values.schedule.arguments) || typeof values.schedule.arguments !== 'object')) {
     $('#scheduleArgumentsError').textContent = 'Enter a valid JSON object for scheduled inputs, for example {}.';
@@ -794,6 +802,7 @@ $('#toolForm').addEventListener('submit',e => { e.preventDefault(); save(); });
 $('#testInputs').addEventListener('input',() => { $('#testInputsError').hidden = true; $('#testInputs').removeAttribute('aria-invalid'); updateOutputState(); });
 $('#toolForm').addEventListener('input',updateState); $('#toolLanguage').addEventListener('change',updateState);
 $('#toolName').addEventListener('input',() => { $('#nameError').hidden = true; field('name').removeAttribute('aria-invalid'); });
+$('#toolTimeout').addEventListener('input',() => { $('#timeoutError').hidden = true; field('timeout_seconds').removeAttribute('aria-invalid'); });
 $('#runBtn').addEventListener('click',runSaved); $('#delBtn').addEventListener('click',deleteCurrent);
 $('#installExamplesBtn').addEventListener('click',installExamples);
 $('#retryToolsBtn').addEventListener('click',() => loadTools().catch(() => {}));

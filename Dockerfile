@@ -11,7 +11,7 @@ FROM python:3.12-slim
 RUN apt-get update && \
     apt-get install -y --no-install-recommends nodejs npm tzdata && \
     rm -rf /var/lib/apt/lists/*
-ARG APP_VERSION=0.3.0
+ARG APP_VERSION=0.3.1
 ARG BUILD_DATE
 ARG VCS_REF
 ENV OMNIFORGE_VERSION=$APP_VERSION \

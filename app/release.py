@@ -2,7 +2,7 @@
 import os
 from datetime import datetime
 
-VERSION = os.environ.get('OMNIFORGE_VERSION', '0.3.0')
+VERSION = os.environ.get('OMNIFORGE_VERSION', '0.3.1')
 BUILD_DATE = os.environ.get('OMNIFORGE_BUILD_DATE', '')
 REVISION = os.environ.get('OMNIFORGE_REVISION', '')
 

@@ -609,3 +609,30 @@ test('sidebar footer shows the served version and build date',async () => {
   await page.screenshot({path:path.join(screenshots,'version-footer-1440.png')});
   await safeClose(context);
 });
+
+
+test('MCP timeout45 appears in editor, dirty edit blocks Run and timeout90 persists',async () => {
+  const call=await initializeClient(null,'Timeout tool author');
+  const created=await call('tools/call',{name:'omniforge_create_tool',arguments:{name:'timeout_from_mcp',description:'Tool with an AI-configured execution timeout',code:'print("finished")\n',timeout_seconds:45}});
+  assert.equal(created.body.result.isError,false);
+  assert.equal((await toolMetadata('timeout_from_mcp')).timeout_seconds,45);
+  const {page,context}=await newPage({viewport:{width:1440,height:1000}});
+  await route(page,'tools');
+  await page.locator('.tool-row').filter({hasText:'timeout_from_mcp'}).locator('.tool-open').click();
+  await page.locator('#editorPage').waitFor({state:'visible'});
+  assert.equal(await page.getByLabel('Execution timeout (seconds)',{exact:true}).inputValue(),'45');
+  assert.equal(await page.locator('#runBtn').isDisabled(),false);
+  await page.locator('#toolTimeout').fill('90');
+  assert.equal(await page.locator('#runBtn').isDisabled(),true);
+  await page.locator('#saveBtn').click();
+  await page.waitForFunction(() => document.querySelector('#saveState').textContent.includes('saved') && !document.querySelector('#runBtn').disabled);
+  assert.equal((await toolMetadata('timeout_from_mcp')).timeout_seconds,90);
+  await page.locator('#toolTimeout').scrollIntoViewIfNeeded(); await noOverflow(page); await audit(page);
+  await page.screenshot({path:path.join(screenshots,'timeout-editor-1440.png')});
+  await page.setViewportSize({width:375,height:900}); await page.locator('#toolTimeout').scrollIntoViewIfNeeded(); await noOverflow(page); await audit(page);
+  await page.screenshot({path:path.join(screenshots,'timeout-editor-375.png')});
+  await page.getByRole('button',{name:'Use a template',exact:true}).click();
+  await page.locator('#templateDialog [data-example="python_basic"]').click();
+  assert.equal(await page.locator('#toolTimeout').inputValue(),'120');
+  await safeClose(context);
+});

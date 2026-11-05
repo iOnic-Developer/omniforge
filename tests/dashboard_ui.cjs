@@ -873,3 +873,37 @@ test('menu footer displays actual API version and display date without caching i
   h.fail({url:'/api/version',status:500,detail:'Unavailable'}); await h.run('loadVersion()');
   assert.equal(h.el('#buildVersion').textContent,'Version unavailable');
 });
+
+
+test('tool timeout defaults to two minutes, reflects AI settings and participates in dirty save state',async () => {
+  const h=await fresh();
+  assert.equal(h.el('#toolTimeout').value,'120'); assert.equal(h.run('dirty()'),false);
+  select(h,{...saved(),timeout_seconds:45});
+  assert.equal(h.el('#toolTimeout').value,'45'); assert.equal(h.el('#runBtn').disabled,false);
+  change(h,'timeout_seconds','90');
+  assert.equal(h.run('dirty()'),true); assert.equal(h.el('#runBtn').disabled,true);
+  await h.run('save()');
+  assert.equal(JSON.parse(writes(h)[0].options.body).timeout_seconds,90);
+  assert.equal(h.el('#runBtn').disabled,false); assert.equal(h.run('current.timeout_seconds'),90);
+  change(h,'description','Updated description'); await h.run('save()');
+  assert.equal(JSON.parse(writes(h).at(-1).options.body).timeout_seconds,90);
+  h.run('fillEditor()'); assert.equal(h.el('#toolTimeout').value,'120'); assert.equal(h.run('dirty()'),false);
+  select(h,saved()); assert.equal(h.el('#toolTimeout').value,'120');
+  for (const example of ['python_basic','node_basic','python_packages','node_packages']) {
+    h.run(`fillEditor(EXAMPLES.${example})`); assert.equal(h.el('#toolTimeout').value,'120');
+  }
+});
+test('invalid execution timeout cannot save; integer limits can save',async () => {
+  const h=await fresh(); select(h,{...saved(),timeout_seconds:45});
+  for (const value of ['', '0','-1','0.5','45.5','3601','Infinity','not-a-number']) {
+    change(h,'timeout_seconds',value); await h.run('save()');
+    assert.equal(writes(h).length,0); assert.equal(h.el('#timeoutError').hidden,false);
+    assert.equal(h.el('#toolTimeout').getAttribute('aria-invalid'),'true');
+    assert.equal(h.el('[name="code"]').value,'print(21)');
+  }
+  for (const value of ['1','3600']) {
+    change(h,'timeout_seconds',value); await h.run('save()');
+    assert.equal(JSON.parse(writes(h).at(-1).options.body).timeout_seconds,Number(value));
+    assert.equal(h.el('#timeoutError').hidden,true);
+  }
+});

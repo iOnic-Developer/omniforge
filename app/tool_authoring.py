@@ -114,6 +114,7 @@ class ToolIn(BaseModel):
     is_active: bool = True
     schedule: ScheduleIn | None = None
     folder_access: FolderAccessIn | None = None
+    timeout_seconds: int = Field(default=120, strict=True, ge=1, le=3600)
 
     @field_validator('name')
     @classmethod
@@ -151,11 +152,14 @@ def save_tool(body: ToolIn, existing: Tool | None = None, expected_revision: str
     """Save metadata only. Never install dependencies or execute code."""
     schedule = body.schedule.model_dump() if body.schedule else None
     folder_access = body.folder_access.model_dump() if body.folder_access else None
+    timeout_seconds = body.timeout_seconds
     if existing:
         if 'schedule' not in body.model_fields_set:
             schedule = existing.schedule
         if 'folder_access' not in body.model_fields_set:
             folder_access = existing.folder_access
+        if 'timeout_seconds' not in body.model_fields_set:
+            timeout_seconds = existing.timeout_seconds
     if schedule and schedule.get('enabled'):
         validate_arguments(schedule.get('arguments', {}), body.json_schema)
     if folder_access and folder_access.get('enabled'):
@@ -173,5 +177,6 @@ def save_tool(body: ToolIn, existing: Tool | None = None, expected_revision: str
         updated_at=None,
         schedule=schedule,
         folder_access=folder_access,
+        timeout_seconds=timeout_seconds,
     )
     return db.upsert(tool, create_only=existing is None, expected_revision=expected_revision)

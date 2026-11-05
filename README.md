@@ -16,10 +16,13 @@ from a single container.
 - **Scheduled tools** with cron, timezones, saved inputs, pause/resume and execution history.
 - **Output folders** chosen in the tool editor, including mounted host directories.
 - **Connections** with revocable client keys and individual tool visibility, all on by default.
+- **Per-tool execution deadlines**, editable in Tool studio or set by an AI during MCP authoring. Default: 120 seconds (2 minutes).
 
 See [scheduled tools and folders](docs/scheduling.md) for a nightly document
 downloader created through MCP, and [connections](docs/connections.md) for client
 setup, tool access and disconnecting clients.
+See [execution deadlines](docs/timeouts.md) to change the two-minute default on a
+tool or set `timeout_seconds` when an AI creates one.
 
 ## Quick start
 
@@ -41,7 +44,7 @@ docker compose up --build
 | `OMNIFORGE_API_KEY` | *(empty)* | Shared MCP bearer credential and connection-management key. Empty permits anonymous MCP and connection management on a trusted network. |
 | `OMNIFORGE_ALLOWED_FOLDERS` | `/opt/omniforge/files` | Allowed output-folder roots, separated with `:` in Linux. Mount host directories first. |
 | `OMNIFORGE_ALLOWED_ORIGINS` | Same server origin | Optional comma-separated additional browser origins accepted by MCP. |
-| `OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS` | `30000` | Configured timeout (ms); runner currently adds 15 seconds. |
+| `OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS` | Legacy | No longer used. Set `timeout_seconds` on each tool (1–3600; default 120). |
 | `OMNIFORGE_MAX_SCRIPT_MEMORY_MB` | `512` | Declared value only; not enforced per script. |
 | `OMNIFORGE_DB_PATH` | `/opt/omniforge/data/omniforge.db` | SQLite database path. |
 | `OMNIFORGE_LIB_ROOT` | `/opt/omniforge/lib` | Writable persistent per-tool pip/npm dependency caches. |
@@ -66,8 +69,8 @@ Browser / LLM Client
 
 - Scripts share the application environment, network and writable data, including
   potential credentials. Only allow trusted authors. Container-level protections
-  are not a per-script sandbox; memory/output limits and process-tree termination
-  are not implemented.
+  are not a per-script sandbox; per-script memory/output limits are not implemented.
+  The execution deadline terminates the script's process group.
 - Tool names are validated against a strict regex.
 - The `/mcp` endpoint accepts an optional Bearer API key.
 

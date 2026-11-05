@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -278,10 +278,14 @@ class AuthoringTests(unittest.TestCase):
 
     def test_timeout_is_reported_as_tool_error(self):
         self.create()
-        with patch.object(runner.subprocess, 'run', side_effect=subprocess.TimeoutExpired('python', 1)):
+        process = Mock(pid=12345, returncode=-9, stdin=None, stdout=None, stderr=None)
+        process.communicate.side_effect = [subprocess.TimeoutExpired('python', 120), ('', '')]
+        with patch.object(runner.subprocess, 'Popen', return_value=process), patch.object(runner, '_kill_process_group') as kill_group:
             result = self.call('sample')
         self.assertTrue(result['isError'])
         self.assertIn('[timeout]', self.text(result))
+        self.assertEqual(process.communicate.call_args_list[0].kwargs['timeout'], 120)
+        kill_group.assert_called_once_with(process)
 
     def test_invalid_syntax_saved_but_only_fails_on_execution(self):
         self.assertFalse(self.create(code='this is not valid Python !!!')['isError'])

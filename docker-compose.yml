@@ -7,7 +7,6 @@ services:
       - "8000:8000"
     environment:
       OMNIFORGE_API_KEY: ${OMNIFORGE_API_KEY:-}
-      OMNIFORGE_MAX_SCRIPT_TIMEOUT_MS: "30000"
       OMNIFORGE_MAX_SCRIPT_MEMORY_MB: "512"
       OMNIFORGE_RUNTIME_IMAGE: omniforge:latest
       OMNIFORGE_DB_PATH: /opt/omniforge/data/omniforge.db
