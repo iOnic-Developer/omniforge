@@ -2,7 +2,7 @@
 
 | Owner | Work | Owned paths | Next |
 | --- | --- | --- | --- |
-| Codex parent | Per-tool timeout MCP contract, verification and release | app/mcp_server.py, tests/test_mcp_timeouts.py, docs, versions, .ai/* | Verify default120 and release |
-| scheduling_backend | Persisted deadlines and process group termination | app/database.py, app/tool_authoring.py, app/runner.py, tests/test_timeouts.py, narrow execution mocks in test_dependencies.py/test_mcp_authoring.py | Backend tests |
-| dashboard_features | Editable timeout in tool window | app/templates/dashboard.html, app/static/product.css, app/static/sw.js, tests/dashboard_ui.cjs, tests/product_browser.cjs | Browser verification |
+| Codex parent | Complete: published/deployed0.3.1 and verified live deadlines | Source2d4c459; .ai/TIMEOUT-RESULT.md | No active edits |
+| scheduling_backend | Complete: persisted deadlines and process group cleanup | Backend and10timeout tests committed | No active edits |
+| dashboard_features | Complete: timeout editor and LAN/public browser acceptance | UI and56unit/service-worker tests committed | No active edits |
 | Claude Opus 5.5 | Proposal review complete; bounded source review returned no usable report | Read-only | No active helper |
